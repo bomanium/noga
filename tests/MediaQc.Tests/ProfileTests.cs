@@ -107,4 +107,18 @@ public class ProfileTests
         Assert.True(report.DropFrame);
         Assert.Equal("00:00:00;00", report.StartTimecode);
     }
+
+    [Fact]
+    public void LoudnessAfterTheLineUpSaysFromWhere()
+    {
+        var from = Only(Profile.EbuR128.Evaluate(Programme() with { LoudnessFrom = 5 }), "loudness.from");
+
+        Assert.Equal(Severity.Info, from.Severity);
+        Assert.Equal("10:00:05:00", from.Start?.Timecode);
+        Assert.Contains("-ss 5 ", from.CheckedAgainst, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LoudnessOfTheWholeFileSaysNothingMore() =>
+        Assert.DoesNotContain(Profile.EbuR128.Evaluate(Programme()).Findings, f => f.Check == "loudness.from");
 }

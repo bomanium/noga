@@ -127,6 +127,19 @@ public sealed record Profile
 
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
         Spans(findings, "silence", "Silence", measured.Silences, MinSilence, SilenceFilter);
+        if (measured.LoudnessFrom > 0 && measured.Loudness is not null)
+        {
+            findings.Add(new Finding
+            {
+                Check = "loudness.from",
+                Severity = Severity.Info,
+                Message = "Loudness is measured after the line-up tone",
+                Start = At(measured.LoudnessFrom),
+                End = At(measured.Duration),
+                CheckedAgainst = Invariant($"ffmpeg -ss {measured.LoudnessFrom:0.###} -i FILE -af ebur128=peak=true (the same figures)"),
+            });
+        }
+
         Loudness(findings, measured.Loudness);
 
         return new QcReport { Profile = Name, StartTimecode = timecode.At(0), DropFrame = timecode.DropFrame, Findings = findings };

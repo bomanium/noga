@@ -26,9 +26,10 @@ public sealed partial class FfmpegMeasurerTests : IClassFixture<Programme>
     }
 
     [Fact]
-    public void LoudnessIsEbur128sWithinATenthOfALu()
+    public void LoudnessIsEbur128sAfterTheLineUpWithinATenthOfALu()
     {
-        var ffmpeg = _programme.Ffmpeg("-af ebur128=peak=true:framelog=quiet");
+        Assert.Equal(Measured.Tone[0].End, Measured.LoudnessFrom);
+        var ffmpeg = _programme.Ffmpeg("-af ebur128=peak=true:framelog=quiet", Invariant($"-ss {Measured.LoudnessFrom}"));
         var loudness = Assert.NotNull(Measured.Loudness);
 
         Assert.Equal(Number(ffmpeg, @"I:\s+(-?[\d.]+) LUFS"), Assert.NotNull(loudness.Integrated), 0.1);

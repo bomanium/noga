@@ -71,7 +71,8 @@ public sealed class CommandLineTests : IClassFixture<Programme>
         Assert.Contains("can't read", error, StringComparison.Ordinal);
     }
 
-    // The programme's tone-only audio is 1.7 LU over -23 LUFS: a failure, so exit code 1.
+    // After the line-up, the programme's audio is a short 1 kHz tone at -18 dBFS, well over -23 LUFS: a failure, so exit
+    // code 1.
     [Fact]
     public void CheckWritesBothReportsAndExitsWithTheReportsCode()
     {
