@@ -5,7 +5,7 @@ freelancers and archives, before files go to a broadcaster or platform. One repo
 pipelines) of a file's black spans, colour bars, line-up tone, silences, loudness (EBU R128), pixels outside broadcast
 range, crop/letterbox, frame types, bitrate and keyframes, and its shot list, each figure saying how it is checked
 against FFmpeg. Not a Netflix/DPP compliance replacement. A planned commercial product; `media-qc` and the `mediaqc`
-command are working names until it gets a real one. Repo: `github.com/bisforboman/media-qc` (private). Where the idea
+command are working names until it gets a real one. Repo: `github.com/bomanium/media-qc` (private). Where the idea
 came from, the market and the gaps: docs/notes/origin.md.
 
 It builds on the owner's public libraries: ManagedCodecs (pure C# H.264/MJPEG/AAC decoding), ShotDetector and
