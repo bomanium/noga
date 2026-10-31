@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/MediaQc.Core/MediaQc.Core.csproj" />
     <Project Path="src/MediaQc.Cli/MediaQc.Cli.csproj" />
+    <Project Path="src/MediaQc.Ffmpeg/MediaQc.Ffmpeg.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MediaQc.Tests/MediaQc.Tests.csproj" />
