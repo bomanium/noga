@@ -10,7 +10,7 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Publish the measures from shotdetector-web's core into FrameReader/ShotDetector
+- Publish the measures from shotdetector-web's core into FrameReader
   - Why: docs/decisions/2026-10-31-where-the-measures-live.md: one implementation, checked against FFmpeg in the
     public repositories, fed by any frame source. What FrameReader has already (2026-10-31): `Loudness.Measure` (FFmpeg's
     own ebur128 filter over an `AudioReader`, so the FFmpeg path only) and `ReferenceToneFinder` (line-up tone, any
@@ -18,12 +18,14 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     types, on decoded frames), a managed BS.1770 loudness and true peak, silences and channel peaks (Mp4Audio). Those
     go public, taking frames and samples from either decoder. The work is in the shotdetector and shotdetector-web
     repositories (their own PRs and releases); media-qc then takes the packages
-  - Status: Open (which package hosts them, and the API, are the owner's to approve)
+  - Status: In progress (2026-10-31: FrameReader hosts them, decisions/2026-10-31-measures-in-framereader.md; a cloud
+    session in the shotdetector repository does the work, the API is the owner's to approve there; shotdetector-web
+    moves to them after FrameReader's release)
 
 - The v1 profile in MediaQc.Core: verdicts, thresholds, timecodes
   - Why: docs/decisions/2026-10-31-first-formats-and-check-profile.md: EBU R128 (integrated -23 LUFS, true peak
     -1 dBTP, loudness range), black spans, bars, tone and silences, each a pass/warning/failure with timecodes and
-    the FFmpeg filter it is checked against. The thresholds and the timecode form are the owner's to approve
+    the FFmpeg filter it is checked against. Thresholds: decisions/2026-10-31-v1-thresholds.md
   - Status: Open
 
 - Both decoding paths, with a test that they agree
