@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <!-- Every package and its licence: docs/dependencies.md (closed-source commercial use; no GPL/AGPL). -->
+  <ItemGroup>
+    <!-- Moves with the format tool in .config/dotnet-tools.json, in one PR. -->
+    <PackageVersion Include="StyleBro.Analyzers" Version="0.8.0-alpha.1" />
+    <!-- Tests only. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <!-- Each failed test as a check-run annotation in CI. -->
+    <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.5" />
+  </ItemGroup>
+</Project>
