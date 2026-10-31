@@ -79,11 +79,15 @@ What is next, in order: docs/backlog.md.
   v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `Product` (name and version).
+- `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
+  through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
+  silences (silencedetect), line-up tone; black, bars and the start timecode not yet.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`), a stub so far: `--help`, `--version`, anything else
   a usage error (exit code 2). `mediaqc check` and the exit codes a QC run gives pipelines come with the first checks.
-- `tests/MediaQc.Tests`: xunit.
+- `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
+  with the `ffmpeg` command line, which must be on PATH (CI installs it).
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
-- `.github/workflows/ci.yml`: format, build, test (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.
+- `.github/workflows/ci.yml`: ffmpeg, format, build, test (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.

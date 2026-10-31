@@ -33,10 +33,15 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 - Both decoding paths, with a test that they agree
   - Why: docs/decisions/2026-10-31-decoding.md: ManagedCodecs for H.264/AAC MP4, FrameReader (FFmpeg) for the rest;
     the same MP4 through both gives the same measures
-  - Status: Open
+  - Status: In progress (2026-10-31, decisions/2026-10-31-ffmpeg-audio-first.md: `MediaQc.Ffmpeg`'s `FfmpegMeasurer`
+    measures duration, frame rate, loudness (ebur128), silences (silencedetect) and line-up tone (ReferenceTone) on
+    the FFmpeg path, with FrameReader 2.18.0, each checked against the ffmpeg command line in a test. Still to come:
+    black and bars (FrameReader's picture measures; its FFmpeg build has no blackdetect), the start timecode
+    (FrameReader doesn't expose a file's tags yet), and the ManagedCodecs path with the test that both agree)
 
 - `mediaqc check`: HTML and JSON reports and the exit code
-  - Why: docs/decisions/2026-10-31-product-shape.md
+  - Why: docs/decisions/2026-10-31-product-shape.md. Until black and bars are measured, `Measurements` can't tell
+    "none found" from "not measured": the report must say which checks ran
   - Status: Open
 
 - CI generates the samples and compares with FFmpeg
