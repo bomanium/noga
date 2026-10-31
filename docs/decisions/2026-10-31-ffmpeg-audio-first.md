@@ -13,6 +13,9 @@ Choices:
    ebur128, `ReferenceToneFinder`), so a check gives real loudness and tone on MOV/MXF first.
 3. Stop here: wait for FrameReader's release.
 
-Answer: 2. `MediaQc.Ffmpeg` measures on the FFmpeg path with FrameReader 2.18.0: loudness (FFmpeg's ebur128), silences
+Answer: 2, a misclick: the owner meant 1. 2 was built by then (PR 4) and kept, as the decoding item needs it
+anyway; `mediaqc check` came next, on top of it.
+
+What 2 is: `MediaQc.Ffmpeg` measures on the FFmpeg path with FrameReader 2.18.0: loudness (FFmpeg's ebur128), silences
 (FFmpeg's silencedetect, which its FFmpeg build has) and line-up tone (ReferenceTone), each checked against the ffmpeg
 command line in a test; black, bars and the start timecode wait for FrameReader.

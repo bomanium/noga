@@ -32,6 +32,12 @@ public sealed record Measurements
 
     /// <summary>The line-up tone segments, in order.</summary>
     public IReadOnlyList<ToneSpan> Tone { get; init; } = [];
+
+    /// <summary>
+    /// The checks this decoder path doesn't measure yet ("black", "bars"): their lists above are empty because
+    /// nothing looked, not because nothing was found, and the report says so.
+    /// </summary>
+    public IReadOnlyList<string> NotMeasured { get; init; } = [];
 }
 
 /// <summary>A span of the file, in seconds from the first frame: <paramref name="Start"/> inclusive, <paramref name="End"/> exclusive.</summary>
