@@ -24,11 +24,11 @@ public sealed class Programme : IDisposable
 
     public Measurements Measured { get; }
 
-    /// <summary>What the ffmpeg command line on PATH prints (its log) for <c>ffmpeg -i programme.mov ARGS -f null -</c>.</summary>
-    public string Ffmpeg(string args)
+    /// <summary>What the ffmpeg command line on PATH prints (its log) for <c>ffmpeg [INPUT] -i programme.mov ARGS -f null -</c>.</summary>
+    public string Ffmpeg(string args, string input = "")
     {
         var start = new ProcessStartInfo("ffmpeg") { RedirectStandardError = true, RedirectStandardOutput = true, UseShellExecute = false };
-        foreach (string arg in (string[])["-hide_banner", "-nostats", "-i", Path, .. args.Split(' '), "-f", "null", "-"])
+        foreach (string arg in (string[])["-hide_banner", "-nostats", .. input.Split(' ', StringSplitOptions.RemoveEmptyEntries), "-i", Path, .. args.Split(' '), "-f", "null", "-"])
             start.ArgumentList.Add(arg);
         Process process;
         try

@@ -6,7 +6,7 @@ namespace MediaQc.Ffmpeg;
 /// <summary>
 /// Measures a file on the FFmpeg path (FrameReader over FFmpeg's libraries, in this process): its duration and frame
 /// rate, and from its audio the loudness (FFmpeg's own ebur128), the silences (FFmpeg's own silencedetect, with the
-/// profile's settings) and the line-up tone (FrameReader's ReferenceTone). Picture measures (black, bars) and the
+/// profile's settings) and the line-up tone (FrameReader's ReferenceTone); the loudness from the end of the line-up (<see cref="LineUp"/>). Picture measures (black, bars) and the
 /// start timecode aren't in FrameReader's public API yet: black and bars are listed as not measured, and timecodes
 /// count from 00:00:00:00 (docs/backlog.md).
 /// </summary>
@@ -42,11 +42,15 @@ public static class FfmpegMeasurer
         if (!info.HasAudio)
             return measured;
 
+        var silences = FindSilences(path, profile, cancellationToken);
+        var tone = FindTone(path, cancellationToken);
+        double from = LineUp.End(tone, silences);
         return measured with
         {
-            Loudness = MeasureLoudness(path, cancellationToken),
-            Silences = FindSilences(path, profile, cancellationToken),
-            Tone = FindTone(path, cancellationToken),
+            Silences = silences,
+            Tone = tone,
+            LoudnessFrom = from,
+            Loudness = MeasureLoudness(path, from, cancellationToken),
         };
     }
 
@@ -57,9 +61,12 @@ public static class FfmpegMeasurer
         return string.Create(CultureInfo.InvariantCulture, $"silencedetect=n={profile.SilenceNoise}dB:d={profile.MinSilence}");
     }
 
-    static LoudnessMeasure MeasureLoudness(string path, CancellationToken cancellationToken)
+    // From the end of the line-up: the reader seeks as ffmpeg's -ss does, so the figures are ffmpeg -ss FROM's.
+    static LoudnessMeasure MeasureLoudness(string path, double from, CancellationToken cancellationToken)
     {
         using var audio = new AudioReader(path, new AudioReaderOptions { CancellationToken = cancellationToken });
+        if (from > 0)
+            audio.Seek(TimeSpan.FromSeconds(from));
         var loudness = Loudness.Measure(audio, cancellationToken);
         double? integrated = loudness.Integrated <= Ungated ? null : loudness.Integrated;
         return new LoudnessMeasure(integrated, loudness.Range, loudness.TruePeak);

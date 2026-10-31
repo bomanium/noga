@@ -18,7 +18,13 @@ public sealed record Measurements
     /// <summary>The file's start timecode (its timecode track), or null when it has none.</summary>
     public string? StartTimecode { get; init; }
 
-    /// <summary>The programme loudness, or null when the file has no audio.</summary>
+    /// <summary>
+    /// Where the loudness is measured from (seconds): the end of the line-up tone (<see cref="LineUp.End"/>), 0 when
+    /// there is none. Programme loudness leaves line-up out (docs/decisions/2026-10-31-loudness-after-line-up.md).
+    /// </summary>
+    public double LoudnessFrom { get; init; }
+
+    /// <summary>The programme loudness from <see cref="LoudnessFrom"/>, or null when the file has no audio.</summary>
     public LoudnessMeasure? Loudness { get; init; }
 
     /// <summary>The black spans (blackdetect's), in order.</summary>

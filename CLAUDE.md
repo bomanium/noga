@@ -80,6 +80,7 @@ What is next, in order: docs/backlog.md.
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
+  `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone; black, bars and the start timecode not yet.
