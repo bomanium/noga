@@ -74,7 +74,11 @@ What is next, in order: docs/backlog.md.
 
 - `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
   `Directory.Packages.props` (central package versions); `global.json` (SDK 10.0.1xx or later).
-- `src/MediaQc.Core`: the library the checks will live in. So far `Product` (name and version).
+- `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
+  bars, tone; seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
+  v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
+  against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
+  (the JSON report, source-generated), `Product` (name and version).
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`), a stub so far: `--help`, `--version`, anything else
   a usage error (exit code 2). `mediaqc check` and the exit codes a QC run gives pipelines come with the first checks.
 - `tests/MediaQc.Tests`: xunit.

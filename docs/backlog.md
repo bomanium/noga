@@ -25,8 +25,10 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 - The v1 profile in MediaQc.Core: verdicts, thresholds, timecodes
   - Why: docs/decisions/2026-10-31-first-formats-and-check-profile.md: EBU R128 (integrated -23 LUFS, true peak
     -1 dBTP, loudness range), black spans, bars, tone and silences, each a pass/warning/failure with timecodes and
-    the FFmpeg filter it is checked against. Thresholds: decisions/2026-10-31-v1-thresholds.md
-  - Status: Open
+    the FFmpeg filter it is checked against. Thresholds: decisions/2026-10-31-v1-thresholds.md; exit codes, head and
+    tail, timecode: decisions/2026-10-31-exit-codes-head-tail-timecode.md
+  - Status: In progress (2026-10-31: `Profile.EbuR128` judges `Measurements` into a `QcReport` with its JSON; the
+    measures that fill `Measurements` come with the decoding item)
 
 - Both decoding paths, with a test that they agree
   - Why: docs/decisions/2026-10-31-decoding.md: ManagedCodecs for H.264/AAC MP4, FrameReader (FFmpeg) for the rest;
