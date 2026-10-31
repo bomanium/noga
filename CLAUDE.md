@@ -40,8 +40,10 @@ in docs/backlog.md (Waiting) are the owner's, asked one at a time with the multi
 
 ## Working on this repository
 
-- **PR pipeline**: `main` is protected; work on a branch, push, open a PR and turn auto-merge on at once (drafts
-  excepted; a PR the owner must decide on says so in its body and waits). Don't push to main directly.
+- **PR pipeline**: work on a branch, push, open a PR; the owner merges by hand once CI is green. A private repository
+  on GitHub Free has no auto-merge and no branch protection (docs/decisions/2026-10-31-merging-by-hand.md), so
+  `main` isn't protected by settings: don't push to it directly all the same. Say in the PR (and to the owner) when
+  it is ready; a PR the owner must decide on says so in its body.
 - **Backlog**: `docs/backlog.md`: Next (priority order), Waiting (on the owner or an outside event), Maybe. Items are
   list entries (What, then Why: and Status:) with a blank line between them. Take the first Next item; when one is
   Done (or Dropped, Won't do), move it to `docs/backlog-done.md` (created with the first one).
