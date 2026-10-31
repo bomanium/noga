@@ -5,7 +5,7 @@ freelancers and archives, before files go to a broadcaster or platform. One repo
 pipelines) of a file's black spans, colour bars, line-up tone, silences, loudness (EBU R128), pixels outside broadcast
 range, crop/letterbox, frame types, bitrate and keyframes, and its shot list, each figure saying how it is checked
 against FFmpeg. Not a Netflix/DPP compliance replacement. A planned commercial product; `media-qc` and the `mediaqc`
-command are working names until it gets a real one. Repo: `github.com/bisforboman/media-qc` (private). Where the idea
+command are working names until it gets a real one. Repo: `github.com/bomanium/media-qc` (private). Where the idea
 came from, the market and the gaps: docs/notes/origin.md.
 
 It builds on the owner's public libraries: ManagedCodecs (pure C# H.264/MJPEG/AAC decoding), ShotDetector and
@@ -74,7 +74,11 @@ What is next, in order: docs/backlog.md.
 
 - `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
   `Directory.Packages.props` (central package versions); `global.json` (SDK 10.0.1xx or later).
-- `src/MediaQc.Core`: the library the checks will live in. So far `Product` (name and version).
+- `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
+  bars, tone; seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
+  v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
+  against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
+  (the JSON report, source-generated), `Product` (name and version).
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`), a stub so far: `--help`, `--version`, anything else
   a usage error (exit code 2). `mediaqc check` and the exit codes a QC run gives pipelines come with the first checks.
 - `tests/MediaQc.Tests`: xunit.
