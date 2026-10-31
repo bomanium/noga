@@ -78,12 +78,14 @@ What is next, in order: docs/backlog.md.
   bars, tone; seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
   v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
-  (the JSON report, source-generated), `Product` (name and version).
+  (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
+  version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone; black, bars and the start timecode not yet.
-- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`), a stub so far: `--help`, `--version`, anything else
-  a usage error (exit code 2). `mediaqc check` and the exit codes a QC run gives pipelines come with the first checks.
+- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`
+  measures FILE (the FFmpeg path for every format so far), judges it by `Profile.EbuR128`, writes FILE.qc.html and
+  FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings.
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line, which must be on PATH (CI installs it).
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,

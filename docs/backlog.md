@@ -39,11 +39,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     black and bars (FrameReader's picture measures; its FFmpeg build has no blackdetect), the start timecode
     (FrameReader doesn't expose a file's tags yet), and the ManagedCodecs path with the test that both agree)
 
-- `mediaqc check`: HTML and JSON reports and the exit code
-  - Why: docs/decisions/2026-10-31-product-shape.md. Until black and bars are measured, `Measurements` can't tell
-    "none found" from "not measured": the report must say which checks ran
-  - Status: Open
-
 - CI generates the samples and compares with FFmpeg
   - Why: Every figure is checked against FFmpeg (CLAUDE.md); CI runs tools/make-samples.sh and FFmpeg's ebur128,
     blackdetect and silencedetect on the samples, and the tests compare
