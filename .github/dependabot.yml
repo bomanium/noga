@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # One PR a week for the actions (their SHA pins and tag comments move together).
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    # The analyzers (Directory.Packages.props) and the format tool (.config/dotnet-tools.json) move together. While
+    # StyleBro is a prerelease, Dependabot never proposes its next one: move both by hand.
+    groups:
+      stylebro:
+        patterns: ["StyleBro.*"]
