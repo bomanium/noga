@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MediaQc.Core\MediaQc.Core.csproj" />
+    <ProjectReference Include="..\MediaQc.Ffmpeg\MediaQc.Ffmpeg.csproj" />
   </ItemGroup>
 
   <ItemGroup>
