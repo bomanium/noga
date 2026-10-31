@@ -7,7 +7,11 @@ and .config/dotnet-tools.json.
 
 ## Shipped with the product
 
-None yet.
+| Package | Licence | How it ships |
+| --- | --- | --- |
+| FrameReader | MIT | A managed assembly (MediaQc.Ffmpeg: the FFmpeg path) |
+| FFmpeg.AutoGen (FrameReader's dependency) | MIT (8.x; older versions were LGPL-3.0) | A managed assembly: the bindings to FFmpeg's libraries |
+| FrameReader.Native.linux-x64, .win-x64 | LGPL-2.1-or-later (FFmpeg 8 without `--enable-gpl`; dav1d BSD-2-Clause, libwebp BSD-3-Clause, OpenSSL Apache-2.0 linked in) | Separate shared libraries under `runtimes/<rid>/native/`, loaded at run time and replaceable; the package's COPYING files, configure line and SBOM go beside them when the product is packaged |
 
 ## Build and test only (not shipped)
 
@@ -24,7 +28,7 @@ None yet.
 
 | Tool | Licence | What for |
 | --- | --- | --- |
-| ffmpeg (whatever is on PATH) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it; nothing from it is shipped, so a GPL build (libx264) is fine there |
+| ffmpeg (whatever is on PATH; CI installs Ubuntu's) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it, and the tests compare the measures with it; nothing from it is shipped, so a GPL build (libx264) is fine there |
 | GitHub Actions: actions/checkout, actions/setup-dotnet | MIT | CI, pinned by commit SHA |
 
 ## Candidates (the open decisions, docs/backlog.md)
@@ -32,8 +36,6 @@ None yet.
 | Package | Licence | How it would ship |
 | --- | --- | --- |
 | ManagedCodecs | MIT | A managed assembly |
-| FrameReader | MIT | A managed assembly |
-| FrameReader.Native.\<rid\> | LGPL-2.1-or-later (our FFmpeg build, without `--enable-gpl`) | Separate shared libraries, loaded at run time and replaceable, with the LGPL text, the build's configure line and its SBOM (what it bundles) |
 | ShotDetector | MIT | A managed assembly |
 | ShotDetector.FastYuv | LGPL-2.1-or-later | Only as its own replaceable assembly, with the LGPL text; or not at all |
 | shotdetector-web's core (copied, if decided so) | MIT | Source in this repository, keeping its copyright and licence notice |

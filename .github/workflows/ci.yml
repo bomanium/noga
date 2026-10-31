@@ -29,6 +29,13 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # The tests compare the measures with the ffmpeg command line (CLAUDE.md: every figure is checked against
+      # FFmpeg). Ubuntu's build is a tool here, never shipped (docs/dependencies.md).
+      - name: ffmpeg
+        run: |
+          command -v ffmpeg || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg; }
+          ffmpeg -hide_banner -version | head -1
+
       - name: Restore
         run: |
           dotnet tool restore

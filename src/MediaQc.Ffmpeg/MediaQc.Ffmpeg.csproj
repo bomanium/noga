@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The FFmpeg decoding path (docs/decisions/2026-10-31-decoding.md): FrameReader over FFmpeg's LGPL libraries,
+       which FrameReader.Native ships as separate shared libraries with their licence beside them (docs/dependencies.md). -->
+  <PropertyGroup>
+    <RootNamespace>MediaQc.Ffmpeg</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FrameReader" />
+    <!-- CI's and the owner's platforms; others come with packaging. -->
+    <PackageReference Include="FrameReader.Native.linux-x64" />
+    <PackageReference Include="FrameReader.Native.win-x64" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MediaQc.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediaQc.Core\MediaQc.Core.csproj" />
+  </ItemGroup>
+
+</Project>
