@@ -2,42 +2,47 @@
 
 What media-qc does next, in priority order. Three sections: **Next** (open work, the first item first), **Waiting**
 (items that wait on the owner or an outside event) and **Maybe** (ideas not committed to). Update a status when work
-starts or lands; add an item when a gap turns up, with why it matters. An item moves to `backlog-done.md` when it is
-Done, Dropped or Won't do. Design questions go to [decisions/](decisions/).
+starts or lands; add an item when a gap turns up, with why it matters. An item moves to
+[backlog-done.md](backlog-done.md) when it is Done, Dropped or Won't do. Design questions go to [decisions/](decisions/).
 
 Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-done.md): **Done**, **Dropped**,
 **Won't do**.
 
 ## Next
 
-Nothing while the project is parked (see Waiting).
+- Publish the measures from shotdetector-web's core into FrameReader/ShotDetector
+  - Why: docs/decisions/2026-10-31-where-the-measures-live.md: one implementation, checked against FFmpeg in the
+    public repositories, fed by any frame source. What FrameReader has already (2026-10-31): `Loudness.Measure` (FFmpeg's
+    own ebur128 filter over an `AudioReader`, so the FFmpeg path only) and `ReferenceToneFinder` (line-up tone, any
+    samples). What only shotdetector-web's core has: PictureMeter/PictureMeasures (black, bars, range, crop, frame
+    types, on decoded frames), a managed BS.1770 loudness and true peak, silences and channel peaks (Mp4Audio). Those
+    go public, taking frames and samples from either decoder. The work is in the shotdetector and shotdetector-web
+    repositories (their own PRs and releases); media-qc then takes the packages
+  - Status: Open (which package hosts them, and the API, are the owner's to approve)
+
+- The v1 profile in MediaQc.Core: verdicts, thresholds, timecodes
+  - Why: docs/decisions/2026-10-31-first-formats-and-check-profile.md: EBU R128 (integrated -23 LUFS, true peak
+    -1 dBTP, loudness range), black spans, bars, tone and silences, each a pass/warning/failure with timecodes and
+    the FFmpeg filter it is checked against. The thresholds and the timecode form are the owner's to approve
+  - Status: Open
+
+- Both decoding paths, with a test that they agree
+  - Why: docs/decisions/2026-10-31-decoding.md: ManagedCodecs for H.264/AAC MP4, FrameReader (FFmpeg) for the rest;
+    the same MP4 through both gives the same measures
+  - Status: Open
+
+- `mediaqc check`: HTML and JSON reports and the exit code
+  - Why: docs/decisions/2026-10-31-product-shape.md
+  - Status: Open
+
+- CI generates the samples and compares with FFmpeg
+  - Why: Every figure is checked against FFmpeg (CLAUDE.md); CI runs tools/make-samples.sh and FFmpeg's ebur128,
+    blackdetect and silencedetect on the samples, and the tests compare
+  - Status: Open
 
 ## Waiting
 
-- Unpark: svarta's feasibility check
-  - Why: The owner's masking tool comes first; media-qc waits until svarta passes its feasibility check (2026-10-31)
-  - Status: Waiting (on the owner)
-
-- Decision: where the measures live
-  - Why: The first profile is EBU R128 loudness, black, bars, tone and silence
-    (decisions/2026-10-31-first-formats-and-check-profile.md). shotdetector-web's core (PictureMeter,
-    PictureMeasures, Loudness, Mp4Audio) already measures black, bars, range, crop and loudness, checked against FFmpeg. Either they are published from there into the public FrameReader
-    or ShotDetector packages, so this repository and the page share one implementation, or they are copied here (MIT
-    allows it; keep the notice)
-  - Status: Waiting (on the owner)
-
-- Decision: decoding
-  - Why: FFmpeg through FrameReader for every format, ManagedCodecs only, or both (managed where possible, FFmpeg for
-    the professional formats). Deliveries are often ProRes, DNxHD/DNxHR or MXF, which ManagedCodecs doesn't decode;
-    FrameReader's FFmpeg build is LGPL, so it ships as separate, replaceable libraries either way. Since
-    decisions/2026-10-31-first-formats-and-check-profile.md, v1 reads ProRes and DNxHR, so FFmpeg is in v1; what is
-    left is whether ManagedCodecs also decodes H.264
-  - Status: Waiting (on the owner)
-
-- Decision: product shape
-  - Why: CLI only, a desktop app, or a local web UI: decides the second project in the solution and how the HTML report
-    is shown. The JSON report and the exit code for pipelines come in every shape
-  - Status: Waiting (on the owner)
+Nothing.
 
 ## Maybe
 
@@ -55,11 +60,6 @@ Nothing while the project is parked (see Waiting).
 - Open films in CI
   - Why: Generated files have known answers but not real pictures; Blender's open films, downloaded and pinned by
     SHA-256 (as shotdetector's realworld.py does), would check the measures on real material, nightly
-  - Status: Maybe
-
-- Run make-samples.sh in CI
-  - Why: CI only checks that it parses; once tests use the samples, CI has to generate them (an ffmpeg without
-    `--enable-gpl` is enough, since the H.264 file is optional)
   - Status: Maybe
 
 - Captions, ad markers and platform spec templates

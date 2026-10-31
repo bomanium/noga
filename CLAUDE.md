@@ -13,11 +13,21 @@ FrameReader (FrameReader reads anything through FFmpeg in-process), and the pict
 shotdetector-web's core (`src/ShotDetectorWeb.Core`: PictureMeter, PictureMeasures, Loudness, Mp4Audio; checked
 against FFmpeg's signalstats, blackdetect, cropdetect and ebur128).
 
-## Status: parked
+## Status
 
-Parked until the owner's masking tool (svarta) passes its feasibility check (2026-10-31). The scaffold is here: the
-solution, a `mediaqc` stub (help and version), CI, and the docs. Don't start product work unasked: the open decisions
-in docs/backlog.md (Waiting) are the owner's, asked one at a time with the multiple-choice prompt.
+Unparked on 2026-10-31 (docs/decisions/2026-10-31-unparked.md); working towards v1. What v1 is, decided that day
+(docs/decisions/):
+
+- Reads ProRes and DNxHR in MOV/MXF and H.264 in MP4; checks EBU R128 loudness, black, bars, line-up tone and
+  silence, with timecodes (2026-10-31-first-formats-and-check-profile.md).
+- The measures come from shotdetector-web's core, published into the public FrameReader/ShotDetector packages, fed
+  by any frame source; this repository adds the verdicts, the profile and the reports (2026-10-31-where-the-measures-live.md).
+- Decoding: ManagedCodecs for H.264/AAC in MP4, FFmpeg through FrameReader for the rest; a test keeps both paths'
+  measures the same on the same MP4 (2026-10-31-decoding.md).
+- A CLI: `mediaqc check <file>` writes an HTML and a JSON report and exits with a code for pipelines; a local web
+  UI may come later on the same core (2026-10-31-product-shape.md).
+
+What is next, in order: docs/backlog.md.
 
 ## Hard rules
 
@@ -65,8 +75,8 @@ in docs/backlog.md (Waiting) are the owner's, asked one at a time with the multi
 - `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
   `Directory.Packages.props` (central package versions); `global.json` (SDK 10.0.1xx or later).
 - `src/MediaQc.Core`: the library the checks will live in. So far `Product` (name and version).
-- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`), a stub: `--help`, `--version`, anything else a usage
-  error (exit code 2). The exit codes a QC run gives pipelines come with the first checks.
+- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`), a stub so far: `--help`, `--version`, anything else
+  a usage error (exit code 2). `mediaqc check` and the exit codes a QC run gives pipelines come with the first checks.
 - `tests/MediaQc.Tests`: xunit.
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
