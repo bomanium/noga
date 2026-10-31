@@ -7,7 +7,8 @@ namespace MediaQc.Ffmpeg;
 /// Measures a file on the FFmpeg path (FrameReader over FFmpeg's libraries, in this process): its duration and frame
 /// rate, and from its audio the loudness (FFmpeg's own ebur128), the silences (FFmpeg's own silencedetect, with the
 /// profile's settings) and the line-up tone (FrameReader's ReferenceTone). Picture measures (black, bars) and the
-/// start timecode aren't in FrameReader's public API yet: those stay empty (docs/backlog.md).
+/// start timecode aren't in FrameReader's public API yet: black and bars are listed as not measured, and timecodes
+/// count from 00:00:00:00 (docs/backlog.md).
 /// </summary>
 public static class FfmpegMeasurer
 {
@@ -36,6 +37,7 @@ public static class FfmpegMeasurer
             Duration = (info.Duration ?? video.Duration ?? TimeSpan.Zero).TotalSeconds,
             RateNumerator = video.FrameRate.Num,
             RateDenominator = video.FrameRate.Den,
+            NotMeasured = ["bars", "black"],
         };
         if (!info.HasAudio)
             return measured;

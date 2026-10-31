@@ -77,6 +77,24 @@ public sealed record Profile
         Position At(double seconds) => new(seconds, timecode.At(seconds));
 
         var findings = new List<Finding>();
+        foreach (string check in measured.NotMeasured)
+        {
+            findings.Add(new Finding
+            {
+                Check = check,
+                Severity = Severity.Info,
+                Message = Invariant($"Not checked: this version doesn't measure {check} yet"),
+                CheckedAgainst = check switch
+                {
+                    "black" => BlackFilter,
+                    "bars" => BarsFilter,
+                    "silence" => SilenceFilter,
+                    "tone" => ToneFilter,
+                    _ => "nothing yet",
+                },
+            });
+        }
+
         foreach (var bars in measured.Bars)
         {
             findings.Add(new Finding
