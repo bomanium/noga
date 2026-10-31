@@ -15,3 +15,6 @@ Choices:
 
 Answer: 1. Sessions open the PR and say when it is ready; nobody pushes to `main` directly, though settings don't
 stop it. If the account moves to Pro, this is worth revisiting.
+
+Since 2026-10-31 ([2026-10-31-sessions-merge.md](2026-10-31-sessions-merge.md)) sessions merge their own PRs once CI is
+green.
