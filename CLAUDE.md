@@ -100,5 +100,8 @@ What is next, in order: docs/backlog.md.
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence; timecode from 10:00:00:00) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
+- `tools/publish.sh [rid ...]`: the release builds (default linux-x64 and win-x64), self-contained, into `artifacts/`
+  as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
+  `licences/ffmpeg/`, `licences/dotnet/`, and `packaging/`'s README and notices). ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
-- `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.
+- `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.

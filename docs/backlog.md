@@ -10,18 +10,26 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Packaging: a release of `mediaqc` with FFmpeg's licence files beside its libraries
-  - Why: CLAUDE.md's licence rule: FrameReader.Native's LGPL libraries ship separate and replaceable, with the LGPL
-    text, the build's configure line and its SBOM beside them (the package has them: COPYING.*, configure.txt,
-    sbom.spdx.json); nothing copies them into a build's output yet. Also which platforms (linux-x64 and win-x64 so
-    far) and the form (a self-contained folder per platform, a zip)
-  - Status: Open
+Nothing: v1's checks and its packaging are done. What comes next is the owner's to choose (Maybe below).
 
 ## Waiting
 
 Nothing.
 
 ## Maybe
+
+- A release workflow: on a tag, CI runs tools/publish.sh and attaches the archives to a GitHub release
+  - Why: today a release is built by hand (tools/publish.sh) and CI only checks it builds and runs
+  - Status: Maybe
+
+- macOS (osx-arm64) and Linux arm64 releases
+  - Why: FrameReader.Native has osx-arm64 and linux-arm64 packages; CI can't run them (ubuntu only, macOS minutes cost
+    10x), and macOS wants a signed, notarised binary
+  - Status: Maybe
+
+- Code signing for the Windows build
+  - Why: an unsigned mediaqc.exe from a download is blocked or warned about by SmartScreen
+  - Status: Maybe
 
 - The AVC patent pool before selling
   - Why: Software with an H.264 decoder falls under the Via LA AVC pool (the first 100,000 units a year carry no
