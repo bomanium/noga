@@ -20,6 +20,7 @@ public static class ReportHtml
         th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #555; }
         td.tc { font-family: ui-monospace, monospace; white-space: nowrap; }
         td.against { color: #555; font-size: .85rem; }
+        td.ebu { font-size: .85rem; white-space: nowrap; }
         .pass { background: #e3f4e6; color: #17602a; }
         .info { background: #e8eef7; color: #24466e; }
         .warning { background: #fdf1d6; color: #7a5200; }
@@ -49,14 +50,14 @@ public static class ReportHtml
             <p class="meta">Profile {Encode(report.Profile)} · starts at {Encode(report.StartTimecode)}{(report.DropFrame ? " (drop-frame)" : "")} · {Encode(Product.Name)} {Encode(Product.Version)}</p>
             <div class="verdict {Class(report.Verdict <= Severity.Info ? Severity.Pass : report.Verdict)}">{Verdict(report.Verdict)}</div>
             <table>
-            <thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th><th>Checked against</th></tr></thead>
+            <thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th><th>Checked against</th><th>EBU QC</th></tr></thead>
             <tbody>
 
             """);
         foreach (var finding in report.Findings)
         {
             html.Append(CultureInfo.InvariantCulture, $"""
-                <tr><td><span class="sev {Class(finding.Severity)}">{finding.Severity}</span></td><td>{Encode(finding.Check)}</td><td>{Encode(finding.Message)}</td><td class="tc">{Encode(finding.Start?.Timecode ?? "")}</td><td class="tc">{Encode(finding.End?.Timecode ?? "")}</td><td class="against">{Encode(finding.CheckedAgainst)}</td></tr>
+                <tr><td><span class="sev {Class(finding.Severity)}">{finding.Severity}</span></td><td>{Encode(finding.Check)}</td><td>{Encode(finding.Message)}</td><td class="tc">{Encode(finding.Start?.Timecode ?? "")}</td><td class="tc">{Encode(finding.End?.Timecode ?? "")}</td><td class="against">{Encode(finding.CheckedAgainst)}</td><td class="ebu">{Ebu(finding.EbuQc)}</td></tr>
 
                 """);
         }
@@ -81,4 +82,8 @@ public static class ReportHtml
     static string Class(Severity severity) => severity.ToString().ToLowerInvariant();
 
     static string Encode(string text) => WebUtility.HtmlEncode(text);
+
+    // The EBU QC item as a link to its page in the catalogue; nothing when the check has none.
+    static string Ebu(EbuQcItem? item) =>
+        item is null ? "" : $"<a href=\"{Encode(item.Url)}\" title=\"EBU QC {Encode(item.Id)} v{Encode(item.Version)}\">{Encode(item.Id)} {Encode(item.Name)}</a>";
 }
