@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The managed decoding path (docs/decisions/2026-10-31-decoding.md): H.264/AAC in MP4 through ManagedCodecs, no
+       native code; the measures are FrameReader's managed ones (LoudnessMeter, ReferenceToneFinder), which touch
+       nothing of FFmpeg, and Core's SilenceFinder. -->
+  <PropertyGroup>
+    <RootNamespace>MediaQc.Managed</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FrameReader" />
+    <PackageReference Include="ManagedCodecs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediaQc.Core\MediaQc.Core.csproj" />
+  </ItemGroup>
+
+</Project>

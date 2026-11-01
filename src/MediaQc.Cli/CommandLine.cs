@@ -1,5 +1,6 @@
 using FrameReader;
 using MediaQc.Ffmpeg;
+using MediaQc.Managed;
 
 namespace MediaQc.Cli;
 
@@ -64,9 +65,12 @@ static class CommandLine
         Measurements measured;
         try
         {
-            measured = FfmpegMeasurer.Measure(check.File, profile);
+            // docs/decisions/2026-10-31-decoding.md: ManagedCodecs for H.264/AAC in MP4, FFmpeg for the rest.
+            measured = ManagedMeasurer.CanMeasure(check.File)
+                ? ManagedMeasurer.Measure(check.File, profile)
+                : FfmpegMeasurer.Measure(check.File, profile);
         }
-        catch (Exception e) when (e is FrameReaderException or MediaException or InvalidDataException)
+        catch (Exception e) when (e is FrameReaderException or MediaException or InvalidDataException or NotSupportedException)
         {
             error.WriteLine($"mediaqc: can't read {check.File}: {e.Message}");
             return Usage;

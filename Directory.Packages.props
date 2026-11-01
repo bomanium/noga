@@ -10,6 +10,8 @@
     <PackageVersion Include="FrameReader" Version="2.18.0" />
     <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.18.0" />
     <PackageVersion Include="FrameReader.Native.win-x64" Version="2.18.0" />
+    <!-- Pure managed H.264/AAC decoding and MP4 demuxing (MIT). -->
+    <PackageVersion Include="ManagedCodecs" Version="0.4.0" />
     <!-- Tests only. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
