@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    # A version tag (v0.1.0-alpha.1) also publishes a release: the release job below
+    # (docs/decisions/2026-11-01-release-workflow.md).
+    tags: ['v*']
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]   # drafts run nothing until marked ready
 
@@ -24,6 +27,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # A tag names the version it releases: v and Directory.Build.props' Version, or nothing is released
+      # (checked first, before the long steps).
+      - name: Tag matches the version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
+          test "$GITHUB_REF_NAME" = "v$version" || { echo "::error::Tag $GITHUB_REF_NAME isn't v$version (Directory.Build.props)"; exit 1; }
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
@@ -64,3 +75,38 @@ jobs:
 
       - name: make-samples.sh parses
         run: bash -n tools/make-samples.sh
+
+      - name: Keep the archives
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: release
+          path: |
+            artifacts/*.tar.gz
+            artifacts/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  # The archives the build made and tested, on a GitHub release published at once; a pre-release when the version has
+  # a suffix (-alpha.1). The only job that writes to the repository.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: release
+          path: release
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          [[ "$GITHUB_REF_NAME" == *-* ]] && prerelease=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --title "mediaqc ${GITHUB_REF_NAME#v}" \
+            --generate-notes --verify-tag "${prerelease[@]}"
