@@ -38,12 +38,15 @@ ul { list-style: none; margin: 0; padding: 0; }
 .failure, .failed { background: #fbe3e1; color: #8d1c12; }
 .error { color: #8d1c12; font-size: .85rem; grid-column: 2 / 4; }
 .empty { color: #777; padding: .6rem .2rem; }
+#watching { margin: 1rem 1.2rem 0; padding: .5rem .8rem; background: #e8eef7; color: #24466e; border-radius: .3rem; font-size: .9rem; }
+#watching:empty, #watching[data-folder=""] { display: none; }
 #problem { color: #8d1c12; min-height: 1.2em; font-size: .85rem; }
 @media (max-width: 52rem) { main { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <header><h1>{{product}}</h1><span>{{version}} · file-based QC · this machine only</span></header>
+<div id="watching" data-folder="{{watched}}">Watching <b>{{watched}}</b>: its media files without a report are checked, new ones once their copy has finished.</div>
 <main>
   <section>
     <h2>Pick a file on this machine</h2>
@@ -159,7 +162,7 @@ events.onmessage = message => { latest = JSON.parse(message.data); show(latest);
 setInterval(() => { if (latest.some(j => j.state === "Measuring")) show(latest); }, 1000);
 
 $("go").addEventListener("submit", event => { event.preventDefault(); open($("path").value); });
-open(null);
+open($("watching").dataset.folder || null);
 </script>
 </body>
 </html>

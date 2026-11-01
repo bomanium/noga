@@ -14,7 +14,7 @@ static class CommandLine
 
     const string Help = """
         Usage: mediaqc check FILE [--out FOLDER] [--warnings-fail]
-               mediaqc serve [--port PORT] [--no-open]
+               mediaqc serve [--port PORT] [--no-open] [--watch FOLDER]
                mediaqc --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
@@ -22,7 +22,8 @@ static class CommandLine
         broadcast range; also reports crop, frame types, keyframes, bitrate and the shot list).
 
         serve runs the web UI on this machine only (http://localhost:8722 unless --port says another), opens it in
-        the browser (not with --no-open) and checks the files picked there, writing their reports beside them.
+        the browser (not with --no-open) and checks the files picked there, writing their reports beside them. With
+        --watch, it also checks FOLDER's media files (subfolders too) that have no report yet, new ones once copied.
 
         Exit codes: 0 passed, 1 failed, 2 usage or read error, 3 warnings (1 with --warnings-fail).
         """;
@@ -50,8 +51,8 @@ static class CommandLine
         if (args is ["check", ..] && CheckArguments.Parse([.. args.Skip(1)]) is { } check)
             return Check(check, output, error);
 
-        if (args is ["serve", ..] && ServeArguments(args.Skip(1).ToList()) is var (port, open))
-            return Serve.Server.Run(port, open, output);
+        if (args is ["serve", ..] && ServeArguments(args.Skip(1).ToList()) is var (port, open, watch))
+            return Serve.Server.Run(port, open, watch, output, error);
 
         error.WriteLine($"mediaqc: can't understand: {string.Join(' ', args)}. See mediaqc --help.");
         return Usage;
@@ -91,11 +92,12 @@ static class CommandLine
         return code;
     }
 
-    // serve's arguments: the port and whether to open the browser; null when they don't parse.
-    static (int Port, bool Open)? ServeArguments(IReadOnlyList<string> args)
+    // serve's arguments: the port, whether to open the browser and the folder to watch; null when they don't parse.
+    static (int Port, bool Open, string? Watch)? ServeArguments(IReadOnlyList<string> args)
     {
         int port = Serve.Server.DefaultPort;
         bool open = true;
+        string? watch = null;
         for (int i = 0; i < args.Count; i++)
         {
             switch (args[i])
@@ -106,12 +108,15 @@ static class CommandLine
                 case "--no-open":
                     open = false;
                     break;
+                case "--watch" when i + 1 < args.Count && watch is null:
+                    watch = args[++i];
+                    break;
                 default:
                     return null;
             }
         }
 
-        return (port, open);
+        return (port, open, watch);
     }
 
     /// <summary><c>check</c>'s arguments: the file, where the reports go, and whether warnings fail.</summary>

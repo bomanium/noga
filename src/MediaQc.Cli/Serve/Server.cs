@@ -25,19 +25,30 @@ static class Server
 
     /// <summary>
     /// Builds the server on 127.0.0.1:<paramref name="port"/> (0: any free port), checking files with
-    /// <paramref name="check"/>. Start it with <c>StartAsync</c>; its address is then in <c>Urls</c>.
+    /// <paramref name="check"/>, and those arriving in <paramref name="watch"/> when given (<see cref="Watcher"/>).
+    /// Start it with <c>StartAsync</c>; its address is then in <c>Urls</c>.
     /// </summary>
-    public static WebApplication Build(int port, Func<string, CancellationToken, CheckResult> check)
+    /// <exception cref="DirectoryNotFoundException"><paramref name="watch"/> isn't a folder.</exception>
+    public static WebApplication Build(int port, Func<string, CancellationToken, CheckResult> check, string? watch = null)
     {
+        var jobs = new Jobs(check);
+        var watcher = watch is null ? null : new Watcher(watch, file => jobs.Add(file));
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
         builder.WebHost.ConfigureKestrel(k => k.Listen(IPAddress.Loopback, port));
         builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.TypeInfoResolverChain.Insert(0, ServeJsonContext.Default));
-        builder.Services.AddSingleton(new Jobs(check));
+        builder.Services.AddSingleton(jobs);
         var app = builder.Build();
         app.Use(Guard);
+        string page = Page(watcher?.Folder);
+        app.Lifetime.ApplicationStarted.Register(() => watcher?.Start());
+        app.Lifetime.ApplicationStopping.Register(() =>
+        {
+            watcher?.Dispose();
+            jobs.Dispose();
+        });
 
-        app.MapGet("/", () => Results.Text(Page, "text/html; charset=utf-8"));
+        app.MapGet("/", () => Results.Text(page, "text/html; charset=utf-8"));
         app.MapGet("/api/folders", (string? path) =>
         {
             try
@@ -61,16 +72,31 @@ static class Server
     }
 
     /// <summary>Runs the server until Ctrl+C, telling <paramref name="output"/> where it is.</summary>
-    public static int Run(int port, bool open, TextWriter output)
+    public static int Run(int port, bool open, string? watch, TextWriter output, TextWriter error)
     {
-        using var app = Build(port, (file, token) => Checker.Run(file, null, token));
-        app.StartAsync().GetAwaiter().GetResult();
-        string url = app.Urls.First().Replace("127.0.0.1", "localhost", StringComparison.Ordinal);
-        output.WriteLine($"{Product.Name} {Product.Version}: the web UI is at {url} (this machine only). Ctrl+C stops it.");
-        if (open)
-            Open(url);
-        app.WaitForShutdownAsync().GetAwaiter().GetResult();
-        app.Services.GetRequiredService<Jobs>().Dispose();
+        WebApplication app;
+        try
+        {
+            app = Build(port, (file, token) => Checker.Run(file, null, token), watch);
+        }
+        catch (DirectoryNotFoundException e)
+        {
+            error.WriteLine($"mediaqc: {e.Message}");
+            return CommandLine.Usage;
+        }
+
+        using (app)
+        {
+            app.StartAsync().GetAwaiter().GetResult();
+            string url = app.Urls.First().Replace("127.0.0.1", "localhost", StringComparison.Ordinal);
+            output.WriteLine($"{Product.Name} {Product.Version}: the web UI is at {url} (this machine only). Ctrl+C stops it.");
+            if (watch is not null)
+                output.WriteLine($"Watching {Path.GetFullPath(watch)}: its media files without a report are checked, new ones once copied.");
+            if (open)
+                Open(url);
+            app.WaitForShutdownAsync().GetAwaiter().GetResult();
+        }
+
         return CommandLine.Ok;
     }
 
@@ -139,16 +165,20 @@ static class Server
         }
     }
 
-    static string Page { get; } = ReadPage();
+    static string Template { get; } = ReadTemplate();
 
-    static string ReadPage()
+    static string ReadTemplate()
     {
         using var stream = typeof(Server).Assembly.GetManifestResourceStream("MediaQc.Cli.Serve.index.html")!;
         using var reader = new StreamReader(stream);
-        return reader.ReadToEnd()
-            .Replace("{{product}}", WebUtility.HtmlEncode(Product.Name), StringComparison.Ordinal)
-            .Replace("{{version}}", WebUtility.HtmlEncode(Product.Version), StringComparison.Ordinal);
+        return reader.ReadToEnd();
     }
+
+    // The page, with the folder watched (the picker opens there, and a line says it is watched).
+    static string Page(string? watched) => Template
+        .Replace("{{product}}", WebUtility.HtmlEncode(Product.Name), StringComparison.Ordinal)
+        .Replace("{{version}}", WebUtility.HtmlEncode(Product.Version), StringComparison.Ordinal)
+        .Replace("{{watched}}", watched is null ? "" : WebUtility.HtmlEncode(watched), StringComparison.Ordinal);
 }
 
 /// <summary>A check asked for: the file's path on this machine.</summary>

@@ -95,3 +95,8 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-01, decisions/2026-11-01-web-ui.md: ASP.NET Core minimal APIs and one page on 127.0.0.1;
     files picked in the server's folders and checked where they are, one at a time, shown live by server-sent events,
     the reports beside each file as the CLI writes them)
+
+- A watch folder: `mediaqc serve --watch FOLDER`
+  - Why: Post houses hand files over through folders; checking each as it lands needs nobody at the page
+  - Status: Done (2026-11-01, decisions/2026-11-01-watch-folder.md: the folder and its subfolders scanned every 2 s,
+    media files without a report checked once their copy has settled for 5 s, shown on the page like picked ones)

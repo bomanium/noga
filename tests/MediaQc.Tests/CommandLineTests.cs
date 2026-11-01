@@ -55,8 +55,20 @@ public sealed class CommandLineTests : IClassFixture<Programme>
     [InlineData("serve", "--port", "0")]
     [InlineData("serve", "--port", "http")]
     [InlineData("serve", "--frobnicate")]
+    [InlineData("serve", "--watch")]
+    [InlineData("serve", "--watch", "a", "--watch", "b")]
     public void ServeArgumentsThatDontParseAreAUsageError(params string[] args) =>
         Assert.Equal(CommandLine.Usage, Run(args).Code);
+
+    [Fact]
+    public void WatchingAFolderThatIsntThereIsAUsageError()
+    {
+        var (code, output, error) = Run("serve", "--no-open", "--port", "1", "--watch", Path.Combine(_programme.Folder, "missing"));
+
+        Assert.Equal(CommandLine.Usage, code);
+        Assert.Empty(output);
+        Assert.Contains("No such folder", error, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void CheckingAFileThatIsntThereIsAUsageError()

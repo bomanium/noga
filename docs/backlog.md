@@ -10,7 +10,7 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-Nothing: the report has every check the description names, a release workflow and a local web UI. What comes next
+Nothing: the report has every check the description names, a release workflow and a local web UI with a watch folder. What comes next
 is the owner's to choose (Maybe below).
 
 ## Waiting
@@ -19,9 +19,10 @@ Nothing.
 
 ## Maybe
 
-- The web UI's next steps: a watch folder, a shared-machine mode (listening beyond localhost, with a token), a thin
+- The web UI's next steps: a shared-machine mode (listening beyond localhost, with a token), a thin
   native shell around the page (native drag and drop of paths, an icon)
-  - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start
+  - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start (the watch
+    folder is done: decisions/2026-11-01-watch-folder.md)
   - Status: Maybe
 
 - macOS (osx-arm64) and Linux arm64 releases
