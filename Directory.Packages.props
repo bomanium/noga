@@ -10,6 +10,8 @@
     <PackageVersion Include="FrameReader" Version="2.19.0" />
     <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.19.0" />
     <PackageVersion Include="FrameReader.Native.win-x64" Version="2.19.0" />
+    <!-- FrameReader's bindings to FFmpeg (MIT), used directly to read packets: FrameReader's version. -->
+    <PackageVersion Include="FFmpeg.AutoGen" Version="8.1.0" />
     <!-- Pure managed H.264/AAC decoding and MP4 demuxing (MIT). -->
     <PackageVersion Include="ManagedCodecs" Version="0.4.0" />
     <!-- Tests only. -->

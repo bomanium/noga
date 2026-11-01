@@ -58,7 +58,7 @@ public static class Pictures
         return (false, 0);
     }
 
-    /// <summary><paramref name="measured"/> with black, bars, pixels outside broadcast range and the active picture.</summary>
+    /// <summary><paramref name="measured"/> with black, bars, pixels outside broadcast range, the active picture and each frame's picture type.</summary>
     public static Measurements Add(Measurements measured, PictureMeasures? pictures, Profile profile)
     {
         ArgumentNullException.ThrowIfNull(measured);
@@ -109,6 +109,7 @@ public static class Pictures
             OutOfRange = spans,
             WorstOutOfRange = worst,
             Crop = crop is null ? null : new ActivePicture(pictures.Width, pictures.Height, crop.W, crop.H, crop.X, crop.Y),
+            PictureTypes = pictures.Types(),
             NotMeasured = [.. measured.NotMeasured.Where(c => c is not ("black" or "bars"))],
         };
     }

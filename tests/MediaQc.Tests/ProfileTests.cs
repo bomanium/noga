@@ -158,4 +158,42 @@ public class ProfileTests
         Assert.Equal(message, crop.Message);
         Assert.Contains("cropdetect", crop.CheckedAgainst, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void FrameTypesKeyframesAndBitrateAreInformation()
+    {
+        var measured = Programme() with
+        {
+            PictureTypes = "IBBP" + new string('B', 46) + "IPPP",
+            Packets = VideoPackets.From([(0, 1_000_000, true), (2, 250_000, true), (2.5, 250_000, false)]),
+        };
+
+        var report = Profile.EbuR128.Evaluate(measured);
+
+        var frames = Only(report, "frames");
+        Assert.Equal(Severity.Info, frames.Severity);
+        Assert.Equal("54 frames: 2 I, 4 P, 48 B; at most 50 frames from one I-frame to the next", frames.Message);
+        var keyframes = Only(report, "keyframes");
+        Assert.Equal("2 keyframes, at most 2.00 s apart", keyframes.Message);
+        Assert.Equal("10:00:00:00", keyframes.Start?.Timecode);
+        var bitrate = Only(report, "bitrate");
+        Assert.Equal("Video bitrate 0.6 Mb/s on average, at most 8.0 Mb/s in a second", bitrate.Message);
+        Assert.Equal("10:00:00:00", bitrate.Start?.Timecode);
+        Assert.Equal(Severity.Info, report.Findings.Where(f => f.Check is "frames" or "keyframes" or "bitrate").Max(f => f.Severity));
+    }
+
+    [Fact]
+    public void IntraOnlyVideoSaysSo()
+    {
+        var measured = Programme() with
+        {
+            PictureTypes = "III",
+            Packets = VideoPackets.From([(0, 10, true), (0.04, 10, true), (0.08, 10, true)]),
+        };
+
+        var report = Profile.EbuR128.Evaluate(measured);
+
+        Assert.Equal("All 3 frames intra-coded (I)", Only(report, "frames").Message);
+        Assert.Equal("Every frame is a keyframe (3)", Only(report, "keyframes").Message);
+    }
 }

@@ -10,7 +10,11 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-Nothing: v1's checks and its packaging are done. What comes next is the owner's to choose (Maybe below).
+- The shot list: ShotDetector's shots in the report, on both paths
+  - Why: The description promises the shot list; decisions/2026-11-01-frames-bitrate-shots.md: information only,
+    PySceneDetect detect-adaptive's through ShotDetector (trusted, checked there), the managed path feeding
+    ManagedCodecs' frames through ShotDetector.FastYuv (LGPL, shipped as a separate DLL with its licence)
+  - Status: Open
 
 ## Waiting
 

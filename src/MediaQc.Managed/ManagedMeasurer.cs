@@ -62,7 +62,10 @@ public static class ManagedMeasurer
             RateDenominator = denominator,
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
-        measured = Pictures.Add(measured, MeasurePictures(path, cancellationToken), profile);
+        measured = Pictures.Add(measured, MeasurePictures(path, cancellationToken), profile) with
+        {
+            Packets = ReadPackets(path, cancellationToken),
+        };
         if (audio is null)
             return measured;
 
@@ -149,6 +152,23 @@ public static class ManagedMeasurer
             var name when name.StartsWith("Yuv422", StringComparison.Ordinal) => ChromaSubsampling.Yuv422,
             _ => ChromaSubsampling.Yuv444,
         };
+    }
+
+    // The video packets as the demuxer gives them, as FFmpeg's (ffprobe -show_packets'): pts, size and key flag.
+    static VideoPackets ReadPackets(string path, CancellationToken cancellationToken)
+    {
+        using var demuxer = Open(path);
+        var video = demuxer.Video!;
+        double unit = (double)video.TimeBase.Numerator / video.TimeBase.Denominator;
+        var packets = new List<(double, long, bool)>();
+        foreach (var packet in demuxer.ReadPackets())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (packet.StreamIndex == video.StreamIndex)
+                packets.Add((packet.Pts * unit, packet.Data.Length, packet.IsKeyframe));
+        }
+
+        return VideoPackets.From(packets);
     }
 
     delegate void ChunkHandler(ReadOnlySpan<float> interleaved, long position);
