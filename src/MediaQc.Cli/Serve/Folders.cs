@@ -13,10 +13,14 @@ sealed record Entry(string Name, string Path, bool IsFolder, long? Size, bool Is
 static class Folders
 {
     /// <summary>The file extensions marked as media (the picker shows other files too, dimmed).</summary>
-    static readonly HashSet<string> MediaExtensions = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly HashSet<string> MediaExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mov", ".mp4", ".m4v", ".mxf", ".mkv", ".avi", ".mts", ".m2ts", ".ts", ".mpg", ".mpeg", ".webm", ".wav", ".mp3", ".m4a",
     };
+
+    /// <summary>Whether <paramref name="name"/> is a report mediaqc wrote (FILE.qc.html or FILE.qc.json).</summary>
+    public static bool IsReport(string name) =>
+        name.EndsWith(".qc.html", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".qc.json", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Where the picker starts: the user's home folder.</summary>
     public static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -46,7 +50,7 @@ static class Folders
             .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase)
             .Select(d => new Entry(d.Name, d.FullName, true, null, false));
         var files = folder.EnumerateFiles("*", options)
-            .Where(f => !f.Name.StartsWith('.') && !f.Name.EndsWith(".qc.html", StringComparison.OrdinalIgnoreCase) && !f.Name.EndsWith(".qc.json", StringComparison.OrdinalIgnoreCase))
+            .Where(f => !f.Name.StartsWith('.') && !IsReport(f.Name))
             .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
             .Select(f => new Entry(f.Name, f.FullName, false, f.Length, MediaExtensions.Contains(f.Extension)));
         string? parent = folder.Parent?.FullName ?? (OperatingSystem.IsWindows() ? Drives : null);

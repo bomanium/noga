@@ -156,6 +156,37 @@ public sealed class ServeTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, (await bare.GetAsync(At("/api/jobs"))).StatusCode);
     }
 
+    // The real watcher on its real schedule: a file there at the start is checked once it has settled (~5-7 s).
+    [Fact]
+    public async Task AWatchedFoldersFilesAreCheckedAndThePageSaysSo()
+    {
+        string watched = Directory.CreateTempSubdirectory("mediaqc-watched-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(watched, "good.mov"), "frames");
+            await using var app = Server.Build(0, Check, watched);
+            await app.StartAsync();
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+            string page = await client.GetStringAsync(At("/"));
+            Assert.Contains($"data-folder=\"{watched}\"", page, StringComparison.Ordinal);
+            List<JsonElement> jobs = [];
+            for (int i = 0; i < 100 && jobs.Count == 0; i++)
+            {
+                await Task.Delay(200);
+                using var json = JsonDocument.Parse(await client.GetStringAsync(At("/api/jobs")));
+                jobs = [.. json.RootElement.EnumerateArray().Select(j => j.Clone())];
+            }
+
+            Assert.Equal(Path.Combine(watched, "good.mov"), Assert.Single(jobs).GetProperty("file").GetString());
+            await app.StopAsync();
+        }
+        finally
+        {
+            Directory.Delete(watched, recursive: true);
+        }
+    }
+
     async Task<List<JsonElement>> Until(Func<List<JsonElement>, bool> done)
     {
         for (int i = 0; i < 100; i++)
