@@ -81,6 +81,15 @@ public sealed record Profile
     /// <summary>What line-up tone is checked against.</summary>
     public static string ToneFilter => "astats per channel (RMS level within 0.1 dB) and a 1 kHz bandpass (each end within 20 ms)";
 
+    /// <summary>What picture types are checked against.</summary>
+    public static string PictureTypesFilter => "ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame's, exact)";
+
+    /// <summary>What the keyframes are checked against.</summary>
+    public static string KeyframesFilter => "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,flags (the K packets, exact)";
+
+    /// <summary>What the bitrate is checked against.</summary>
+    public static string BitrateFilter => "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,size (summed per second, exact)";
+
     /// <summary>Judges <paramref name="measured"/> by this profile.</summary>
     public QcReport Evaluate(Measurements measured)
     {
@@ -107,6 +116,9 @@ public sealed record Profile
                     "tone" => ToneFilter,
                     "range" => RangeFilter,
                     "crop" => CropFilter,
+                    "frames" => PictureTypesFilter,
+                    "keyframes" => KeyframesFilter,
+                    "bitrate" => BitrateFilter,
                     "timecode" => TimecodeTag.CheckedAgainst,
                     _ => "nothing yet",
                 },
@@ -146,6 +158,9 @@ public sealed record Profile
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
         Range(findings, measured, At);
         Crop(findings, measured.Crop);
+        PictureTypes(findings, measured.PictureTypes);
+        Keyframes(findings, measured, At);
+        Bitrate(findings, measured, At);
         Spans(findings, "silence", "Silence", measured.Silences, MinSilence, SilenceFilter);
         if (measured.LoudnessFrom > 0 && measured.Loudness is not null)
         {
@@ -285,6 +300,84 @@ public sealed record Profile
             ? Invariant($"The picture fills the {c.FrameWidth}x{c.FrameHeight} frame")
             : Invariant($"Active picture {c.Width}x{c.Height} ({(double)c.Width / c.Height:0.00}:1) at {c.X},{c.Y} in the {c.FrameWidth}x{c.FrameHeight} frame");
         into.Add(new Finding { Check = "crop", Severity = Severity.Info, Message = message, CheckedAgainst = CropFilter });
+    }
+
+    // Information only (docs/decisions/2026-11-01-frames-bitrate-shots.md): how many of each type, and the GOP's
+    // longest run from one I-frame to the next.
+    static void PictureTypes(List<Finding> into, string types)
+    {
+        if (types.Length == 0)
+            return;
+        string message;
+        if (types.All(t => t == 'I'))
+        {
+            message = Invariant($"All {types.Length} frames intra-coded (I)");
+        }
+        else
+        {
+            var counts = types.GroupBy(t => t).OrderBy(g => "IPB".IndexOf(g.Key, StringComparison.Ordinal) is var i and >= 0 ? i : 3).Select(g => Invariant($"{g.Count()} {g.Key}"));
+            var starts = types.Select((t, i) => (t, i)).Where(x => x.t == 'I').Select(x => x.i).Append(types.Length).ToList();
+            int gop = starts.Count < 2 ? types.Length : starts.Zip(starts.Skip(1), (a, b) => b - a).Prepend(starts[0]).Max();
+            message = Invariant($"{types.Length} frames: {string.Join(", ", counts)}; at most {gop} frames from one I-frame to the next");
+        }
+
+        into.Add(new Finding { Check = "frames", Severity = Severity.Info, Message = message, Value = types.Length, Unit = "frames", CheckedAgainst = PictureTypesFilter });
+    }
+
+    // The longest interval between two keyframes (a single keyframe's: the file's length).
+    static void Keyframes(List<Finding> into, Measurements measured, Func<double, Position> at)
+    {
+        if (measured.Packets is not { } packets)
+            return;
+        var keys = packets.Keyframes;
+        if (keys.Count == 0)
+        {
+            into.Add(new Finding { Check = "keyframes", Severity = Severity.Info, Message = "No keyframes", CheckedAgainst = KeyframesFilter });
+            return;
+        }
+
+        if (keys.Count == measured.PictureTypes.Length && keys.Count > 1)
+        {
+            into.Add(new Finding { Check = "keyframes", Severity = Severity.Info, Message = Invariant($"Every frame is a keyframe ({keys.Count})"), CheckedAgainst = KeyframesFilter });
+            return;
+        }
+
+        var (from, longest) = keys.Count == 1
+            ? (keys[0], measured.Duration - keys[0])
+            : keys.Zip(keys.Skip(1), (a, b) => (a, b - a)).MaxBy(x => x.Item2);
+        string message = keys.Count == 1 ? "1 keyframe" : Invariant($"{keys.Count} keyframes, at most {longest:0.00} s apart");
+        into.Add(new Finding
+        {
+            Check = "keyframes",
+            Severity = Severity.Info,
+            Message = message,
+            Value = longest,
+            Unit = "s",
+            Start = at(from),
+            End = at(from + longest),
+            CheckedAgainst = KeyframesFilter,
+        });
+    }
+
+    // The average over the video's duration, and the second with the most bytes.
+    static void Bitrate(List<Finding> into, Measurements measured, Func<double, Position> at)
+    {
+        if (measured.Packets is not { BytesPerSecond.Count: > 0 } packets || measured.Duration <= 0)
+            return;
+        double average = packets.Bytes * 8 / measured.Duration / 1e6;
+        int second = packets.BytesPerSecond.Index().MaxBy(x => x.Item).Index;
+        double peak = packets.BytesPerSecond[second] * 8 / 1e6;
+        into.Add(new Finding
+        {
+            Check = "bitrate",
+            Severity = Severity.Info,
+            Message = Invariant($"Video bitrate {average:0.0} Mb/s on average, at most {peak:0.0} Mb/s in a second"),
+            Value = average,
+            Unit = "Mb/s",
+            Start = at(second),
+            End = at(Math.Min(second + 1, measured.Duration)),
+            CheckedAgainst = BitrateFilter,
+        });
     }
 
     static string Invariant(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);

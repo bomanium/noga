@@ -8,7 +8,8 @@ namespace MediaQc.Ffmpeg;
 /// rate, and from its audio the loudness (FFmpeg's own ebur128), the silences (FFmpeg's own silencedetect, with the
 /// profile's settings) and the line-up tone (FrameReader's ReferenceTone), the loudness from the end of the line-up
 /// (<see cref="LineUp"/>); from its picture black, bars, pixels outside broadcast range and the active picture
-/// (<see cref="Pictures"/>); the start timecode the tag ffprobe's JSON gives (<see cref="StartTimecode"/>).
+/// and each frame's picture type (<see cref="Pictures"/>); the keyframes and bitrate from the video packets
+/// (<see cref="Packets"/>); the start timecode the tag ffprobe's JSON gives (<see cref="StartTimecode"/>).
 /// </summary>
 public static class FfmpegMeasurer
 {
@@ -40,7 +41,10 @@ public static class FfmpegMeasurer
             NotMeasured = ["bars", "black"],
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
-        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken), profile);
+        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken), profile) with
+        {
+            Packets = Packets.Read(path, cancellationToken),
+        };
         if (!info.HasAudio)
             return measured;
 

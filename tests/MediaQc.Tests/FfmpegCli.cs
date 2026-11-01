@@ -39,17 +39,48 @@ internal static partial class FfmpegCli
     }
 
     /// <summary>What ffprobe -show_format -show_streams -of json prints for <paramref name="file"/>.</summary>
-    public static string Probe(string file)
+    public static string Probe(string file) => Ffprobe(file, "-show_format", "-show_streams", "-of", "json");
+
+    /// <summary>What <c>ffprobe -v error ARGS FILE</c> prints.</summary>
+    public static string Ffprobe(string file, params string[] args)
     {
         var start = new ProcessStartInfo("ffprobe") { RedirectStandardError = true, RedirectStandardOutput = true, UseShellExecute = false };
-        foreach (string arg in (string[])["-v", "error", "-show_format", "-show_streams", "-of", "json", file])
+        foreach (string arg in (string[])["-v", "error", .. args, file])
             start.ArgumentList.Add(arg);
         using var process = Process.Start(start)!;
         var error = process.StandardError.ReadToEndAsync();
-        string json = process.StandardOutput.ReadToEnd();
+        string output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
-        Assert.True(process.ExitCode == 0, $"ffprobe failed:\n{error.Result}");
-        return json;
+        Assert.True(process.ExitCode == 0, $"ffprobe {string.Join(' ', args)} failed:\n{error.Result}");
+        return output;
+    }
+
+    /// <summary>Each frame's picture type is ffprobe -show_frames' pict_type, exactly.</summary>
+    public static void AssertPictureTypes(string file, Measurements measured)
+    {
+        string types = Ffprobe(file, "-select_streams", "v:0", "-show_entries", "frame=pict_type", "-of", "csv=p=0");
+
+        // A frame with side data gets more columns after its type ("I,").
+        Assert.Equal(string.Concat(types.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(line => line[0])), measured.PictureTypes);
+    }
+
+    /// <summary>The keyframes and the bytes in all and each second are ffprobe -show_packets', exactly.</summary>
+    public static void AssertPackets(string file, Measurements measured)
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-select_streams", "v:0", "-show_entries", "stream=time_base:packet=pts,dts,size,flags", "-of", "json"));
+        string[] timeBase = json.RootElement.GetProperty("streams")[0].GetProperty("time_base").GetString()!.Split('/');
+        double unit = Parse(timeBase[0]) / Parse(timeBase[1]);
+        var expected = VideoPackets.From(json.RootElement.GetProperty("packets").EnumerateArray().Select(p =>
+        {
+            string pts = p.TryGetProperty("pts", out var value) ? value.ToString() : p.GetProperty("dts").ToString();
+            return (Parse(pts) * unit, long.Parse(p.GetProperty("size").GetString()!, CultureInfo.InvariantCulture), p.GetProperty("flags").GetString()!.Contains('K', StringComparison.Ordinal));
+        }));
+        Assert.NotNull(measured.Packets);
+        var got = measured.Packets;
+
+        Assert.Equal(expected.Bytes, got.Bytes);
+        Assert.Equal(expected.BytesPerSecond, got.BytesPerSecond);
+        Assert.Equal(expected.Keyframes, got.Keyframes);
     }
 
     /// <summary>The start timecode is the tag the ffprobe command line gives.</summary>

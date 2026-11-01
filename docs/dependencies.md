@@ -11,7 +11,7 @@ and .config/dotnet-tools.json.
 | --- | --- | --- |
 | FrameReader | MIT | A managed assembly (MediaQc.Ffmpeg: the FFmpeg path; MediaQc.Managed uses its managed meters only) |
 | ManagedCodecs (.Core, .Containers, .Aac, .H264, .Mjpeg) | MIT | Managed assemblies (MediaQc.Managed: MP4 demuxing and AAC decoding, no native code) |
-| FFmpeg.AutoGen (FrameReader's dependency) | MIT (8.x; older versions were LGPL-3.0) | A managed assembly: the bindings to FFmpeg's libraries |
+| FFmpeg.AutoGen (FrameReader's dependency; MediaQc.Ffmpeg's packet scan uses it directly, at FrameReader's version) | MIT (8.x; older versions were LGPL-3.0) | A managed assembly: the bindings to FFmpeg's libraries |
 | .NET runtime (Microsoft.NETCore.App, self-contained in a release) | MIT, with third-party notices | Its licence and THIRD-PARTY-NOTICES.TXT in a release's licences/dotnet/ |
 | FrameReader.Native.linux-x64, .win-x64 | LGPL-2.1-or-later (FFmpeg 8 without `--enable-gpl`; dav1d BSD-2-Clause, libwebp BSD-3-Clause, OpenSSL Apache-2.0 linked in) | Separate shared libraries under `runtimes/<rid>/native/`, loaded at run time and replaceable; the package's COPYING files, configure line, SBOM and README go to a release's licences/ffmpeg/ (tools/publish.sh) |
 

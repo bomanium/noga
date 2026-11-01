@@ -38,6 +38,18 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Empty(measured.OutOfRange);
         Assert.True(Assert.NotNull(measured.WorstOutOfRange).Share < Profile.EbuR128.MaxOutOfRange);
         Assert.True(Assert.NotNull(measured.Crop).FillsFrame);
+        Assert.Equal(500, measured.PictureTypes.Length);
+        Assert.Equal('I', measured.PictureTypes[0]);
+        Assert.NotNull(measured.Packets);
+        var packets = measured.Packets;
+        Assert.Equal(0, packets.Keyframes[0]);
+        Assert.Equal(20, packets.BytesPerSecond.Count);
+        if (programme != "programme_h264.mp4")
+        {
+            // ProRes and DNxHR are intra-only: every frame an I-frame and a keyframe.
+            Assert.Equal(new string('I', 500), measured.PictureTypes);
+            Assert.Equal(500, packets.Keyframes.Count);
+        }
     }
 
     [Theory]
@@ -54,6 +66,8 @@ public sealed class SampleTests : IClassFixture<Samples>
         FfmpegCli.AssertBlack(file, measured);
         FfmpegCli.AssertWorstOutOfRange(file, measured);
         FfmpegCli.AssertCrop(file, measured);
+        FfmpegCli.AssertPictureTypes(file, measured);
+        FfmpegCli.AssertPackets(file, measured);
     }
 
     [Fact]
@@ -124,6 +138,13 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal(ffmpeg.OutOfRange, managed.OutOfRange);
         Assert.Equal(ffmpeg.WorstOutOfRange, managed.WorstOutOfRange);
         Assert.Equal(ffmpeg.Crop, managed.Crop);
+        Assert.Equal(ffmpeg.PictureTypes, managed.PictureTypes);
+        Assert.NotNull(ffmpeg.Packets);
+        Assert.NotNull(managed.Packets);
+        var (p, q) = (ffmpeg.Packets, managed.Packets);
+        Assert.Equal(p.Bytes, q.Bytes);
+        Assert.Equal(p.BytesPerSecond, q.BytesPerSecond);
+        Assert.Equal(p.Keyframes, q.Keyframes);
 
         FfmpegCli.AssertStartTimecode(file, managed);
         FfmpegCli.AssertLoudness(file, managed);
@@ -132,5 +153,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         FfmpegCli.AssertBlack(file, managed);
         FfmpegCli.AssertWorstOutOfRange(file, managed);
         FfmpegCli.AssertCrop(file, managed);
+        FfmpegCli.AssertPictureTypes(file, managed);
+        FfmpegCli.AssertPackets(file, managed);
     }
 }

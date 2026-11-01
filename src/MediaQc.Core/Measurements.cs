@@ -52,6 +52,15 @@ public sealed record Measurements
     public ActivePicture? Crop { get; init; }
 
     /// <summary>
+    /// Each frame's picture type in display order, one character each as ffprobe -show_frames prints pict_type (I, P,
+    /// B; ? when the decoder gives none); empty without video measures.
+    /// </summary>
+    public string PictureTypes { get; init; } = "";
+
+    /// <summary>The video packets' keyframes and sizes (ffprobe -show_packets'); null when not read.</summary>
+    public VideoPackets? Packets { get; init; }
+
+    /// <summary>
     /// The checks this decoder path doesn't measure yet ("black", "bars"): their lists above are empty because
     /// nothing looked, not because nothing was found, and the report says so.
     /// </summary>
@@ -85,4 +94,42 @@ public readonly record struct ActivePicture(int FrameWidth, int FrameHeight, int
 {
     /// <summary>Whether the active picture is the whole frame, to cropdetect's rounding (16).</summary>
     public bool FillsFrame => FrameWidth - Width < 16 && FrameHeight - Height < 16;
+}
+
+/// <summary>
+/// The video stream's packets, as ffprobe -show_packets gives them: where the keyframes are (the packets flagged K) and
+/// how many bytes there are, in all and in each second (by pts, seconds from the first frame: second k is [k, k + 1)).
+/// </summary>
+public sealed record VideoPackets
+{
+    /// <summary>Each keyframe's time (seconds), in order.</summary>
+    public required IReadOnlyList<double> Keyframes { get; init; }
+
+    /// <summary>The bytes of every video packet.</summary>
+    public required long Bytes { get; init; }
+
+    /// <summary>The bytes of the packets in each second, from second 0.</summary>
+    public required IReadOnlyList<long> BytesPerSecond { get; init; }
+
+    /// <summary>The packets of one stream: each one's time (seconds), size (bytes) and whether it is a keyframe.</summary>
+    public static VideoPackets From(IEnumerable<(double Seconds, long Size, bool Key)> packets)
+    {
+        ArgumentNullException.ThrowIfNull(packets);
+        var keyframes = new List<double>();
+        var perSecond = new List<long>();
+        long bytes = 0;
+        foreach (var (seconds, size, key) in packets)
+        {
+            bytes += size;
+            int second = (int)Math.Max(0, Math.Floor(seconds));
+            while (perSecond.Count <= second)
+                perSecond.Add(0);
+            perSecond[second] += size;
+            if (key)
+                keyframes.Add(seconds);
+        }
+
+        keyframes.Sort();
+        return new VideoPackets { Keyframes = keyframes, Bytes = bytes, BytesPerSecond = perSecond };
+    }
 }

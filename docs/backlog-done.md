@@ -71,3 +71,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     and win-x64 folders and archives into artifacts/, MediaQc.Cli.csproj's PublishLicences puts FFmpeg's licence,
     configure line, SBOM and README in licences/ffmpeg/, .NET's in licences/dotnet/, packaging/'s notices and README
     beside them; CI publishes both and runs the Linux one on a sample)
+
+- Frame types, keyframes and bitrate
+  - Why: The description promises them in the report (decisions/2026-11-01-frames-bitrate-shots.md)
+  - Status: Done (2026-11-01: each frame's picture type from PictureMeter, the keyframes and bytes a second from the
+    video packets (av_read_frame on the FFmpeg path, ManagedCodecs' demuxer on the managed one), as information,
+    each checked against ffprobe -show_frames and -show_packets exactly, on both paths)
