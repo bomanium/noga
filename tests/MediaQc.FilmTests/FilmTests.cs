@@ -5,7 +5,8 @@ namespace MediaQc.Tests;
 /// <summary>
 /// Each figure on real pictures and sound: Blender's open films (tools/get-films.sh, pinned by SHA-256) measured on
 /// the FFmpeg path, against the ffmpeg command line with the tolerances SampleTests use on generated files
-/// (docs/decisions/2026-11-01-open-films.md). Neither film has AAC in MP4, so the managed path isn't among them.
+/// (docs/decisions/2026-11-01-open-films.md). Neither film has AAC in MP4, so the managed path isn't among them; Big Buck Bunny's two audio tracks
+/// (MP3 stereo, AC-3 5.1) are each checked.
 /// </summary>
 public sealed class FilmTests
 {
@@ -33,6 +34,9 @@ public sealed class FilmTests
         FfmpegCli.AssertCrop(file, measured);
         FfmpegCli.AssertPictureTypes(file, measured);
         FfmpegCli.AssertPackets(file, measured);
+        foreach (var track in measured.OtherTracks)
+            FfmpegCli.AssertTrack(file, track);
+        Assert.Equal(measured.AudioTracks.Count - 1, measured.OtherTracks.Count);
         Assert.NotNull(measured.Shots);
         Assert.NotEmpty(measured.Shots);
     }

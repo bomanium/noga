@@ -32,14 +32,20 @@ public static class ManagedMeasurer
     /// <summary>The line-up tone's frequency searched for (Hz), as on the FFmpeg path.</summary>
     const double ToneFrequency = 1000;
 
-    /// <summary>Whether this path reads <paramref name="path"/>: an MP4 with H.264 video and AAC audio (or none).</summary>
+    /// <summary>
+    /// Whether this path reads <paramref name="path"/>: an MP4 with H.264 video and one AAC audio track (or none). A file
+    /// with several audio tracks goes to the FFmpeg path, which judges every one (ManagedCodecs' demuxer gives one:
+    /// docs/decisions/2026-11-01-every-audio-track.md).
+    /// </summary>
     public static bool CanMeasure(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
         try
         {
-            using var demuxer = Demuxer.Open(path) as Mp4Demuxer;
-            return demuxer?.Video?.Codec == CodecIds.H264 && (demuxer.Audio is null || demuxer.Audio.Codec == CodecIds.Aac);
+            bool managed;
+            using (var demuxer = Demuxer.Open(path) as Mp4Demuxer)
+                managed = demuxer?.Video?.Codec == CodecIds.H264 && (demuxer.Audio is null || demuxer.Audio.Codec == CodecIds.Aac);
+            return managed && Tags.AudioTrackCount(path) <= 1;
         }
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or IOException or ArgumentException)
         {
