@@ -23,3 +23,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-10-31: `mediaqc check FILE [--out FOLDER] [--warnings-fail]` measures on the FFmpeg path,
     writes FILE.qc.html and FILE.qc.json and exits 0/1/2/3; checks not measured yet (black, bars) are reported as
     such)
+
+- CI generates the samples and compares with FFmpeg
+  - Why: Every figure is checked against FFmpeg (CLAUDE.md)
+  - Status: Done (2026-11-01: CI runs tools/make-samples.sh; SampleTests measure the programme as ProRes/MOV,
+    DNxHR/MXF and H.264/MP4 and check what was put in and each figure against ffmpeg's ebur128, silencedetect,
+    bandpass and astats. Black and bars join when they are measured)

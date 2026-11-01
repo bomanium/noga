@@ -88,9 +88,11 @@ What is next, in order: docs/backlog.md.
   measures FILE (the FFmpeg path for every format so far), judges it by `Profile.EbuR128`, writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings.
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
-  with the `ffmpeg` command line, which must be on PATH (CI installs it).
+  with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
+  make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
+  aren't there (bash, ffmpeg with libx264; ~1 min the first time).
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
-- `.github/workflows/ci.yml`: ffmpeg, format, build, test (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.
+- `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.
