@@ -19,10 +19,11 @@ Nothing.
 
 ## Maybe
 
-- The web UI's next steps: a shared-machine mode (listening beyond localhost, with a token), a thin
-  native shell around the page (native drag and drop of paths, an icon)
-  - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start (the watch
-    folder is done: decisions/2026-11-01-watch-folder.md)
+- The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate), a thin native shell around
+  the page (native drag and drop of paths, an icon)
+  - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start; the watch folder
+    (decisions/2026-11-01-watch-folder.md) and the shared-machine mode (decisions/2026-11-01-shared-machine.md, plain
+    HTTP for trusted networks) are done
   - Status: Maybe
 
 - macOS (osx-arm64) and Linux arm64 releases

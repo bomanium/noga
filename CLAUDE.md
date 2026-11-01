@@ -101,12 +101,14 @@ What is next, in order: docs/backlog.md.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by `Profile.EbuR128`, writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings. `Checker.Run`:
-  one file's check, for both commands. `mediaqc serve [--port PORT] [--no-open] [--watch FOLDER]` (`Serve/`): the web UI on 127.0.0.1
-  (default 8722), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
+  one file's check, for both commands. `mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
+  [--watch FOLDER] [--token TOKEN] [--no-open]` (`Serve/`): the web UI on 127.0.0.1 (default 8722), or shared on the
+  network (`ServeOptions.Shared`: only the `--root` folders, `Roots`, and only with the token link's cookie;
+  decisions/2026-11-01-shared-machine.md), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
   machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file), `/api/events`
   streams them (server-sent events), `Watcher` scans a watched folder every 2 s and queues its media files without a
-  report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts, and changes without the X-MediaQc header
-  or from another Origin.
+  report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts (localhost) or requests without the token (shared), and changes without the
+  X-MediaQc header or from another Origin.
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files

@@ -57,8 +57,22 @@ public sealed class CommandLineTests : IClassFixture<Programme>
     [InlineData("serve", "--frobnicate")]
     [InlineData("serve", "--watch")]
     [InlineData("serve", "--watch", "a", "--watch", "b")]
+    [InlineData("serve", "--listen", "everywhere")]
+    [InlineData("serve", "--listen", "0.0.0.0:0")]
+    [InlineData("serve", "--port", "8000", "--listen", "0.0.0.0:8722")]
+    [InlineData("serve", "--token", "short")]
     public void ServeArgumentsThatDontParseAreAUsageError(params string[] args) =>
         Assert.Equal(CommandLine.Usage, Run(args).Code);
+
+    [Fact]
+    public void SharingWithoutARootIsAUsageError()
+    {
+        var (code, output, error) = Run("serve", "--no-open", "--listen", "0.0.0.0:1");
+
+        Assert.Equal(CommandLine.Usage, code);
+        Assert.Empty(output);
+        Assert.Contains("--root", error, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void WatchingAFolderThatIsntThereIsAUsageError()

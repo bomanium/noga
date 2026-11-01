@@ -14,7 +14,8 @@ static class CommandLine
 
     const string Help = """
         Usage: mediaqc check FILE [--out FOLDER] [--warnings-fail]
-               mediaqc serve [--port PORT] [--no-open] [--watch FOLDER]
+               mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER]
+                             [--token TOKEN] [--no-open]
                mediaqc --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
@@ -24,6 +25,9 @@ static class CommandLine
         serve runs the web UI on this machine only (http://localhost:8722 unless --port says another), opens it in
         the browser (not with --no-open) and checks the files picked there, writing their reports beside them. With
         --watch, it also checks FOLDER's media files (subfolders too) that have no report yet, new ones once copied.
+        --listen 0.0.0.0:8722 shares it on the network: only the --root folders (and --watch's) can be seen, and only
+        by who opens the link it prints, which carries a random token (or --token's, 16 characters or more). --root
+        limits localhost too.
 
         Exit codes: 0 passed, 1 failed, 2 usage or read error, 3 warnings (1 with --warnings-fail).
         """;
@@ -51,8 +55,8 @@ static class CommandLine
         if (args is ["check", ..] && CheckArguments.Parse([.. args.Skip(1)]) is { } check)
             return Check(check, output, error);
 
-        if (args is ["serve", ..] && ServeArguments(args.Skip(1).ToList()) is var (port, open, watch))
-            return Serve.Server.Run(port, open, watch, output, error);
+        if (args is ["serve", ..] && ServeArguments(args.Skip(1).ToList()) is var (options, open))
+            return Serve.Server.Run(options, open, output, error);
 
         error.WriteLine($"mediaqc: can't understand: {string.Join(' ', args)}. See mediaqc --help.");
         return Usage;
@@ -92,31 +96,50 @@ static class CommandLine
         return code;
     }
 
-    // serve's arguments: the port, whether to open the browser and the folder to watch; null when they don't parse.
-    static (int Port, bool Open, string? Watch)? ServeArguments(IReadOnlyList<string> args)
+    // serve's arguments: where it listens, its folders and token, and whether to open the browser; null when they don't
+    // parse. A shared server (--listen beyond localhost) gets a random token unless --token gives one.
+    static (Serve.ServeOptions Options, bool Open)? ServeArguments(IReadOnlyList<string> args)
     {
-        int port = Serve.Server.DefaultPort;
-        bool open = true;
-        string? watch = null;
+        var options = new Serve.ServeOptions();
+        bool open = true, placed = false;
+        List<string> roots = [];
         for (int i = 0; i < args.Count; i++)
         {
+            string? value = i + 1 < args.Count ? args[i + 1] : null;
             switch (args[i])
             {
-                case "--port" when i + 1 < args.Count && int.TryParse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture, out port) && port is > 0 and < 65536:
-                    i++;
+                case "--port" when !placed && int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out int port) && port is > 0 and < 65536:
+                    options = options with { Port = port };
+                    (placed, i) = (true, i + 1);
+                    break;
+                case "--listen" when !placed && System.Net.IPEndPoint.TryParse(value ?? "", out var at) && at.Port is > 0 and < 65536:
+                    options = options with { Address = at.Address, Port = at.Port };
+                    (placed, i) = (true, i + 1);
                     break;
                 case "--no-open":
                     open = false;
                     break;
-                case "--watch" when i + 1 < args.Count && watch is null:
-                    watch = args[++i];
+                case "--watch" when value is not null && options.Watch is null:
+                    options = options with { Watch = value };
+                    i++;
+                    break;
+                case "--root" when value is not null:
+                    roots.Add(value);
+                    i++;
+                    break;
+                case "--token" when value is { Length: >= 16 } && options.Token is null:
+                    options = options with { Token = value };
+                    i++;
                     break;
                 default:
                     return null;
             }
         }
 
-        return (port, open, watch);
+        options = options with { Roots = roots };
+        if (options.Shared && options.Token is null)
+            options = options with { Token = Serve.Server.NewToken() };
+        return (options, open);
     }
 
     /// <summary><c>check</c>'s arguments: the file, where the reports go, and whether warnings fail.</summary>
