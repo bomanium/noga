@@ -1,7 +1,3 @@
-using FrameReader;
-using MediaQc.Ffmpeg;
-using MediaQc.Managed;
-
 namespace MediaQc.Cli;
 
 /// <summary>
@@ -18,11 +14,15 @@ static class CommandLine
 
     const string Help = """
         Usage: mediaqc check FILE [--out FOLDER] [--warnings-fail]
+               mediaqc serve [--port PORT] [--no-open]
                mediaqc --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
         Profile: ebu-r128 (EBU R128 loudness, true peak, black, silence, bars and line-up tone, pixels outside
         broadcast range; also reports crop, frame types, keyframes, bitrate and the shot list).
+
+        serve runs the web UI on this machine only (http://localhost:8722 unless --port says another), opens it in
+        the browser (not with --no-open) and checks the files picked there, writing their reports beside them.
 
         Exit codes: 0 passed, 1 failed, 2 usage or read error, 3 warnings (1 with --warnings-fail).
         """;
@@ -50,41 +50,28 @@ static class CommandLine
         if (args is ["check", ..] && CheckArguments.Parse([.. args.Skip(1)]) is { } check)
             return Check(check, output, error);
 
+        if (args is ["serve", ..] && ServeArguments(args.Skip(1).ToList()) is var (port, open))
+            return Serve.Server.Run(port, open, output);
+
         error.WriteLine($"mediaqc: can't understand: {string.Join(' ', args)}. See mediaqc --help.");
         return Usage;
     }
 
     static int Check(CheckArguments check, TextWriter output, TextWriter error)
     {
-        if (!File.Exists(check.File))
-        {
-            error.WriteLine($"mediaqc: no such file: {check.File}");
-            return Usage;
-        }
-
-        var profile = Profile.EbuR128;
-        Measurements measured;
+        CheckResult result;
         try
         {
-            // docs/decisions/2026-10-31-decoding.md: ManagedCodecs for H.264/AAC in MP4, FFmpeg for the rest.
-            measured = ManagedMeasurer.CanMeasure(check.File)
-                ? ManagedMeasurer.Measure(check.File, profile)
-                : FfmpegMeasurer.Measure(check.File, profile);
+            result = Checker.Run(check.File, check.Out);
         }
-        catch (Exception e) when (e is FrameReaderException or MediaException or InvalidDataException or NotSupportedException)
+        catch (CheckException e)
         {
-            error.WriteLine($"mediaqc: can't read {check.File}: {e.Message}");
+            error.WriteLine($"mediaqc: {e.Message}");
             return Usage;
         }
 
-        var report = profile.Evaluate(measured);
+        var (report, html, json) = result;
         string name = Path.GetFileName(check.File);
-        string folder = check.Out ?? Path.GetDirectoryName(Path.GetFullPath(check.File))!;
-        Directory.CreateDirectory(folder);
-        string html = Path.Combine(folder, name + ".qc.html"), json = Path.Combine(folder, name + ".qc.json");
-        File.WriteAllText(html, ReportHtml.Write(report, name));
-        File.WriteAllText(json, ReportJson.Write(report, name));
-
         int code = report.ExitCode(check.WarningsFail);
         output.WriteLine($"{name}: {report.Verdict} (profile {report.Profile}, exit code {code})");
 
@@ -102,6 +89,29 @@ static class CommandLine
 
         output.WriteLine($"Reports: {html}, {json}");
         return code;
+    }
+
+    // serve's arguments: the port and whether to open the browser; null when they don't parse.
+    static (int Port, bool Open)? ServeArguments(IReadOnlyList<string> args)
+    {
+        int port = Serve.Server.DefaultPort;
+        bool open = true;
+        for (int i = 0; i < args.Count; i++)
+        {
+            switch (args[i])
+            {
+                case "--port" when i + 1 < args.Count && int.TryParse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture, out port) && port is > 0 and < 65536:
+                    i++;
+                    break;
+                case "--no-open":
+                    open = false;
+                    break;
+                default:
+                    return null;
+            }
+        }
+
+        return (port, open);
     }
 
     /// <summary><c>check</c>'s arguments: the file, where the reports go, and whether warnings fail.</summary>
