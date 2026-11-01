@@ -54,5 +54,13 @@ jobs:
       - name: Test
         run: dotnet test MediaQc.slnx -c Release --no-build --logger GitHubActions
 
+      # The release folders and archives for Linux and Windows, with their licences (tools/publish.sh checks them),
+      # then the Linux one run on a sample: it exits 1, as the sample fails loudness on purpose.
+      - name: Publish
+        run: |
+          tools/publish.sh
+          code=0; artifacts/mediaqc-*-linux-x64/mediaqc check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
+          test "$code" -eq 1
+
       - name: make-samples.sh parses
         run: bash -n tools/make-samples.sh

@@ -61,3 +61,13 @@ Finished items from [backlog.md](backlog.md), oldest first.
     already measures both (signalstats, cropdetect), and make-samples.sh makes files for them
   - Status: Done (2026-11-01, decisions/2026-11-01-range-and-crop.md: a warning over 1% of a frame (EBU R 103), bars
     left out; crop as information)
+
+- Packaging: a release of `mediaqc` with FFmpeg's licence files beside its libraries
+  - Why: CLAUDE.md's licence rule: FrameReader.Native's LGPL libraries ship separate and replaceable, with the LGPL
+    text, the build's configure line and its SBOM beside them (the package has them: COPYING.*, configure.txt,
+    sbom.spdx.json); nothing copies them into a build's output yet. Also which platforms (linux-x64 and win-x64 so
+    far) and the form (a self-contained folder per platform, a zip)
+  - Status: Done (2026-11-01, decisions/2026-11-01-packaging.md: tools/publish.sh builds self-contained linux-x64
+    and win-x64 folders and archives into artifacts/, MediaQc.Cli.csproj's PublishLicences puts FFmpeg's licence,
+    configure line, SBOM and README in licences/ffmpeg/, .NET's in licences/dotnet/, packaging/'s notices and README
+    beside them; CI publishes both and runs the Linux one on a sample)
