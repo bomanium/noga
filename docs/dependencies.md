@@ -29,8 +29,7 @@ and .config/dotnet-tools.json.
 
 | Tool | Licence | What for |
 | --- | --- | --- |
-| ffmpeg (whatever is on PATH; CI installs Ubuntu's) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it, and the tests compare the measures with it; nothing from it is shipped, so a GPL build (libx264) is fine there |
-| ffprobe (whatever is on PATH) | LGPL-2.1 or GPL, by build | `mediaqc check` runs it, a separate process, for the start timecode (decisions/2026-11-01-timecode-via-ffprobe.md); the user's own, not shipped, and the check works without it |
+| ffmpeg and ffprobe (whatever is on PATH; CI installs Ubuntu's) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it, and the tests compare the measures (and the timecode tag) with them; nothing from it is shipped, so a GPL build (libx264) is fine there |
 | GitHub Actions: actions/checkout, actions/setup-dotnet | MIT | CI, pinned by commit SHA |
 
 ## Candidates (the open decisions, docs/backlog.md)
