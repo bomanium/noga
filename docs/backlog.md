@@ -38,9 +38,10 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     the FFmpeg path, with FrameReader 2.18.0, each checked against the ffmpeg command line in a test. 2026-11-01, decisions/2026-11-01-managed-path-audio.md:
     `MediaQc.Managed`'s `ManagedMeasurer` does the same on H.264/AAC MP4 with ManagedCodecs 0.4.0 (FrameReader's
     managed LoudnessMeter and ReferenceToneFinder, Core's SilenceFinder), `mediaqc check` uses it for those files, and
-    a test checks both paths agree on make-samples.sh's MP4. Still to come: black and bars on both paths
-    (FrameReader's picture measures; its FFmpeg build has no blackdetect) and the start timecode (FrameReader doesn't
-    expose a file's tags yet; ManagedCodecs doesn't read MP4's tmcd track))
+    a test checks both paths agree on make-samples.sh's MP4. 2026-11-01,
+    decisions/2026-11-01-timecode-via-ffprobe.md: the start timecode through the ffprobe on PATH, on both paths, until
+    FrameReader reads a file's tags. Still to come: black and bars on both paths (FrameReader's picture measures; its
+    FFmpeg build has no blackdetect))
 
 ## Waiting
 

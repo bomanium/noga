@@ -80,10 +80,11 @@ What is next, in order: docs/backlog.md.
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
-  `SilenceFinder`: FFmpeg's silencedetect on samples a caller decodes. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
+  `Ffprobe`: the start timecode through the ffprobe on PATH, for both paths until FrameReader reads tags (without it
+  the report says so). `SilenceFinder`: FFmpeg's silencedetect on samples a caller decodes. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
-  silences (silencedetect), line-up tone; black, bars and the start timecode not yet.
+  silences (silencedetect), line-up tone, start timecode (ffprobe's); black and bars not yet.
 - `src/MediaQc.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
   `Measure`) demuxes and decodes the AAC with ManagedCodecs and measures with FrameReader's managed meters
   (LoudnessMeter, ReferenceToneFinder) and Core's `SilenceFinder` (silencedetect's algorithm): the same figures as the
@@ -94,9 +95,9 @@ What is next, in order: docs/backlog.md.
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
-  aren't there (bash, ffmpeg with libx264; ~1 min the first time).
+  aren't there or an older script made them (`samples/.make-samples.sha256`) (bash, ffmpeg with libx264; ~1 min the first time).
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
-  black and silence, picture and noise, black and silence) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
+  black and silence, picture and noise, black and silence; timecode from 10:00:00:00) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.
