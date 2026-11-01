@@ -41,6 +41,11 @@ Nothing.
     before the first sale (docs/notes/origin.md)
   - Status: Maybe
 
-- Captions, ad markers and platform spec templates
+- Captions and ad markers
   - Why: Out of scope at first (docs/notes/origin.md); what customers ask for after the first version decides which
+  - Status: Maybe
+
+- OP-59's and ARIB TR-B32's figures checked against the originals
+  - Why: decisions/2026-11-01-profiles.md took them from vendor summaries (ARIB's tolerance not found, ±1 LU assumed);
+    a customer relying on op-59 or arib-tr-b32 needs them confirmed
   - Status: Maybe

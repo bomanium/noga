@@ -78,7 +78,8 @@ What is next, in order: docs/backlog.md.
 - `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
-  v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
+  v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (atsc-a85, op-59, arib-tr-b32, and profile files:
+  `Profiles.Get(nameOrFile)`, decisions/2026-11-01-profiles.md), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against, its EBU QC item: `EbuQcItem.For`, decisions/2026-11-01-ebu-qc-items.md; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
@@ -98,11 +99,11 @@ What is next, in order: docs/backlog.md.
   FFmpeg path), the packets from its demuxer, and the shots from
   ShotDetector on the same decoded frames (ShotDetector.FastYuv converts them; LGPL, its own DLL): the same figures as the FFmpeg path, which a
   test checks on make-samples.sh's MP4.
-- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`
-  measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by `Profile.EbuR128`, writes FILE.qc.html and
+- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]`
+  measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by the profile (ebu-r128 unless --profile names another or a file), writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings. `Checker.Run`:
   one file's check, for both commands. `mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
-  [--watch FOLDER] [--token TOKEN] [--no-open]` (`Serve/`): the web UI on 127.0.0.1 (default 8722), or shared on the
+  [--watch FOLDER] [--token TOKEN] [--profile PROFILE] [--no-open]` (`Serve/`): the web UI on 127.0.0.1 (default 8722), or shared on the
   network (`ServeOptions.Shared`: only the `--root` folders, `Roots`, and only with the token link's cookie;
   decisions/2026-11-01-shared-machine.md), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
   machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file), `/api/events`
