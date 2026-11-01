@@ -23,10 +23,6 @@ Nothing.
   - Why: decisions/2026-10-31-product-shape.md kept it for later, on the same core
   - Status: Maybe
 
-- A release workflow: on a tag, CI runs tools/publish.sh and attaches the archives to a GitHub release
-  - Why: today a release is built by hand (tools/publish.sh) and CI only checks it builds and runs
-  - Status: Maybe
-
 - macOS (osx-arm64) and Linux arm64 releases
   - Why: FrameReader.Native has osx-arm64 and linux-arm64 packages; CI can't run them (ubuntu only, macOS minutes cost
     10x), and macOS wants a signed, notarised binary

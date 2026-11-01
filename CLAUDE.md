@@ -111,4 +111,5 @@ What is next, in order: docs/backlog.md.
   `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, and `packaging/`'s README and notices).
   Not single-file nor trimmed: the LGPL binaries stay separate files. ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
-- `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.
+- `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is
+  `v` + Version, also a GitHub release with the archives, published at once (decisions/2026-11-01-release-workflow.md). `.github/dependabot.yml`: actions and NuGet weekly.
