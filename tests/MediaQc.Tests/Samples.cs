@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace MediaQc.Tests;
 
 /// <summary>
 /// tools/make-samples.sh's files, in the repository's samples/ folder (ignored by git): made once when they aren't
-/// there (bash and ffmpeg with libx264 on PATH; ~45 s, ~480 MB), then kept. CI makes them in a step of its own first.
+/// there or an older make-samples.sh made them (its SHA-256 in samples/.make-samples.sha256; bash and ffmpeg with
+/// libx264 on PATH; ~45 s, ~480 MB), then kept. CI makes them in a step of its own first.
 /// </summary>
 public sealed class Samples
 {
@@ -15,7 +17,10 @@ public sealed class Samples
     {
         string root = Root();
         Folder = Path.Combine(root, "samples");
-        if (Programmes.All(p => File.Exists(Path.Combine(Folder, p))))
+        string script = Path.Combine(root, "tools", "make-samples.sh");
+        string stamp = Path.Combine(Folder, ".make-samples.sha256");
+        string version = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(script)));
+        if (Programmes.All(p => File.Exists(Path.Combine(Folder, p))) && File.Exists(stamp) && File.ReadAllText(stamp).Trim() == version)
             return;
 
         var start = new ProcessStartInfo("bash") { WorkingDirectory = root, RedirectStandardError = true, UseShellExecute = false };

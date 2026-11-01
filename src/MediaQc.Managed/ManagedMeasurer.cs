@@ -1,6 +1,7 @@
 using ManagedCodecs;
 using ManagedCodecs.Aac;
 using ManagedCodecs.Containers;
+using MediaQc.Ffmpeg;
 using LoudnessMeter = FrameReader.LoudnessMeter;
 using ReferenceToneFinder = FrameReader.ReferenceToneFinder;
 using ReferenceToneOptions = FrameReader.ReferenceToneOptions;
@@ -9,7 +10,7 @@ namespace MediaQc.Managed;
 
 /// <summary>
 /// Measures an H.264/AAC MP4 on the managed path (docs/decisions/2026-10-31-decoding.md): ManagedCodecs demuxes it and
-/// decodes its AAC, no native code; the loudness is FrameReader's LoudnessMeter (FFmpeg's ebur128 arithmetic), the
+/// decodes its AAC, no native code (only the start timecode is read through FFmpeg's libraries); the loudness is FrameReader's LoudnessMeter (FFmpeg's ebur128 arithmetic), the
 /// line-up tone its ReferenceToneFinder, the silences Core's <see cref="SilenceFinder"/> (silencedetect's), the same
 /// measures and the same settings as the FFmpeg path, so both give the same figures for the same file. Picture
 /// measures (black, bars) come later, as on the FFmpeg path.
@@ -54,6 +55,7 @@ public static class ManagedMeasurer
             RateDenominator = denominator,
             NotMeasured = ["bars", "black"],
         };
+        measured = StartTimecode.Add(measured, path, cancellationToken);
         if (audio is null)
             return measured;
 

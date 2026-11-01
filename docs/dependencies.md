@@ -29,7 +29,7 @@ and .config/dotnet-tools.json.
 
 | Tool | Licence | What for |
 | --- | --- | --- |
-| ffmpeg (whatever is on PATH; CI installs Ubuntu's) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it, and the tests compare the measures with it; nothing from it is shipped, so a GPL build (libx264) is fine there |
+| ffmpeg and ffprobe (whatever is on PATH; CI installs Ubuntu's) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it, and the tests compare the measures (and the timecode tag) with them; nothing from it is shipped, so a GPL build (libx264) is fine there |
 | GitHub Actions: actions/checkout, actions/setup-dotnet | MIT | CI, pinned by commit SHA |
 
 ## Candidates (the open decisions, docs/backlog.md)

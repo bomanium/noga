@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MediaQc.Core\MediaQc.Core.csproj" />
+    <!-- The start timecode only: FrameReader's ProbeJson, through FFmpeg's libraries (decisions/2026-11-01-start-timecode.md). -->
+    <ProjectReference Include="..\MediaQc.Ffmpeg\MediaQc.Ffmpeg.csproj" />
   </ItemGroup>
 
 </Project>

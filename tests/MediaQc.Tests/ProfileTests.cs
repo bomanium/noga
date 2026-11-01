@@ -2,8 +2,8 @@ namespace MediaQc.Tests;
 
 public class ProfileTests
 {
-    // tools/make-samples.sh's programme: bars and tone 0-5 s, black and silence 5-7 s, picture 7-17 s, black and
-    // silence 17-20 s.
+    // A programme shaped like tools/make-samples.sh's: bars and tone 0-5 s, black and silence 5-7 s, picture 7-17 s,
+    // black and silence 17-20 s.
     static Measurements Programme(double integrated = -23, double truePeak = -3) => new()
     {
         Duration = 20,

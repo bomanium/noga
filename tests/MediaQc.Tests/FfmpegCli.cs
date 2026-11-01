@@ -38,6 +38,24 @@ internal static partial class FfmpegCli
         }
     }
 
+    /// <summary>What ffprobe -show_format -show_streams -of json prints for <paramref name="file"/>.</summary>
+    public static string Probe(string file)
+    {
+        var start = new ProcessStartInfo("ffprobe") { RedirectStandardError = true, RedirectStandardOutput = true, UseShellExecute = false };
+        foreach (string arg in (string[])["-v", "error", "-show_format", "-show_streams", "-of", "json", file])
+            start.ArgumentList.Add(arg);
+        using var process = Process.Start(start)!;
+        var error = process.StandardError.ReadToEndAsync();
+        string json = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(process.ExitCode == 0, $"ffprobe failed:\n{error.Result}");
+        return json;
+    }
+
+    /// <summary>The start timecode is the tag the ffprobe command line gives.</summary>
+    public static void AssertStartTimecode(string file, Measurements measured) =>
+        Assert.Equal(TimecodeTag.Pick(Probe(file), measured.RateNumerator, measured.RateDenominator), measured.StartTimecode);
+
     /// <summary>The loudness is ebur128's from the same point (ffmpeg -ss), within 0.1 LU and 0.1 dB.</summary>
     public static void AssertLoudness(string file, Measurements measured)
     {
