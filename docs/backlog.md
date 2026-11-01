@@ -15,14 +15,14 @@ is the owner's to choose (Maybe below).
 
 ## Waiting
 
-Nothing.
-
-## Maybe
-
 - Every audio track measured and judged, each with its own findings
   - Why: The report judges the first track only and says so (decisions/2026-11-01-open-films.md); deliveries often
     carry stereo and 5.1, or split stems
-  - Status: Maybe
+  - Status: Waiting: on a FrameReader release with `AudioReaderOptions.Stream` (bisforboman/shotdetector#697;
+    decisions/2026-11-01-every-audio-track.md); then each track measured through it, files with several audio tracks
+    on the FFmpeg path
+
+## Maybe
 
 - The web UI's next steps: a shared-machine mode (listening beyond localhost, with a token), a thin
   native shell around the page (native drag and drop of paths, an icon)
