@@ -10,6 +10,8 @@ and .config/dotnet-tools.json.
 | Package | Licence | How it ships |
 | --- | --- | --- |
 | FrameReader | MIT | A managed assembly (MediaQc.Ffmpeg: the FFmpeg path; MediaQc.Managed uses its managed meters only) |
+| ShotDetector | MIT | A managed assembly (the shot list on both paths: MediaQc.Ffmpeg's Shots, MediaQc.Managed) |
+| ShotDetector.FastYuv | LGPL-2.1-or-later (ports FFmpeg's swscale code) | A separate managed assembly, ShotDetector.FastYuv.dll, loaded at run time and replaceable (not single-file, not trimmed); converts the managed path's frames for ShotDetector; its COPYING.LGPL goes to a release's licences/shotdetector-fastyuv/, the source and commit in its README.txt (decisions/2026-11-01-frames-bitrate-shots.md) |
 | ManagedCodecs (.Core, .Containers, .Aac, .H264, .Mjpeg) | MIT | Managed assemblies (MediaQc.Managed: MP4 demuxing and AAC decoding, no native code) |
 | FFmpeg.AutoGen (FrameReader's dependency; MediaQc.Ffmpeg's packet scan uses it directly, at FrameReader's version) | MIT (8.x; older versions were LGPL-3.0) | A managed assembly: the bindings to FFmpeg's libraries |
 | .NET runtime (Microsoft.NETCore.App, self-contained in a release) | MIT, with third-party notices | Its licence and THIRD-PARTY-NOTICES.TXT in a release's licences/dotnet/ |

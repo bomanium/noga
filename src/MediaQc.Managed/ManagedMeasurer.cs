@@ -10,7 +10,11 @@ using PictureMeasures = FrameReader.PictureMeasures;
 using PictureMeter = FrameReader.PictureMeter;
 using ReferenceToneFinder = FrameReader.ReferenceToneFinder;
 using ReferenceToneOptions = FrameReader.ReferenceToneOptions;
+using ShotDetection = ShotDetector.ShotDetection;
 using SilenceFinder = FrameReader.SilenceFinder;
+using SwscaleYuv420 = ShotDetector.FastYuv.SwscaleYuv420;
+using YuvFrame = ShotDetector.YuvFrame;
+using YuvVideo = ShotDetector.YuvVideo;
 
 namespace MediaQc.Managed;
 
@@ -19,8 +23,9 @@ namespace MediaQc.Managed;
 /// decodes its H.264 and AAC, no native code (only the tags, start timecode and colour range, are read through
 /// FFmpeg's libraries); the loudness is FrameReader's LoudnessMeter (FFmpeg's ebur128 arithmetic), the line-up tone
 /// its ReferenceToneFinder, the silences its SilenceFinder (silencedetect's), the picture its PictureMeter
-/// (blackdetect's, signalstats' BRNG, cropdetect's, the bars): the same measures and settings as the FFmpeg path, so
-/// both give the same figures for the same file.
+/// (blackdetect's, signalstats' BRNG, cropdetect's, the bars), the shots ShotDetector's on the same frames (converted by
+/// ShotDetector.FastYuv): the same measures and settings as the FFmpeg path, so both give the same figures for the same
+/// file.
 /// </summary>
 public static class ManagedMeasurer
 {
@@ -62,10 +67,9 @@ public static class ManagedMeasurer
             RateDenominator = denominator,
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
-        measured = Pictures.Add(measured, MeasurePictures(path, cancellationToken), profile) with
-        {
-            Packets = ReadPackets(path, cancellationToken),
-        };
+        var (packets, timestamps) = ReadPackets(path, cancellationToken);
+        var (pictures, shots) = MeasurePictures(path, timestamps, cancellationToken);
+        measured = Shots.Add(Pictures.Add(measured, pictures, profile) with { Packets = packets }, shots);
         if (audio is null)
             return measured;
 
@@ -102,49 +106,83 @@ public static class ManagedMeasurer
         };
     }
 
-    // Every frame of the video through ManagedCodecs' H.264 decoder into FrameReader's PictureMeter, in display order.
-    static PictureMeasures? MeasurePictures(string path, CancellationToken cancellationToken)
+    // Every frame of the video through ManagedCodecs' H.264 decoder, in display order, into FrameReader's PictureMeter
+    // and ShotDetector (which pulls the frames one at a time, so each is measured and then detected on).
+    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, CancellationToken cancellationToken)
     {
-        var (fullRange, rotation) = Pictures.VideoFormat(path, cancellationToken);
+        var tags = Tags.Read(path, cancellationToken);
         using var demuxer = Open(path);
         var video = demuxer.Video!;
         var decoder = new H264Decoder(video) { Threads = Environment.ProcessorCount };
         var timeBase = new FrameReader.Rational(video.TimeBase.Numerator, video.TimeBase.Denominator);
+        var shotVideo = new YuvVideo
+        {
+            Width = video.Width,
+            Height = video.Height,
+            FrameRate = tags.AverageFrameRate,
+            PixelFormat = tags.PixelFormat,
+            ColorSpace = tags.ColorSpace,
+            FullRange = tags.FullRange,
+            ChromaLocation = tags.ChromaLocation,
+            TimeBase = timeBase,
+            FrameTimestamps = timestamps,
+            StartPts = tags.StartPts,
+            FrameCount = tags.FrameCount,
+            Duration = tags.Duration,
+            Rotation = tags.Rotation,
+            FieldOrder = tags.FieldOrder,
+            Codec = "h264",
+            Container = tags.Container,
+        };
         PictureMeter? meter = null;
-        foreach (var packet in demuxer.ReadPackets())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (packet.StreamIndex == video.StreamIndex)
-                Add(decoder.Decode(packet));
-        }
+        var options = Shots.Options with { Yuv420Converter = new SwscaleYuv420() };
+        var shots = ShotDetection.Detect(shotVideo, Frames(), options, cancellationToken);
+        return (meter?.Measures, shots);
 
-        Add(decoder.Flush());
-        return meter?.Measures;
-
-        void Add(IReadOnlyList<VideoFrame> frames)
+        IEnumerable<YuvFrame> Frames()
         {
-            foreach (var frame in frames)
+            foreach (var packet in demuxer.ReadPackets())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (packet.StreamIndex != video.StreamIndex)
+                    continue;
+                foreach (var frame in decoder.Decode(packet))
+                {
+                    using (frame)
+                        yield return Measured(frame);
+                }
+            }
+
+            foreach (var frame in decoder.Flush())
             {
                 using (frame)
-                {
-                    var format = frame.Format;
-                    if (format.PlaneCount() != 3)
-                        throw new InvalidDataException($"{path}: monochrome H.264 isn't measured.");
-                    meter ??= new PictureMeter(new PictureFormat(frame.Width, frame.Height, fullRange, timeBase, rotation, format.BitDepth(), Chroma(format)));
-                    meter.Add(
-                        Plane(frame, 0),
-                        frame.Strides[0],
-                        Plane(frame, 1),
-                        frame.Strides[1],
-                        Plane(frame, 2),
-                        frame.Strides[2],
-                        frame.Pts,
-                        (FrameReader.PictureType)(int)frame.PictureType);
-                }
+                    yield return Measured(frame);
             }
         }
 
-        static ReadOnlySpan<byte> Plane(VideoFrame frame, int i) => frame.Planes[i].AsSpan(frame.Offsets[i]);
+        // The frame measured, and handed on as ShotDetector's: its planes stay the decoder's until the next is pulled.
+        YuvFrame Measured(VideoFrame frame)
+        {
+            var format = frame.Format;
+            if (format.PlaneCount() != 3)
+                throw new InvalidDataException($"{path}: monochrome H.264 isn't measured.");
+            meter ??= new PictureMeter(new PictureFormat(frame.Width, frame.Height, tags.FullRange, timeBase, tags.Rotation, format.BitDepth(), Chroma(format)));
+            meter.Add(
+                Plane(frame, 0).Span,
+                frame.Strides[0],
+                Plane(frame, 1).Span,
+                frame.Strides[1],
+                Plane(frame, 2).Span,
+                frame.Strides[2],
+                frame.Pts,
+                (FrameReader.PictureType)(int)frame.PictureType);
+            return new YuvFrame(Plane(frame, 0), frame.Strides[0], Plane(frame, 1), frame.Strides[1], Plane(frame, 2), frame.Strides[2])
+            {
+                Pts = frame.Pts,
+            };
+        }
+
+        static ReadOnlyMemory<byte> Plane(VideoFrame frame, int i) => frame.Planes[i].AsMemory(frame.Offsets[i]);
 
         static ChromaSubsampling Chroma(PixelFormat format) => format.ToString() switch
         {
@@ -154,21 +192,26 @@ public static class ManagedMeasurer
         };
     }
 
-    // The video packets as the demuxer gives them, as FFmpeg's (ffprobe -show_packets'): pts, size and key flag.
-    static VideoPackets ReadPackets(string path, CancellationToken cancellationToken)
+    // The video packets as the demuxer gives them, as FFmpeg's (ffprobe -show_packets'): pts, size and key flag; and
+    // their pts sorted, each frame's timestamp as ShotDetector's file path labels them.
+    static (VideoPackets Packets, IReadOnlyList<long> Timestamps) ReadPackets(string path, CancellationToken cancellationToken)
     {
         using var demuxer = Open(path);
         var video = demuxer.Video!;
         double unit = (double)video.TimeBase.Numerator / video.TimeBase.Denominator;
         var packets = new List<(double, long, bool)>();
+        var timestamps = new List<long>();
         foreach (var packet in demuxer.ReadPackets())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (packet.StreamIndex == video.StreamIndex)
-                packets.Add((packet.Pts * unit, packet.Data.Length, packet.IsKeyframe));
+            if (packet.StreamIndex != video.StreamIndex)
+                continue;
+            packets.Add((packet.Pts * unit, packet.Data.Length, packet.IsKeyframe));
+            timestamps.Add(packet.Pts);
         }
 
-        return VideoPackets.From(packets);
+        timestamps.Sort();
+        return (VideoPackets.From(packets), timestamps);
     }
 
     delegate void ChunkHandler(ReadOnlySpan<float> interleaved, long position);

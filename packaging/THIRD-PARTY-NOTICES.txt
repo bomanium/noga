@@ -4,6 +4,10 @@ FrameReader
   Copyright (c) Jakob Boman
   https://github.com/bisforboman/shotdetector
 
+ShotDetector
+  Copyright (c) Jakob Boman
+  https://github.com/bisforboman/shotdetector
+
 ManagedCodecs (ManagedCodecs.Core, .Containers, .Aac, .H264, .Mjpeg)
   Copyright (c) Jakob Boman
 
@@ -11,7 +15,7 @@ FFmpeg.AutoGen
   Copyright (c) 2025 Ruslan Balanukhin (Rationale One)
   https://github.com/Ruslan-B/FFmpeg.AutoGen
 
-FFmpeg's libraries are under the LGPL: licences/ffmpeg/. The .NET runtime's licence and notices: licences/dotnet/.
+FFmpeg's libraries are under the LGPL: licences/ffmpeg/. So is ShotDetector.FastYuv: licences/shotdetector-fastyuv/. The .NET runtime's licence and notices: licences/dotnet/.
 
 MIT License
 

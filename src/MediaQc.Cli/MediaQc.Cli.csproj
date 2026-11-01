@@ -30,17 +30,21 @@
       <NativePackage>FrameReader.Native.$(RuntimeIdentifier)</NativePackage>
       <NativeVersion>@(PackageVersion->WithMetadataValue('Identity', '$(NativePackage)')->'%(Version)')</NativeVersion>
       <NativeFolder>$(NuGetPackageRoot)$(NativePackage.ToLowerInvariant())/$(NativeVersion)/</NativeFolder>
+      <FastYuvVersion>@(PackageVersion->WithMetadataValue('Identity', 'ShotDetector.FastYuv')->'%(Version)')</FastYuvVersion>
+      <FastYuvFolder>$(NuGetPackageRoot)shotdetector.fastyuv/$(FastYuvVersion)/</FastYuvFolder>
     </PropertyGroup>
     <ItemGroup>
       <FfmpegLicence Include="$(NativeFolder)COPYING.*;$(NativeFolder)configure.txt;$(NativeFolder)sbom.spdx.json;$(NativeFolder)README.md" />
       <NetCoreRuntimePack Include="@(ResolvedRuntimePack->WithMetadataValue('FrameworkName', 'Microsoft.NETCore.App'))" />
       <DotnetLicence Include="%(NetCoreRuntimePack.PackageDirectory)/LICENSE.TXT;%(NetCoreRuntimePack.PackageDirectory)/THIRD-PARTY-NOTICES.TXT" />
       <ResolvedFileToPublish Include="@(FfmpegLicence)" RelativePath="licences/ffmpeg/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(FastYuvFolder)COPYING.LGPL" RelativePath="licences/shotdetector-fastyuv/COPYING.LGPL" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="@(DotnetLicence)" RelativePath="licences/dotnet/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/THIRD-PARTY-NOTICES.txt" RelativePath="licences/THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/README.txt" RelativePath="README.txt" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
     <Error Condition="!Exists('$(NativeFolder)COPYING.LGPL')" Text="No COPYING.LGPL in $(NativeFolder): a $(RuntimeIdentifier) publish needs $(NativePackage) referenced (MediaQc.Ffmpeg) to ship FFmpeg's libraries with their licence." />
+    <Error Condition="!Exists('$(FastYuvFolder)COPYING.LGPL')" Text="No COPYING.LGPL in $(FastYuvFolder): ShotDetector.FastYuv (LGPL) ships with its licence." />
   </Target>
 
 </Project>

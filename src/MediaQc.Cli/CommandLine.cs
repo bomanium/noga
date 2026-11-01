@@ -21,7 +21,8 @@ static class CommandLine
                mediaqc --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
-        Profile: ebu-r128 (EBU R128 loudness, true peak, black, silence, bars and line-up tone).
+        Profile: ebu-r128 (EBU R128 loudness, true peak, black, silence, bars and line-up tone, pixels outside
+        broadcast range; also reports crop, frame types, keyframes, bitrate and the shot list).
 
         Exit codes: 0 passed, 1 failed, 2 usage or read error, 3 warnings (1 with --warnings-fail).
         """;
@@ -86,7 +87,9 @@ static class CommandLine
 
         int code = report.ExitCode(check.WarningsFail);
         output.WriteLine($"{name}: {report.Verdict} (profile {report.Profile}, exit code {code})");
-        foreach (var finding in report.Findings)
+
+        // Each shot is in the reports; here only how many ("shots").
+        foreach (var finding in report.Findings.Where(f => f.Check != "shot"))
         {
             string where = (finding.Start, finding.End) switch
             {

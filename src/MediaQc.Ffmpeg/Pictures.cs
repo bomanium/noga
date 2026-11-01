@@ -28,36 +28,6 @@ public static class Pictures
         return meter?.Measures;
     }
 
-    /// <summary>
-    /// What a decoder that doesn't read the container's tags needs from them: whether the video is full range (ffprobe's
-    /// color_range pc, or a yuvj pixel format) and its display rotation (ffprobe's, degrees counterclockwise).
-    /// </summary>
-    public static (bool FullRange, int Rotation) VideoFormat(string path, CancellationToken cancellationToken = default)
-    {
-        Libraries.Load();
-        using var json = System.Text.Json.JsonDocument.Parse(MediaProbe.ProbeJson(path, new ProbeOptions { CancellationToken = cancellationToken }));
-        foreach (var stream in json.RootElement.GetProperty("streams").EnumerateArray())
-        {
-            if (!stream.TryGetProperty("codec_type", out var type) || type.GetString() != "video")
-                continue;
-            bool full = (stream.TryGetProperty("color_range", out var range) && range.GetString() == "pc")
-                || (stream.TryGetProperty("pix_fmt", out var format) && format.GetString()?.StartsWith("yuvj", StringComparison.Ordinal) == true);
-            int rotation = 0;
-            if (stream.TryGetProperty("side_data_list", out var sideData))
-            {
-                foreach (var item in sideData.EnumerateArray())
-                {
-                    if (item.TryGetProperty("rotation", out var degrees) && degrees.TryGetDouble(out double value))
-                        rotation = (int)Math.Round(value);
-                }
-            }
-
-            return (full, rotation);
-        }
-
-        return (false, 0);
-    }
-
     /// <summary><paramref name="measured"/> with black, bars, pixels outside broadcast range, the active picture and each frame's picture type.</summary>
     public static Measurements Add(Measurements measured, PictureMeasures? pictures, Profile profile)
     {

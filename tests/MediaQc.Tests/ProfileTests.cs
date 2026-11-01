@@ -196,4 +196,21 @@ public class ProfileTests
         Assert.Equal("All 3 frames intra-coded (I)", Only(report, "frames").Message);
         Assert.Equal("Every frame is a keyframe (3)", Only(report, "keyframes").Message);
     }
+
+    [Fact]
+    public void TheShotListIsInformation()
+    {
+        var measured = Programme() with { Shots = [new TimeRange(0, 5), new TimeRange(5, 8), new TimeRange(8, 20)] };
+
+        var report = Profile.EbuR128.Evaluate(measured);
+
+        var shots = Only(report, "shots");
+        Assert.Equal("3 shots, the shortest 3.00 s", shots.Message);
+        Assert.Equal(Profile.ShotsFilter, shots.CheckedAgainst);
+        var each = report.Findings.Where(f => f.Check == "shot").ToList();
+        Assert.Equal(["Shot 1, 5.00 s", "Shot 2, 3.00 s", "Shot 3, 12.00 s"], each.Select(f => f.Message));
+        Assert.Equal("10:00:05:00", each[1].Start?.Timecode);
+        Assert.Equal("10:00:08:00", each[1].End?.Timecode);
+        Assert.All(each.Append(shots), f => Assert.Equal(Severity.Info, f.Severity));
+    }
 }
