@@ -1,12 +1,15 @@
 mediaqc: file-based quality control of video deliveries (a working name)
 
   mediaqc check FILE [--out FOLDER] [--warnings-fail]
-  mediaqc serve [--port PORT] [--no-open] [--watch FOLDER]
+  mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER] [--token TOKEN] [--no-open]
 
 writes FILE.qc.html and FILE.qc.json next to FILE (or in FOLDER), prints the findings and exits 0 passed, 1 failed,
 2 usage or read error, 3 warnings (1 with --warnings-fail). serve runs the web UI on this machine only
 (http://localhost:8722): pick files in its folders, and each is checked where it is, its reports written beside it. With --watch, the media
 files in FOLDER (and its subfolders) that have no report yet are checked too, new ones once their copy has finished.
+--listen 0.0.0.0:8722 --root FOLDER shares it with your team on a trusted network: only the --root folders can be seen
+and checked, and only by who opens the link it prints (it carries a random token). It is plain HTTP: use it on a
+network you trust.
 mediaqc --help says the same.
 
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).

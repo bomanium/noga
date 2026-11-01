@@ -121,3 +121,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     IDs read as familiar
   - Status: Done (2026-11-01, decisions/2026-11-01-ebu-qc-items.md: each finding carries its item, read from
     qc.ebu.io's API, in the JSON and as a linked column in the HTML report; bitrate and the shot list have none)
+
+- A shared-machine mode for `mediaqc serve`
+  - Why: A team's shared machine runs one server for everyone; decisions/2026-11-01-web-ui.md kept it for later
+  - Status: Done (2026-11-01, decisions/2026-11-01-shared-machine.md: `--listen` beyond localhost needs `--root`
+    folders, the only ones seen or checked, links that lead out refused; a token link sets an HttpOnly cookie every
+    request needs; plain HTTP for trusted networks)
