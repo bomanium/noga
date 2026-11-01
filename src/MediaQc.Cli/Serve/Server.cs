@@ -57,7 +57,7 @@ static class Server
         builder.Services.AddSingleton(jobs);
         var app = builder.Build();
         app.Use((context, next) => Guard(context, next, options));
-        string page = Page(watcher?.Folder);
+        string page = Page(watcher?.Folder, options.Profile.Name);
         app.Lifetime.ApplicationStarted.Register(() => watcher?.Start());
         app.Lifetime.ApplicationStopping.Register(() =>
         {
@@ -97,7 +97,7 @@ static class Server
         WebApplication app;
         try
         {
-            app = Build(options, (file, token) => Checker.Run(file, null, token));
+            app = Build(options, (file, token) => Checker.Run(file, null, options.Profile, token));
         }
         catch (Exception e) when (e is DirectoryNotFoundException or ArgumentException)
         {
@@ -236,8 +236,9 @@ static class Server
         return reader.ReadToEnd();
     }
 
-    // The page, with the folder watched (the picker opens there, and a line says it is watched).
-    static string Page(string? watched) => Template
+    // The page, with the folder watched (the picker opens there, and a line says it is watched) and the profile.
+    static string Page(string? watched, string profile) => Template
+        .Replace("{{profile}}", WebUtility.HtmlEncode(profile), StringComparison.Ordinal)
         .Replace("{{product}}", WebUtility.HtmlEncode(Product.Name), StringComparison.Ordinal)
         .Replace("{{version}}", WebUtility.HtmlEncode(Product.Version), StringComparison.Ordinal)
         .Replace("{{watched}}", watched is null ? "" : WebUtility.HtmlEncode(watched), StringComparison.Ordinal);
@@ -260,6 +261,12 @@ sealed record ServeOptions
 
     /// <summary>A shared server's token, which its link carries.</summary>
     public string? Token { get; init; }
+
+    /// <summary>The profile every check is judged by.</summary>
+    public Profile Profile { get; init; } = Profile.EbuR128;
+
+    /// <summary>The profile's name or file as given on the command line, before it is read into <see cref="Profile"/>.</summary>
+    public string? ProfileName { get; init; }
 
     /// <summary>Whether it listens beyond this machine.</summary>
     public bool Shared => !IPAddress.IsLoopback(Address);

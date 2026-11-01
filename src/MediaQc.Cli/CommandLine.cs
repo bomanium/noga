@@ -13,14 +13,17 @@ static class CommandLine
     public const int Usage = QcReport.Error;
 
     const string Help = """
-        Usage: mediaqc check FILE [--out FOLDER] [--warnings-fail]
+        Usage: mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]
                mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER]
-                             [--token TOKEN] [--no-open]
+                             [--token TOKEN] [--profile PROFILE] [--no-open]
                mediaqc --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
-        Profile: ebu-r128 (EBU R128 loudness, true peak, black, silence, bars and line-up tone, pixels outside
-        broadcast range; also reports crop, frame types, keyframes, bitrate and the shot list).
+        Profiles (--profile; ebu-r128 unless given): ebu-r128 (EBU R128: -23 LUFS within 0.5 LU, true peak -1 dBTP),
+        atsc-a85 (US: -24 LKFS within 2 LU, -2 dBTP), op-59 (Australia: -24 LKFS within 1 LU, -2 dBTP), arib-tr-b32
+        (Japan: -24 LKFS within 1 LU, -1 dBTP), or a profile file (.json: a name, basedOn and the thresholds it
+        changes). Each also checks black, silence, bars and line-up tone, pixels outside broadcast range, and reports
+        crop, frame types, keyframes, bitrate and the shot list.
 
         serve runs the web UI on this machine only (http://localhost:8722 unless --port says another), opens it in
         the browser (not with --no-open) and checks the files picked there, writing their reports beside them. With
@@ -56,7 +59,16 @@ static class CommandLine
             return Check(check, output, error);
 
         if (args is ["serve", ..] && ServeArguments(args.Skip(1).ToList()) is var (options, open))
+        {
+            if (options.ProfileName is { } name)
+            {
+                if (!TryProfile(name, error, out var profile))
+                    return Usage;
+                options = options with { Profile = profile };
+            }
+
             return Serve.Server.Run(options, open, output, error);
+        }
 
         error.WriteLine($"mediaqc: can't understand: {string.Join(' ', args)}. See mediaqc --help.");
         return Usage;
@@ -64,10 +76,13 @@ static class CommandLine
 
     static int Check(CheckArguments check, TextWriter output, TextWriter error)
     {
+        if (check.ProfileName is not null && !TryProfile(check.ProfileName, error, out _))
+            return Usage;
+
         CheckResult result;
         try
         {
-            result = Checker.Run(check.File, check.Out);
+            result = Checker.Run(check.File, check.Out, check.Profile);
         }
         catch (CheckException e)
         {
@@ -94,6 +109,22 @@ static class CommandLine
 
         output.WriteLine($"Reports: {html}, {json}");
         return code;
+    }
+
+    // The profile a name or file gives; false (and why, on error) when neither.
+    static bool TryProfile(string nameOrFile, TextWriter error, out Profile profile)
+    {
+        try
+        {
+            profile = Profiles.Get(nameOrFile);
+            return true;
+        }
+        catch (Exception e) when (e is ArgumentException or IOException or UnauthorizedAccessException)
+        {
+            error.WriteLine($"mediaqc: {e.Message}");
+            profile = Profile.EbuR128;
+            return false;
+        }
     }
 
     // serve's arguments: where it listens, its folders and token, and whether to open the browser; null when they don't
@@ -131,6 +162,10 @@ static class CommandLine
                     options = options with { Token = value };
                     i++;
                     break;
+                case "--profile" when value is not null && options.ProfileName is null:
+                    options = options with { ProfileName = value };
+                    i++;
+                    break;
                 default:
                     return null;
             }
@@ -142,13 +177,16 @@ static class CommandLine
         return (options, open);
     }
 
-    /// <summary><c>check</c>'s arguments: the file, where the reports go, and whether warnings fail.</summary>
-    sealed record CheckArguments(string File, string? Out, bool WarningsFail)
+    /// <summary><c>check</c>'s arguments: the file, where the reports go, whether warnings fail, and the profile.</summary>
+    sealed record CheckArguments(string File, string? Out, bool WarningsFail, string? ProfileName)
     {
+        /// <summary>The profile named (checked to be one already), or null for the default.</summary>
+        public Profile? Profile => ProfileName is null ? null : Profiles.Get(ProfileName);
+
         /// <summary>The arguments after <c>check</c>; null when they don't parse.</summary>
         public static CheckArguments? Parse(IReadOnlyList<string> args)
         {
-            string? file = null, folder = null;
+            string? file = null, folder = null, profile = null;
             bool warningsFail = false;
             for (int i = 0; i < args.Count; i++)
             {
@@ -160,6 +198,9 @@ static class CommandLine
                     case "--warnings-fail":
                         warningsFail = true;
                         break;
+                    case "--profile" when i + 1 < args.Count && profile is null:
+                        profile = args[++i];
+                        break;
                     case var arg when !arg.StartsWith('-') && file is null:
                         file = arg;
                         break;
@@ -168,7 +209,7 @@ static class CommandLine
                 }
             }
 
-            return file is null ? null : new CheckArguments(file, folder, warningsFail);
+            return file is null ? null : new CheckArguments(file, folder, warningsFail, profile);
         }
     }
 }

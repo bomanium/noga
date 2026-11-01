@@ -127,3 +127,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-01, decisions/2026-11-01-shared-machine.md: `--listen` beyond localhost needs `--root`
     folders, the only ones seen or checked, links that lead out refused; a token link sets an HttpOnly cookie every
     request needs; plain HTTP for trusted networks)
+
+- Platform spec profiles
+  - Why: Deliveries outside EBU R128 territory have their own loudness and peak specs (docs/notes/origin.md's "platform
+    spec templates")
+  - Status: Done (2026-11-01, decisions/2026-11-01-profiles.md: atsc-a85, op-59 and arib-tr-b32 beside ebu-r128, and
+    profile files (JSON, basedOn a shipped one), chosen with --profile on check and serve)

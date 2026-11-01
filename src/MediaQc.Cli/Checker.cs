@@ -10,15 +10,18 @@ namespace MediaQc.Cli;
 /// </summary>
 static class Checker
 {
-    /// <summary>Checks <paramref name="file"/> and writes FILE.qc.html and FILE.qc.json in <paramref name="folder"/> (else beside it).</summary>
+    /// <summary>
+    /// Checks <paramref name="file"/> by <paramref name="profile"/> (ebu-r128 when null) and writes FILE.qc.html and
+    /// FILE.qc.json in <paramref name="folder"/> (else beside it).
+    /// </summary>
     /// <exception cref="CheckException">The file isn't there or can't be read.</exception>
-    public static CheckResult Run(string file, string? folder, CancellationToken cancellationToken = default)
+    public static CheckResult Run(string file, string? folder, Profile? profile = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(file);
         if (!File.Exists(file))
             throw new CheckException($"no such file: {file}");
 
-        var profile = Profile.EbuR128;
+        profile ??= Profile.EbuR128;
         Measurements measured;
         try
         {

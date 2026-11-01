@@ -65,6 +65,30 @@ public sealed class CommandLineTests : IClassFixture<Programme>
         Assert.Equal(CommandLine.Usage, Run(args).Code);
 
     [Fact]
+    public void CheckJudgesByTheProfileGiven()
+    {
+        string folder = Path.Combine(_programme.Folder, "atsc");
+
+        var (_, output, error) = Run("check", _programme.Path, "--out", folder, "--profile", "atsc-a85");
+
+        Assert.Empty(error);
+        Assert.Contains("(profile atsc-a85,", output, StringComparison.Ordinal);
+        using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, "programme.mov.qc.json")));
+        Assert.Equal("atsc-a85", json.RootElement.GetProperty("profile").GetString());
+    }
+
+    [Theory]
+    [InlineData("check", "PROGRAMME", "--profile", "netflix")]
+    [InlineData("serve", "--no-open", "--port", "1", "--profile", "netflix")]
+    public void AnUnknownProfileIsAUsageError(params string[] args)
+    {
+        var (code, _, error) = Run([.. args.Select(a => a == "PROGRAMME" ? _programme.Path : a)]);
+
+        Assert.Equal(CommandLine.Usage, code);
+        Assert.Contains("No profile netflix", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SharingWithoutARootIsAUsageError()
     {
         var (code, output, error) = Run("serve", "--no-open", "--listen", "0.0.0.0:1");

@@ -1,7 +1,7 @@
 mediaqc: file-based quality control of video deliveries (a working name)
 
-  mediaqc check FILE [--out FOLDER] [--warnings-fail]
-  mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER] [--token TOKEN] [--no-open]
+  mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]
+  mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER] [--token TOKEN] [--profile PROFILE] [--no-open]
 
 writes FILE.qc.html and FILE.qc.json next to FILE (or in FOLDER), prints the findings and exits 0 passed, 1 failed,
 2 usage or read error, 3 warnings (1 with --warnings-fail). serve runs the web UI on this machine only
@@ -11,6 +11,9 @@ files in FOLDER (and its subfolders) that have no report yet are checked too, ne
 and checked, and only by who opens the link it prints (it carries a random token). It is plain HTTP: use it on a
 network you trust.
 mediaqc --help says the same.
+
+Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
+of those, and the thresholds it changes, e.g. "maxTruePeak": -3); mediaqc --help lists them with their figures.
 
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
