@@ -100,3 +100,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: Post houses hand files over through folders; checking each as it lands needs nobody at the page
   - Status: Done (2026-11-01, decisions/2026-11-01-watch-folder.md: the folder and its subfolders scanned every 2 s,
     media files without a report checked once their copy has settled for 5 s, shown on the page like picked ones)
+
+- Open films in CI
+  - Why: Generated files have known answers but not real pictures; Blender's open films, downloaded and pinned by
+    SHA-256, check the measures on real material
+  - Status: Done (2026-11-01, decisions/2026-11-01-open-films.md: Big Buck Bunny and Tears of Steel, every figure
+    against the ffmpeg command line, weekly and on demand (films.yml); range spans under 1 s apart now join, which the
+    first run on Big Buck Bunny showed was needed)

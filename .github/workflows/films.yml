@@ -1,0 +1,43 @@
+name: Films
+
+# Each figure on Blender's open films against the ffmpeg command line (tests/MediaQc.FilmTests;
+# docs/decisions/2026-11-01-open-films.md): real pictures and sound, which make-samples.sh's generated files don't
+# have. ~30 min, so weekly (Monday night) and on demand, not on every push.
+on:
+  schedule:
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  films:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: ffmpeg
+        run: |
+          command -v ffmpeg || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg; }
+          ffmpeg -hide_banner -version | head -1
+
+      # The films (~650 MB) are kept between runs; get-films.sh checks their hashes either way.
+      - name: Films cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: films
+          key: films-${{ hashFiles('tools/get-films.sh') }}
+
+      - name: Films
+        run: tools/get-films.sh films
+
+      - name: Test
+        env:
+          MEDIAQC_FILMS: ${{ github.workspace }}/films
+        run: dotnet test tests/MediaQc.FilmTests -c Release --logger GitHubActions

@@ -22,6 +22,7 @@ public sealed record Profile
         MinSilence = 2,
         SilenceNoise = -60,
         MaxOutOfRange = 0.01,
+        RangeMergeGap = 1,
     };
 
     /// <summary>The profile's name in reports and on the command line.</summary>
@@ -60,8 +61,14 @@ public sealed record Profile
     /// </summary>
     public required double MaxOutOfRange { get; init; }
 
+    /// <summary>
+    /// Spans of pixels outside broadcast range less than this many seconds apart are one warning
+    /// (docs/decisions/2026-11-01-open-films.md); 0 keeps every span.
+    /// </summary>
+    public double RangeMergeGap { get; init; }
+
     /// <summary>What pixels outside broadcast range are checked against.</summary>
-    public static string RangeFilter => "signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out";
+    public string RangeFilter => Invariant($"signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under {RangeMergeGap:0.#} s apart joined");
 
     /// <summary>What the active picture is checked against.</summary>
     public static string CropFilter => "cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact)";

@@ -213,4 +213,15 @@ public class ProfileTests
         Assert.Equal("10:00:08:00", each[1].End?.Timecode);
         Assert.All(each.Append(shots), f => Assert.Equal(Severity.Info, f.Severity));
     }
+
+    [Fact]
+    public void RangeSpansLessThanTheGapApartAreJoinedWithTheWorstShare()
+    {
+        RangeSpan[] spans = [new(10, 10.04, 0.011), new(10.5, 10.6, 0.03), new(11.59, 11.62, 0.012), new(12.62, 13, 0.02)];
+
+        var merged = RangeSpan.Merge(spans, 1);
+
+        Assert.Equal([new RangeSpan(10, 11.62, 0.03), new RangeSpan(12.62, 13, 0.02)], merged);
+        Assert.Equal(spans, RangeSpan.Merge(spans, 0));
+    }
 }
