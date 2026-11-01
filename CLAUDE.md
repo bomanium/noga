@@ -75,20 +75,21 @@ What is next, in order: docs/backlog.md.
 - `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
   `Directory.Packages.props` (central package versions); `global.json` (SDK 10.0.1xx or later).
 - `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
-  bars, tone; seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
+  bars, tone, pixels outside broadcast range, the active picture; seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
   v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
-  `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `SilenceFinder`: FFmpeg's silencedetect on samples a caller decodes. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
+  `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
-  silences (silencedetect), line-up tone; black and bars not yet. `StartTimecode.Add`: the timecode tag through FrameReader's
+  silences (silencedetect), line-up tone. `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
+  bars, BRNG, cropdetect) for both paths, and FFmpeg's frames into it. `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths.
 - `src/MediaQc.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
-  `Measure`) demuxes and decodes the AAC with ManagedCodecs and measures with FrameReader's managed meters
-  (LoudnessMeter, ReferenceToneFinder) and Core's `SilenceFinder` (silencedetect's algorithm): the same figures as the
-  FFmpeg path, which a test checks on make-samples.sh's MP4.
+  `Measure`) demuxes and decodes the H.264 and AAC with ManagedCodecs and measures with FrameReader's managed meters
+  (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter): the same figures as the FFmpeg path, which a
+  test checks on make-samples.sh's MP4.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by `Profile.EbuR128`, writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings.

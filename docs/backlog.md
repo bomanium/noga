@@ -10,38 +10,12 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Publish the measures from shotdetector-web's core into FrameReader
-  - Why: docs/decisions/2026-10-31-where-the-measures-live.md: one implementation, checked against FFmpeg in the
-    public repositories, fed by any frame source. What FrameReader has already (2026-10-31): `Loudness.Measure` (FFmpeg's
-    own ebur128 filter over an `AudioReader`, so the FFmpeg path only) and `ReferenceToneFinder` (line-up tone, any
-    samples). What only shotdetector-web's core has: PictureMeter/PictureMeasures (black, bars, range, crop, frame
-    types, on decoded frames), a managed BS.1770 loudness and true peak, silences and channel peaks (Mp4Audio). Those
-    go public, taking frames and samples from either decoder. The work is in the shotdetector and shotdetector-web
-    repositories (their own PRs and releases); media-qc then takes the packages
-  - Status: In progress (2026-10-31: FrameReader hosts them, decisions/2026-10-31-measures-in-framereader.md; a cloud
-    session in the shotdetector repository does the work, the API is the owner's to approve there; shotdetector-web
-    moves to them after FrameReader's release)
-
-- The v1 profile in MediaQc.Core: verdicts, thresholds, timecodes
-  - Why: docs/decisions/2026-10-31-first-formats-and-check-profile.md: EBU R128 (integrated -23 LUFS, true peak
-    -1 dBTP, loudness range), black spans, bars, tone and silences, each a pass/warning/failure with timecodes and
-    the FFmpeg filter it is checked against. Thresholds: decisions/2026-10-31-v1-thresholds.md; exit codes, head and
-    tail, timecode: decisions/2026-10-31-exit-codes-head-tail-timecode.md
-  - Status: In progress (2026-10-31: `Profile.EbuR128` judges `Measurements` into a `QcReport` with its JSON; the
-    measures that fill `Measurements` come with the decoding item)
-
-- Both decoding paths, with a test that they agree
-  - Why: docs/decisions/2026-10-31-decoding.md: ManagedCodecs for H.264/AAC MP4, FrameReader (FFmpeg) for the rest;
-    the same MP4 through both gives the same measures
-  - Status: In progress (2026-10-31, decisions/2026-10-31-ffmpeg-audio-first.md: `MediaQc.Ffmpeg`'s `FfmpegMeasurer`
-    measures duration, frame rate, loudness (ebur128), silences (silencedetect) and line-up tone (ReferenceTone) on
-    the FFmpeg path, with FrameReader 2.18.0, each checked against the ffmpeg command line in a test. 2026-11-01, decisions/2026-11-01-managed-path-audio.md:
-    `MediaQc.Managed`'s `ManagedMeasurer` does the same on H.264/AAC MP4 with ManagedCodecs 0.4.0 (FrameReader's
-    managed LoudnessMeter and ReferenceToneFinder, Core's SilenceFinder), `mediaqc check` uses it for those files, and
-    a test checks both paths agree on make-samples.sh's MP4. 2026-11-01,
-    decisions/2026-11-01-start-timecode.md: the start timecode on both paths from FrameReader's ProbeJson (ffprobe's
-    JSON in-process). Still to come: black and bars on both paths (FrameReader's picture measures; its
-    FFmpeg build has no blackdetect))
+- Packaging: a release of `mediaqc` with FFmpeg's licence files beside its libraries
+  - Why: CLAUDE.md's licence rule: FrameReader.Native's LGPL libraries ship separate and replaceable, with the LGPL
+    text, the build's configure line and its SBOM beside them (the package has them: COPYING.*, configure.txt,
+    sbom.spdx.json); nothing copies them into a build's output yet. Also which platforms (linux-x64 and win-x64 so
+    far) and the form (a self-contained folder per platform, a zip)
+  - Status: Open
 
 ## Waiting
 
@@ -53,11 +27,6 @@ Nothing.
   - Why: Software with an H.264 decoder falls under the Via LA AVC pool (the first 100,000 units a year carry no
     royalty, then $0.20 a unit). Check the current terms, and whether decoding through FFmpeg's libraries changes it,
     before the first sale (docs/notes/origin.md)
-  - Status: Maybe
-
-- Pixels outside broadcast range and crop/letterbox
-  - Why: The next checks after the first profile (decisions/2026-10-31-first-formats-and-check-profile.md); shotdetector-web
-    already measures both (signalstats, cropdetect), and make-samples.sh makes files for them
   - Status: Maybe
 
 - Open films in CI

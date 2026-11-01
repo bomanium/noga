@@ -95,6 +95,49 @@ internal static partial class FfmpegCli
         Assert.Equal(rms + (20 * Math.Log10(Math.Sqrt(2))), tone.Level, 0.1);
     }
 
+    /// <summary>
+    /// Black spans are blackdetect's with the profile's options, each end within one frame (blackdetect ends a span at
+    /// the file's end at the last frame's pts, a frame before the end the report gives).
+    /// </summary>
+    public static void AssertBlack(string file, Measurements measured)
+    {
+        var profile = Profile.EbuR128;
+        string log = Run(file, Invariant($"-an -vf blackdetect=d={profile.MinBlack}:pix_th={profile.BlackPixelThreshold}:pic_th={profile.BlackPictureThreshold}"));
+        var starts = BlackStart().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+        var ends = BlackEnd().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+        double frame = (double)measured.RateDenominator / measured.RateNumerator;
+
+        Assert.Equal(starts.Count, measured.Black.Count);
+        foreach (var ((start, end), got) in starts.Zip(ends).Zip(measured.Black))
+        {
+            Assert.Equal(start, got.Start, frame + 1e-6);
+            Assert.Equal(end, got.End, frame + 1e-6);
+        }
+    }
+
+    /// <summary>The worst frame's share of pixels outside broadcast range is signalstats' BRNG for that frame, exactly (to 1e-6).</summary>
+    public static void AssertWorstOutOfRange(string file, Measurements measured)
+    {
+        var worst = Assert.NotNull(measured.WorstOutOfRange);
+        string log = Run(file, "-an -vf signalstats=stat=brng,metadata=print:key=lavfi.signalstats.BRNG");
+        var frames = SignalstatsFrame().Matches(log).Select(m => (Time: Parse(m.Groups[1].Value), Brng: Parse(m.Groups[2].Value))).ToList();
+        var at = frames.MinBy(f => Math.Abs(f.Time - worst.Seconds));
+
+        Assert.Equal(worst.Seconds, at.Time, 1e-3);
+        Assert.Equal(at.Brng, worst.Share, 1e-6);
+    }
+
+    /// <summary>The active picture is cropdetect's last suggestion with its defaults, exactly.</summary>
+    public static void AssertCrop(string file, Measurements measured)
+    {
+        var crop = Assert.NotNull(measured.Crop);
+        var last = CropDetect().Matches(Run(file, "-an -vf cropdetect")).Last();
+
+        Assert.Equal(
+            (int.Parse(last.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(last.Groups[2].Value, CultureInfo.InvariantCulture), int.Parse(last.Groups[3].Value, CultureInfo.InvariantCulture), int.Parse(last.Groups[4].Value, CultureInfo.InvariantCulture)),
+            (crop.Width, crop.Height, crop.X, crop.Y));
+    }
+
     static double Number(string text, string pattern)
     {
         var match = Regex.Match(text, pattern);
@@ -119,6 +162,18 @@ internal static partial class FfmpegCli
 
     [GeneratedRegex(@"silence_end: (-?[\d.]+)")]
     private static partial Regex SilenceEnd();
+
+    [GeneratedRegex(@"black_start:(-?[\d.]+)")]
+    private static partial Regex BlackStart();
+
+    [GeneratedRegex(@"black_end:(-?[\d.]+)")]
+    private static partial Regex BlackEnd();
+
+    [GeneratedRegex(@"pts_time:(-?[\d.]+)\s*\n.*lavfi\.signalstats\.BRNG=(-?[\d.e+-]+)")]
+    private static partial Regex SignalstatsFrame();
+
+    [GeneratedRegex(@"crop=(\d+):(\d+):(\d+):(\d+)")]
+    private static partial Regex CropDetect();
 
     [GeneratedRegex(@"RMS level dB: (-?[\d.]+)")]
     private static partial Regex RmsLevel();

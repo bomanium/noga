@@ -7,9 +7,9 @@
     <!-- Moves with the format tool in .config/dotnet-tools.json, in one PR. -->
     <PackageVersion Include="StyleBro.Analyzers" Version="0.8.0-alpha.1" />
     <!-- FFmpeg through FrameReader (MIT) and FFmpeg's shared libraries (LGPL, separate and replaceable). They move together. -->
-    <PackageVersion Include="FrameReader" Version="2.18.0" />
-    <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.18.0" />
-    <PackageVersion Include="FrameReader.Native.win-x64" Version="2.18.0" />
+    <PackageVersion Include="FrameReader" Version="2.19.0" />
+    <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.19.0" />
+    <PackageVersion Include="FrameReader.Native.win-x64" Version="2.19.0" />
     <!-- Pure managed H.264/AAC decoding and MP4 demuxing (MIT). -->
     <PackageVersion Include="ManagedCodecs" Version="0.4.0" />
     <!-- Tests only. -->

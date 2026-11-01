@@ -21,6 +21,7 @@ public sealed record Profile
         BlackPictureThreshold = 0.98,
         MinSilence = 2,
         SilenceNoise = -60,
+        MaxOutOfRange = 0.01,
     };
 
     /// <summary>The profile's name in reports and on the command line.</summary>
@@ -52,6 +53,18 @@ public sealed record Profile
 
     /// <summary>The level below which audio is silent (dBFS; silencedetect's n).</summary>
     public required double SilenceNoise { get; init; }
+
+    /// <summary>
+    /// The largest share of a frame's pixels outside broadcast range that passes (0 to 1): EBU R 103's 1%
+    /// (docs/decisions/2026-11-01-range-and-crop.md).
+    /// </summary>
+    public required double MaxOutOfRange { get; init; }
+
+    /// <summary>What pixels outside broadcast range are checked against.</summary>
+    public static string RangeFilter => "signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out";
+
+    /// <summary>What the active picture is checked against.</summary>
+    public static string CropFilter => "cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact)";
 
     /// <summary>The FFmpeg filter the loudness figures are checked against (exact: FrameReader runs ebur128 itself on the FFmpeg path).</summary>
     public static string LoudnessFilter => "ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)";
@@ -92,6 +105,8 @@ public sealed record Profile
                     "bars" => BarsFilter,
                     "silence" => SilenceFilter,
                     "tone" => ToneFilter,
+                    "range" => RangeFilter,
+                    "crop" => CropFilter,
                     "timecode" => TimecodeTag.CheckedAgainst,
                     _ => "nothing yet",
                 },
@@ -129,6 +144,8 @@ public sealed record Profile
         }
 
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
+        Range(findings, measured, At);
+        Crop(findings, measured.Crop);
         Spans(findings, "silence", "Silence", measured.Silences, MinSilence, SilenceFilter);
         if (measured.LoudnessFrom > 0 && measured.Loudness is not null)
         {
@@ -226,6 +243,48 @@ public sealed record Profile
             Unit = "dBTP",
             CheckedAgainst = LoudnessFilter,
         });
+    }
+
+    void Range(List<Finding> into, Measurements measured, Func<double, Position> at)
+    {
+        foreach (var span in measured.OutOfRange)
+        {
+            into.Add(new Finding
+            {
+                Check = "range",
+                Severity = Severity.Warning,
+                Message = Invariant($"Pixels outside broadcast range: up to {span.WorstShare * 100:0.0}% of the picture (over {MaxOutOfRange * 100:0.#}%) for {span.End - span.Start:0.00} s"),
+                Value = span.WorstShare * 100,
+                Unit = "%",
+                Start = at(span.Start),
+                End = at(span.End),
+                CheckedAgainst = RangeFilter,
+            });
+        }
+
+        if (measured.OutOfRange.Count == 0 && measured.WorstOutOfRange is { } worst)
+        {
+            into.Add(new Finding
+            {
+                Check = "range",
+                Severity = Severity.Pass,
+                Message = Invariant($"Pixels outside broadcast range: at most {worst.Share * 100:0.00}% of the picture (at most {MaxOutOfRange * 100:0.#}%)"),
+                Value = worst.Share * 100,
+                Unit = "%",
+                Start = at(worst.Seconds),
+                CheckedAgainst = RangeFilter,
+            });
+        }
+    }
+
+    static void Crop(List<Finding> into, ActivePicture? crop)
+    {
+        if (crop is not { } c)
+            return;
+        string message = c.FillsFrame
+            ? Invariant($"The picture fills the {c.FrameWidth}x{c.FrameHeight} frame")
+            : Invariant($"Active picture {c.Width}x{c.Height} ({(double)c.Width / c.Height:0.00}:1) at {c.X},{c.Y} in the {c.FrameWidth}x{c.FrameHeight} frame");
+        into.Add(new Finding { Check = "crop", Severity = Severity.Info, Message = message, CheckedAgainst = CropFilter });
     }
 
     static string Invariant(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);

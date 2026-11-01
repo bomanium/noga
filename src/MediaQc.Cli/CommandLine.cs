@@ -88,7 +88,12 @@ static class CommandLine
         output.WriteLine($"{name}: {report.Verdict} (profile {report.Profile}, exit code {code})");
         foreach (var finding in report.Findings)
         {
-            string where = finding.Start is { } start ? $" [{start.Timecode}-{finding.End?.Timecode}]" : "";
+            string where = (finding.Start, finding.End) switch
+            {
+                ({ } start, { } end) => $" [{start.Timecode}-{end.Timecode}]",
+                ({ } start, null) => $" [{start.Timecode}]",
+                _ => "",
+            };
             output.WriteLine($"  {finding.Severity,-8} {finding.Check}: {finding.Message}{where}");
         }
 

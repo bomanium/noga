@@ -1,19 +1,26 @@
 using ManagedCodecs;
 using ManagedCodecs.Aac;
 using ManagedCodecs.Containers;
+using ManagedCodecs.H264;
 using MediaQc.Ffmpeg;
+using ChromaSubsampling = FrameReader.ChromaSubsampling;
 using LoudnessMeter = FrameReader.LoudnessMeter;
+using PictureFormat = FrameReader.PictureFormat;
+using PictureMeasures = FrameReader.PictureMeasures;
+using PictureMeter = FrameReader.PictureMeter;
 using ReferenceToneFinder = FrameReader.ReferenceToneFinder;
 using ReferenceToneOptions = FrameReader.ReferenceToneOptions;
+using SilenceFinder = FrameReader.SilenceFinder;
 
 namespace MediaQc.Managed;
 
 /// <summary>
 /// Measures an H.264/AAC MP4 on the managed path (docs/decisions/2026-10-31-decoding.md): ManagedCodecs demuxes it and
-/// decodes its AAC, no native code (only the start timecode is read through FFmpeg's libraries); the loudness is FrameReader's LoudnessMeter (FFmpeg's ebur128 arithmetic), the
-/// line-up tone its ReferenceToneFinder, the silences Core's <see cref="SilenceFinder"/> (silencedetect's), the same
-/// measures and the same settings as the FFmpeg path, so both give the same figures for the same file. Picture
-/// measures (black, bars) come later, as on the FFmpeg path.
+/// decodes its H.264 and AAC, no native code (only the tags, start timecode and colour range, are read through
+/// FFmpeg's libraries); the loudness is FrameReader's LoudnessMeter (FFmpeg's ebur128 arithmetic), the line-up tone
+/// its ReferenceToneFinder, the silences its SilenceFinder (silencedetect's), the picture its PictureMeter
+/// (blackdetect's, signalstats' BRNG, cropdetect's, the bars): the same measures and settings as the FFmpeg path, so
+/// both give the same figures for the same file.
 /// </summary>
 public static class ManagedMeasurer
 {
@@ -53,23 +60,24 @@ public static class ManagedMeasurer
             Duration = videoDuration,
             RateNumerator = numerator,
             RateDenominator = denominator,
-            NotMeasured = ["bars", "black"],
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
+        measured = Pictures.Add(measured, MeasurePictures(path, cancellationToken), profile);
         if (audio is null)
             return measured;
 
         // First the tone and the silences, which say where the line-up ends; then the loudness from there.
-        var silences = new SilenceFinder(audio.SampleRate, audio.Channels, profile.SilenceNoise, profile.MinSilence);
+        var silences = new SilenceFinder(audio.SampleRate, audio.Channels, profile.SilenceNoise, TimeSpan.FromSeconds(profile.MinSilence));
         var tone = new ReferenceToneFinder(audio.SampleRate, audio.Channels, new ReferenceToneOptions { Frequency = ToneFrequency });
         long samples = Decode(path, cancellationToken, (chunk, position) =>
         {
-            silences.Add(chunk, position);
+            silences.Add(chunk);
             tone.Add(chunk, TimeSpan.FromSeconds((double)position / audio.SampleRate));
         });
-        var silenceSpans = silences.Finish();
+        var silenceSpans = silences.Finish().Select(s => new TimeRange((double)s.StartSample / audio.SampleRate, (double)s.EndSample / audio.SampleRate)).ToList();
         var toneSpans = tone.Finish().Select(s => new ToneSpan(s.Start.TotalSeconds, s.End.TotalSeconds, ToneFrequency, s.Level)).ToList();
-        double from = LineUp.End(toneSpans, silenceSpans);
+        double duration = Math.Max(measured.Duration, (double)samples / audio.SampleRate);
+        double from = LineUp.End(toneSpans, silenceSpans, duration);
 
         // As ffmpeg -ss FROM: the first sample at or after it.
         long first = (long)Math.Ceiling(from * audio.SampleRate);
@@ -83,11 +91,63 @@ public static class ManagedMeasurer
 
         return measured with
         {
-            Duration = Math.Max(videoDuration, (double)samples / audio.SampleRate),
+            Duration = duration,
             Silences = silenceSpans,
             Tone = toneSpans,
             LoudnessFrom = from,
             Loudness = new LoudnessMeasure(loudness.Integrated <= -70 ? null : loudness.Integrated, loudness.Range, loudness.TruePeak),
+        };
+    }
+
+    // Every frame of the video through ManagedCodecs' H.264 decoder into FrameReader's PictureMeter, in display order.
+    static PictureMeasures? MeasurePictures(string path, CancellationToken cancellationToken)
+    {
+        var (fullRange, rotation) = Pictures.VideoFormat(path, cancellationToken);
+        using var demuxer = Open(path);
+        var video = demuxer.Video!;
+        var decoder = new H264Decoder(video) { Threads = Environment.ProcessorCount };
+        var timeBase = new FrameReader.Rational(video.TimeBase.Numerator, video.TimeBase.Denominator);
+        PictureMeter? meter = null;
+        foreach (var packet in demuxer.ReadPackets())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (packet.StreamIndex == video.StreamIndex)
+                Add(decoder.Decode(packet));
+        }
+
+        Add(decoder.Flush());
+        return meter?.Measures;
+
+        void Add(IReadOnlyList<VideoFrame> frames)
+        {
+            foreach (var frame in frames)
+            {
+                using (frame)
+                {
+                    var format = frame.Format;
+                    if (format.PlaneCount() != 3)
+                        throw new InvalidDataException($"{path}: monochrome H.264 isn't measured.");
+                    meter ??= new PictureMeter(new PictureFormat(frame.Width, frame.Height, fullRange, timeBase, rotation, format.BitDepth(), Chroma(format)));
+                    meter.Add(
+                        Plane(frame, 0),
+                        frame.Strides[0],
+                        Plane(frame, 1),
+                        frame.Strides[1],
+                        Plane(frame, 2),
+                        frame.Strides[2],
+                        frame.Pts,
+                        (FrameReader.PictureType)(int)frame.PictureType);
+                }
+            }
+        }
+
+        static ReadOnlySpan<byte> Plane(VideoFrame frame, int i) => frame.Planes[i].AsSpan(frame.Offsets[i]);
+
+        static ChromaSubsampling Chroma(PixelFormat format) => format.ToString() switch
+        {
+            var name when name.StartsWith("Yuv420", StringComparison.Ordinal) => ChromaSubsampling.Yuv420,
+            var name when name.StartsWith("Yuv422", StringComparison.Ordinal) => ChromaSubsampling.Yuv422,
+            _ => ChromaSubsampling.Yuv444,
         };
     }
 

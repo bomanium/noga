@@ -121,4 +121,41 @@ public class ProfileTests
     [Fact]
     public void LoudnessOfTheWholeFileSaysNothingMore() =>
         Assert.DoesNotContain(Profile.EbuR128.Evaluate(Programme()).Findings, f => f.Check == "loudness.from");
+
+    [Fact]
+    public void ASpanOverOnePercentOutOfRangeWarns()
+    {
+        var report = Profile.EbuR128.Evaluate(Programme() with
+        {
+            OutOfRange = [new RangeSpan(9, 10.5, 0.043)],
+            WorstOutOfRange = new FrameShare(9.2, 0.043),
+        });
+
+        var range = Only(report, "range");
+        Assert.Equal(Severity.Warning, range.Severity);
+        Assert.Equal("10:00:09:00", range.Start?.Timecode);
+        Assert.Contains("4.3%", range.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WithinOnePercentOutOfRangePassesAndSaysTheWorst()
+    {
+        var range = Only(Profile.EbuR128.Evaluate(Programme() with { WorstOutOfRange = new FrameShare(12, 0.0067) }), "range");
+
+        Assert.Equal(Severity.Pass, range.Severity);
+        Assert.Contains("0.67%", range.Message, StringComparison.Ordinal);
+        Assert.Equal("10:00:12:00", range.Start?.Timecode);
+    }
+
+    [Theory]
+    [InlineData(1920, 800, 0, 140, "Active picture 1920x800 (2.40:1) at 0,140 in the 1920x1080 frame")]
+    [InlineData(1920, 1072, 0, 4, "The picture fills the 1920x1080 frame")]
+    public void TheActivePictureIsInformation(int width, int height, int x, int y, string message)
+    {
+        var crop = Only(Profile.EbuR128.Evaluate(Programme() with { Crop = new ActivePicture(1920, 1080, width, height, x, y) }), "crop");
+
+        Assert.Equal(Severity.Info, crop.Severity);
+        Assert.Equal(message, crop.Message);
+        Assert.Contains("cropdetect", crop.CheckedAgainst, StringComparison.Ordinal);
+    }
 }

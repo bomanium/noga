@@ -6,9 +6,9 @@ namespace MediaQc.Ffmpeg;
 /// <summary>
 /// Measures a file on the FFmpeg path (FrameReader over FFmpeg's libraries, in this process): its duration and frame
 /// rate, and from its audio the loudness (FFmpeg's own ebur128), the silences (FFmpeg's own silencedetect, with the
-/// profile's settings) and the line-up tone (FrameReader's ReferenceTone); the loudness from the end of the line-up (<see cref="LineUp"/>). Picture measures (black, bars) aren't in
-/// FrameReader's public API yet: they are listed as not measured. The start timecode is the tag ffprobe's JSON
-/// gives (<see cref="StartTimecode"/>).
+/// profile's settings) and the line-up tone (FrameReader's ReferenceTone), the loudness from the end of the line-up
+/// (<see cref="LineUp"/>); from its picture black, bars, pixels outside broadcast range and the active picture
+/// (<see cref="Pictures"/>); the start timecode the tag ffprobe's JSON gives (<see cref="StartTimecode"/>).
 /// </summary>
 public static class FfmpegMeasurer
 {
@@ -40,12 +40,13 @@ public static class FfmpegMeasurer
             NotMeasured = ["bars", "black"],
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
+        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken), profile);
         if (!info.HasAudio)
             return measured;
 
         var silences = FindSilences(path, profile, cancellationToken);
         var tone = FindTone(path, cancellationToken);
-        double from = LineUp.End(tone, silences);
+        double from = LineUp.End(tone, silences, measured.Duration);
         return measured with
         {
             Silences = silences,
