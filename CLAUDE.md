@@ -79,7 +79,7 @@ What is next, in order: docs/backlog.md.
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
   v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
-  against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
+  against, its EBU QC item: `EbuQcItem.For`, decisions/2026-11-01-ebu-qc-items.md; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
   `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `AudioTrack.All`: every audio track (ffmpeg's 0:a:N);

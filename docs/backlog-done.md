@@ -115,3 +115,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     `AudioReaderOptions.Stream` (bisforboman/shotdetector#697); each track measured from its own line-up and judged by
     the same profile, its findings marked with the track and compared with ffmpeg -map 0:a:N; files with several audio
     tracks go through the FFmpeg path)
+
+- Map the checks to EBU's QC test items
+  - Why: EBU's catalogue (qc.ebu.io) names and defines the checks broadcasters know; reports that use its names and
+    IDs read as familiar
+  - Status: Done (2026-11-01, decisions/2026-11-01-ebu-qc-items.md: each finding carries its item, read from
+    qc.ebu.io's API, in the JSON and as a linked column in the HTML report; bitrate and the shot list have none)

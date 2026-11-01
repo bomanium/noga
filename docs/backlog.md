@@ -43,8 +43,3 @@ Nothing.
 - Captions, ad markers and platform spec templates
   - Why: Out of scope at first (docs/notes/origin.md); what customers ask for after the first version decides which
   - Status: Maybe
-
-- Map the checks to EBU's QC test items
-  - Why: EBU's catalogue (tech.ebu.ch/qc) names and defines the checks broadcasters know; reports that use its names and
-    IDs read as familiar
-  - Status: Maybe

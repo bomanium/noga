@@ -46,6 +46,9 @@ public sealed record Finding
     /// <summary>The audio track it is about (from 1), when the file has several and every one is judged; null otherwise.</summary>
     public int? Track { get; init; }
 
+    /// <summary>The EBU QC catalogue's item this check is (<see cref="EbuQcItem.For"/>); null when it has none.</summary>
+    public EbuQcItem? EbuQc => EbuQcItem.For(Check);
+
     /// <summary>The FFmpeg filter, options and tolerance this figure is checked against.</summary>
     public required string CheckedAgainst { get; init; }
 }
