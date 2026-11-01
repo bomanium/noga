@@ -9,7 +9,8 @@ and .config/dotnet-tools.json.
 
 | Package | Licence | How it ships |
 | --- | --- | --- |
-| FrameReader | MIT | A managed assembly (MediaQc.Ffmpeg: the FFmpeg path) |
+| FrameReader | MIT | A managed assembly (MediaQc.Ffmpeg: the FFmpeg path; MediaQc.Managed uses its managed meters only) |
+| ManagedCodecs (.Core, .Containers, .Aac, .H264, .Mjpeg) | MIT | Managed assemblies (MediaQc.Managed: MP4 demuxing and AAC decoding, no native code) |
 | FFmpeg.AutoGen (FrameReader's dependency) | MIT (8.x; older versions were LGPL-3.0) | A managed assembly: the bindings to FFmpeg's libraries |
 | FrameReader.Native.linux-x64, .win-x64 | LGPL-2.1-or-later (FFmpeg 8 without `--enable-gpl`; dav1d BSD-2-Clause, libwebp BSD-3-Clause, OpenSSL Apache-2.0 linked in) | Separate shared libraries under `runtimes/<rid>/native/`, loaded at run time and replaceable; the package's COPYING files, configure line and SBOM go beside them when the product is packaged |
 
@@ -35,10 +36,10 @@ and .config/dotnet-tools.json.
 
 | Package | Licence | How it would ship |
 | --- | --- | --- |
-| ManagedCodecs | MIT | A managed assembly |
 | ShotDetector | MIT | A managed assembly |
 | ShotDetector.FastYuv | LGPL-2.1-or-later | Only as its own replaceable assembly, with the LGPL text; or not at all |
 | shotdetector-web's core (copied, if decided so) | MIT | Source in this repository, keeping its copyright and licence notice |
 
-Patents are a separate question from licences: an H.264 decoder in a sold product falls under the Via LA AVC pool
+Patents are a separate question from licences: an H.264 decoder in a sold product falls under the Via LA AVC pool, and
+an AAC decoder under its AAC pool
 (docs/notes/origin.md).
