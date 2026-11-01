@@ -89,3 +89,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: A release was built by hand (tools/publish.sh) and CI only checked it builds and runs
   - Status: Done (2026-11-01, decisions/2026-11-01-release-workflow.md: a `v*` tag that matches Version runs CI,
     then publishes the Linux and Windows archives at once, a pre-release for a suffixed version)
+
+- A local web UI: `mediaqc serve`
+  - Why: decisions/2026-10-31-product-shape.md kept it for later, on the same core
+  - Status: Done (2026-11-01, decisions/2026-11-01-web-ui.md: ASP.NET Core minimal APIs and one page on 127.0.0.1;
+    files picked in the server's folders and checked where they are, one at a time, shown live by server-sent events,
+    the reports beside each file as the CLI writes them)

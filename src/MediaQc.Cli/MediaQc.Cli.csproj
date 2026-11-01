@@ -7,7 +7,15 @@
     <RootNamespace>MediaQc.Cli</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- mediaqc serve's endpoints, without reflection (docs/decisions/2026-11-01-web-ui.md). -->
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- mediaqc serve: ASP.NET Core (MIT), part of the .NET runtime a release carries. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <EmbeddedResource Include="Serve\index.html" LogicalName="MediaQc.Cli.Serve.index.html" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MediaQc.Core\MediaQc.Core.csproj" />
@@ -37,9 +45,12 @@
       <FfmpegLicence Include="$(NativeFolder)COPYING.*;$(NativeFolder)configure.txt;$(NativeFolder)sbom.spdx.json;$(NativeFolder)README.md" />
       <NetCoreRuntimePack Include="@(ResolvedRuntimePack->WithMetadataValue('FrameworkName', 'Microsoft.NETCore.App'))" />
       <DotnetLicence Include="%(NetCoreRuntimePack.PackageDirectory)/LICENSE.TXT;%(NetCoreRuntimePack.PackageDirectory)/THIRD-PARTY-NOTICES.TXT" />
+      <AspNetCoreRuntimePack Include="@(ResolvedRuntimePack->WithMetadataValue('FrameworkName', 'Microsoft.AspNetCore.App'))" />
+      <AspNetCoreLicence Include="%(AspNetCoreRuntimePack.PackageDirectory)/LICENSE.txt;%(AspNetCoreRuntimePack.PackageDirectory)/THIRD-PARTY-NOTICES.TXT" />
       <ResolvedFileToPublish Include="@(FfmpegLicence)" RelativePath="licences/ffmpeg/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(FastYuvFolder)COPYING.LGPL" RelativePath="licences/shotdetector-fastyuv/COPYING.LGPL" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="@(DotnetLicence)" RelativePath="licences/dotnet/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="@(AspNetCoreLicence)" RelativePath="licences/aspnetcore/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/THIRD-PARTY-NOTICES.txt" RelativePath="licences/THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/README.txt" RelativePath="README.txt" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>

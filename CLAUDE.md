@@ -25,7 +25,7 @@ Unparked on 2026-10-31 (docs/decisions/2026-10-31-unparked.md); working towards 
 - Decoding: ManagedCodecs for H.264/AAC in MP4, FFmpeg through FrameReader for the rest; a test keeps both paths'
   measures the same on the same MP4 (2026-10-31-decoding.md).
 - A CLI: `mediaqc check <file>` writes an HTML and a JSON report and exits with a code for pipelines; a local web
-  UI may come later on the same core (2026-10-31-product-shape.md).
+  UI on the same core, `mediaqc serve` (2026-10-31-product-shape.md, 2026-11-01-web-ui.md).
 
 What is next, in order: docs/backlog.md.
 
@@ -98,7 +98,12 @@ What is next, in order: docs/backlog.md.
   test checks on make-samples.sh's MP4.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by `Profile.EbuR128`, writes FILE.qc.html and
-  FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings.
+  FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings. `Checker.Run`:
+  one file's check, for both commands. `mediaqc serve [--port PORT] [--no-open]` (`Serve/`): the web UI on 127.0.0.1
+  (default 8722), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
+  machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file), `/api/events`
+  streams them (server-sent events); `Server`'s guard refuses other Hosts, and changes without the X-MediaQc header
+  or from another Origin.
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
@@ -108,7 +113,8 @@ What is next, in order: docs/backlog.md.
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `tools/publish.sh [rid ...]`: the release builds (default linux-x64 and win-x64), self-contained, into `artifacts/`
   as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
-  `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, and `packaging/`'s README and notices).
+  `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, `licences/aspnetcore/`, and `packaging/`'s
+  README and notices).
   Not single-file nor trimmed: the LGPL binaries stay separate files. ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is

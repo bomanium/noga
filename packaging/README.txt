@@ -1,9 +1,12 @@
 mediaqc: file-based quality control of video deliveries (a working name)
 
   mediaqc check FILE [--out FOLDER] [--warnings-fail]
+  mediaqc serve [--port PORT] [--no-open]
 
 writes FILE.qc.html and FILE.qc.json next to FILE (or in FOLDER), prints the findings and exits 0 passed, 1 failed,
-2 usage or read error, 3 warnings (1 with --warnings-fail). mediaqc --help says the same.
+2 usage or read error, 3 warnings (1 with --warnings-fail). serve runs the web UI on this machine only
+(http://localhost:8722): pick files in its folders, and each is checked where it is, its reports written beside it.
+mediaqc --help says the same.
 
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
@@ -26,3 +29,4 @@ ShotDetector.FastYuv
 Other licences
   licences/THIRD-PARTY-NOTICES.txt: the libraries mediaqc is built on (MIT).
   licences/dotnet/: the .NET runtime's licence and third-party notices.
+  licences/aspnetcore/: ASP.NET Core's (the web UI's server), the same.
