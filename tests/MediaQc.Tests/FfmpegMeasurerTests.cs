@@ -24,6 +24,13 @@ public sealed class FfmpegMeasurerTests : IClassFixture<Programme>
     }
 
     [Fact]
+    public void AFileWithoutATimecodeStartsAtZero()
+    {
+        Assert.Null(Measured.StartTimecode);
+        Assert.DoesNotContain("timecode", Measured.NotMeasured);
+    }
+
+    [Fact]
     public void LoudnessIsEbur128sAfterTheLineUpWithinATenthOfALu()
     {
         Assert.Equal(Measured.Tone[0].End, Measured.LoudnessFrom);

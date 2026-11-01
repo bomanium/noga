@@ -54,6 +54,7 @@ public static class ManagedMeasurer
             RateDenominator = denominator,
             NotMeasured = ["bars", "black"],
         };
+        measured = Ffprobe.WithStartTimecode(measured, path);
         if (audio is null)
             return measured;
 

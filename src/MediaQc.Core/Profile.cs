@@ -83,13 +83,16 @@ public sealed record Profile
             {
                 Check = check,
                 Severity = Severity.Info,
-                Message = Invariant($"Not checked: this version doesn't measure {check} yet"),
+                Message = check == "timecode"
+                    ? "Start timecode not read (ffprobe isn't on PATH): timecodes count from 00:00:00:00"
+                    : Invariant($"Not checked: this version doesn't measure {check} yet"),
                 CheckedAgainst = check switch
                 {
                     "black" => BlackFilter,
                     "bars" => BarsFilter,
                     "silence" => SilenceFilter,
                     "tone" => ToneFilter,
+                    "timecode" => Ffprobe.TimecodeCommand,
                     _ => "nothing yet",
                 },
             });
