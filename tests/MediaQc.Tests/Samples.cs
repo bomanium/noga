@@ -1,5 +1,8 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using MediaQc.Ffmpeg;
+using MediaQc.Managed;
 
 namespace MediaQc.Tests;
 
@@ -34,8 +37,21 @@ public sealed class Samples
             Assert.True(File.Exists(Path.Combine(Folder, programme)), $"make-samples.sh made no {programme} (the H.264 file needs an ffmpeg with libx264).");
     }
 
+    readonly ConcurrentDictionary<(string, bool), Measurements> _measured = new();
+
     /// <summary>The samples folder.</summary>
     public string Folder { get; }
+
+    /// <summary>A sample's path.</summary>
+    public string this[string name] => Path.Combine(Folder, name);
+
+    /// <summary>A sample measured on the FFmpeg path, once for every test.</summary>
+    public Measurements Ffmpeg(string name) =>
+        _measured.GetOrAdd((name, false), key => FfmpegMeasurer.Measure(this[key.Item1], Profile.EbuR128));
+
+    /// <summary>A sample measured on the managed path, once for every test.</summary>
+    public Measurements Managed(string name) =>
+        _measured.GetOrAdd((name, true), key => ManagedMeasurer.Measure(this[key.Item1], Profile.EbuR128));
 
     static string Root()
     {

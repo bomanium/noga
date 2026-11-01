@@ -1,12 +1,12 @@
-using MediaQc.Ffmpeg;
 using MediaQc.Managed;
 
 namespace MediaQc.Tests;
 
 /// <summary>
-/// make-samples.sh's 20 s programme (bars and tone 0-5 s, black and silence 5-8 s, picture and pink noise 8-17 s,
-/// black and silence 17-20 s; timecode from 10:00:00:00) in each delivery format, measured on the FFmpeg path: what was put in, and each figure
-/// against the ffmpeg command line.
+/// make-samples.sh's files measured on both decoding paths: what was put in, and each figure against the ffmpeg
+/// command line. The programme (20 s; timecode from 10:00:00:00): bars and tone 0-5 s, black and silence 5-8 s,
+/// picture and pink noise 8-17 s, black and silence 17-20 s, as ProRes/MOV, DNxHR/MXF and H.264/MP4; then a ramp over
+/// every code value (out of range), and a 2.39:1 letterbox.
 /// </summary>
 public sealed class SampleTests : IClassFixture<Samples>
 {
@@ -16,59 +16,89 @@ public sealed class SampleTests : IClassFixture<Samples>
 
     public static TheoryData<string> Programmes => [.. Samples.Programmes];
 
+    static (double, double) Rounded(double start, double end) => (Math.Round(start, 1), Math.Round(end, 1));
+
     [Theory]
     [MemberData(nameof(Programmes))]
     public void TheProgrammeIsWhatWasPutIn(string programme)
     {
-        var measured = FfmpegMeasurer.Measure(Path.Combine(_samples.Folder, programme), Profile.EbuR128);
+        var measured = _samples.Ffmpeg(programme);
 
         Assert.Equal(20, measured.Duration, 0.05);
         Assert.Equal((25, 1), (measured.RateNumerator, measured.RateDenominator));
         Assert.Equal("10:00:00:00", measured.StartTimecode);
-        Assert.DoesNotContain("timecode", measured.NotMeasured);
+        Assert.Empty(measured.NotMeasured);
         var tone = Assert.Single(measured.Tone);
-        Assert.Equal((0, 5), (Math.Round(tone.Start, 1), Math.Round(tone.End, 1)));
+        Assert.Equal((0, 5), Rounded(tone.Start, tone.End));
         Assert.Equal(-18, tone.Level, 0.1);
         Assert.Equal(tone.End, measured.LoudnessFrom);
-        Assert.Equal(2, measured.Silences.Count);
-        Assert.Equal((5, 8), (Math.Round(measured.Silences[0].Start, 1), Math.Round(measured.Silences[0].End, 1)));
-        Assert.Equal((17, 20), (Math.Round(measured.Silences[1].Start, 1), Math.Round(measured.Silences[1].End, 1)));
+        Assert.Equal([(5, 8), (17, 20)], measured.Silences.Select(s => Rounded(s.Start, s.End)));
+        Assert.Equal([(0, 5)], measured.Bars.Select(s => Rounded(s.Start, s.End)));
+        Assert.Equal([(5, 8), (17, 20)], measured.Black.Select(s => Rounded(s.Start, s.End)));
+        Assert.Empty(measured.OutOfRange);
+        Assert.True(Assert.NotNull(measured.WorstOutOfRange).Share < Profile.EbuR128.MaxOutOfRange);
+        Assert.True(Assert.NotNull(measured.Crop).FillsFrame);
     }
 
     [Theory]
     [MemberData(nameof(Programmes))]
     public void EachFigureIsFfmpegs(string programme)
     {
-        string file = Path.Combine(_samples.Folder, programme);
-        var measured = FfmpegMeasurer.Measure(file, Profile.EbuR128);
+        string file = _samples[programme];
+        var measured = _samples.Ffmpeg(programme);
 
         FfmpegCli.AssertStartTimecode(file, measured);
         FfmpegCli.AssertLoudness(file, measured);
         FfmpegCli.AssertSilences(file, measured);
         FfmpegCli.AssertTone(file, measured.Tone[0]);
+        FfmpegCli.AssertBlack(file, measured);
+        FfmpegCli.AssertWorstOutOfRange(file, measured);
+        FfmpegCli.AssertCrop(file, measured);
+    }
+
+    [Fact]
+    public void TheRampIsOutOfRangeThroughout()
+    {
+        var measured = _samples.Ffmpeg("out_of_range.mov");
+
+        var span = Assert.Single(measured.OutOfRange);
+        Assert.Equal((0, 5), Rounded(span.Start, span.End));
+        Assert.Equal(Assert.NotNull(measured.WorstOutOfRange).Share, span.WorstShare);
+        FfmpegCli.AssertWorstOutOfRange(_samples["out_of_range.mov"], measured);
+        Assert.Equal(Severity.Warning, Assert.Single(Profile.EbuR128.Evaluate(measured).Findings, f => f.Check == "range").Severity);
+    }
+
+    [Fact]
+    public void TheLetterboxIsCropdetects()
+    {
+        var measured = _samples.Ffmpeg("letterbox.mov");
+
+        Assert.Equal(new ActivePicture(1920, 1080, 1920, 800, 0, 140), measured.Crop);
+        FfmpegCli.AssertCrop(_samples["letterbox.mov"], measured);
     }
 
     [Fact]
     public void TheManagedPathReadsTheH264FileOnly()
     {
-        Assert.True(ManagedMeasurer.CanMeasure(Path.Combine(_samples.Folder, "programme_h264.mp4")));
-        Assert.False(ManagedMeasurer.CanMeasure(Path.Combine(_samples.Folder, "programme_prores.mov")));
-        Assert.False(ManagedMeasurer.CanMeasure(Path.Combine(_samples.Folder, "programme_dnxhr.mxf")));
+        Assert.True(ManagedMeasurer.CanMeasure(_samples["programme_h264.mp4"]));
+        Assert.False(ManagedMeasurer.CanMeasure(_samples["programme_prores.mov"]));
+        Assert.False(ManagedMeasurer.CanMeasure(_samples["programme_dnxhr.mxf"]));
     }
 
     // docs/decisions/2026-10-31-decoding.md: the same MP4 through both paths gives the same measures, within the
-    // tolerances each figure states, and the managed path's figures are ffmpeg's too.
+    // tolerances each figure states (the picture's exactly: ManagedCodecs' H.264 is bit-exact with FFmpeg's), and the
+    // managed path's figures are ffmpeg's too.
     [Fact]
     public void BothDecodingPathsAgreeOnTheH264File()
     {
-        string file = Path.Combine(_samples.Folder, "programme_h264.mp4");
-        var ffmpeg = FfmpegMeasurer.Measure(file, Profile.EbuR128);
-        var managed = ManagedMeasurer.Measure(file, Profile.EbuR128);
+        string file = _samples["programme_h264.mp4"];
+        var ffmpeg = _samples.Ffmpeg("programme_h264.mp4");
+        var managed = _samples.Managed("programme_h264.mp4");
 
         Assert.Equal(ffmpeg.Duration, managed.Duration, 0.05);
         Assert.Equal((ffmpeg.RateNumerator, ffmpeg.RateDenominator), (managed.RateNumerator, managed.RateDenominator));
         Assert.Equal(ffmpeg.NotMeasured, managed.NotMeasured);
-        Assert.Equal("10:00:00:00", managed.StartTimecode);
+        Assert.Equal(ffmpeg.StartTimecode, managed.StartTimecode);
         Assert.Equal(ffmpeg.LoudnessFrom, managed.LoudnessFrom, 0.02);
         var (a, b) = (Assert.NotNull(ffmpeg.Loudness), Assert.NotNull(managed.Loudness));
         Assert.Equal(Assert.NotNull(a.Integrated), Assert.NotNull(b.Integrated), 0.1);
@@ -89,9 +119,18 @@ public sealed class SampleTests : IClassFixture<Samples>
             Assert.Equal(x.Level, y.Level, 0.1);
         }
 
+        Assert.Equal(ffmpeg.Black, managed.Black);
+        Assert.Equal(ffmpeg.Bars, managed.Bars);
+        Assert.Equal(ffmpeg.OutOfRange, managed.OutOfRange);
+        Assert.Equal(ffmpeg.WorstOutOfRange, managed.WorstOutOfRange);
+        Assert.Equal(ffmpeg.Crop, managed.Crop);
+
         FfmpegCli.AssertStartTimecode(file, managed);
         FfmpegCli.AssertLoudness(file, managed);
         FfmpegCli.AssertSilences(file, managed);
         FfmpegCli.AssertTone(file, managed.Tone[0]);
+        FfmpegCli.AssertBlack(file, managed);
+        FfmpegCli.AssertWorstOutOfRange(file, managed);
+        FfmpegCli.AssertCrop(file, managed);
     }
 }
