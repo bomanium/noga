@@ -57,6 +57,12 @@ public sealed record Measurements
     /// </summary>
     public string PictureTypes { get; init; } = "";
 
+    /// <summary>
+    /// The shots, in order, covering the video (PySceneDetect detect-adaptive's, through ShotDetector); null when not
+    /// detected.
+    /// </summary>
+    public IReadOnlyList<TimeRange>? Shots { get; init; }
+
     /// <summary>The video packets' keyframes and sizes (ffprobe -show_packets'); null when not read.</summary>
     public VideoPackets? Packets { get; init; }
 

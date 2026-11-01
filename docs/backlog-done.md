@@ -77,3 +77,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-01: each frame's picture type from PictureMeter, the keyframes and bytes a second from the
     video packets (av_read_frame on the FFmpeg path, ManagedCodecs' demuxer on the managed one), as information,
     each checked against ffprobe -show_frames and -show_packets exactly, on both paths)
+
+- The shot list: ShotDetector's shots in the report, on both paths
+  - Why: The description promises the shot list (decisions/2026-11-01-frames-bitrate-shots.md)
+  - Status: Done (2026-11-01: PySceneDetect detect-adaptive's shots through ShotDetector 3.25.0, trusted as checked
+    in its own CI; the FFmpeg path detects on the file, the managed path on ManagedCodecs' frames (decoded once for
+    the picture measures and the shots) converted by ShotDetector.FastYuv, shipped as its own LGPL assembly with its
+    licence; a "shots" finding and one per shot, in the reports; both paths agree on the MP4)

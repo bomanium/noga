@@ -2,7 +2,7 @@
 # Builds mediaqc for each platform into artifacts/ (ignored by git): a self-contained folder (the .NET runtime and
 # FFmpeg's libraries with it) and its archive, a .tar.gz for Linux and a .zip for Windows, then checks that each holds
 # its licences (CLAUDE.md's licence rule: FFmpeg's LGPL libraries ship separate, with their licence, configure line and
-# SBOM beside them; MediaQc.Cli.csproj's PublishLicences puts them there).
+# SBOM beside them, ShotDetector.FastYuv's assembly with its licence; MediaQc.Cli.csproj's PublishLicences puts them there).
 #
 #   tools/publish.sh [rid ...]      default: linux-x64 win-x64
 set -euo pipefail
@@ -24,7 +24,7 @@ for rid in "${rids[@]}"; do
   esac
   for file in "$exe" "${libs[@]}" README.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
               licences/ffmpeg/configure.txt licences/ffmpeg/sbom.spdx.json licences/dotnet/LICENSE.TXT \
-              licences/dotnet/THIRD-PARTY-NOTICES.TXT; do
+              licences/dotnet/THIRD-PARTY-NOTICES.TXT ShotDetector.FastYuv.dll licences/shotdetector-fastyuv/COPYING.LGPL; do
     [ -f "$out/$file" ] || { echo "publish: $out has no $file" >&2; exit 1; }
   done
 

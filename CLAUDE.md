@@ -46,7 +46,8 @@ What is next, in order: docs/backlog.md.
 - **Decisions are the owner's.** Ask with the multiple-choice prompt (AskUserQuestion), the recommendation first,
   and record question, choices and answer in `docs/decisions/YYYY-MM-DD-<what>.md` (docs/decisions/README.md).
 - **Every figure says how it is checked against FFmpeg** (which filter, which options, what tolerance), in the report
-  and in a test.
+  and in a test. The shot list is the exception: FFmpeg has none like it, so it is PySceneDetect's through
+  ShotDetector, trusted as checked there (decisions/2026-11-01-frames-bitrate-shots.md).
 
 ## Working on this repository
 
@@ -86,11 +87,14 @@ What is next, in order: docs/backlog.md.
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone. `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
   bars, BRNG, cropdetect, picture types) for both paths, and FFmpeg's frames into it. `Packets.Read`: the video
-  packets (av_read_frame through FFmpeg.AutoGen: keyframes and bitrate, as ffprobe -show_packets). `StartTimecode.Add`: the timecode tag through FrameReader's
+  packets (av_read_frame through FFmpeg.AutoGen: keyframes and bitrate, as ffprobe -show_packets). `Shots`: the
+  shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
+  the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths.
 - `src/MediaQc.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
   `Measure`) demuxes and decodes the H.264 and AAC with ManagedCodecs and measures with FrameReader's managed meters
-  (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter), and the packets from its demuxer: the same figures as the FFmpeg path, which a
+  (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter), the packets from its demuxer, and the shots from
+  ShotDetector on the same decoded frames (ShotDetector.FastYuv converts them; LGPL, its own DLL): the same figures as the FFmpeg path, which a
   test checks on make-samples.sh's MP4.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by `Profile.EbuR128`, writes FILE.qc.html and
@@ -104,6 +108,7 @@ What is next, in order: docs/backlog.md.
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `tools/publish.sh [rid ...]`: the release builds (default linux-x64 and win-x64), self-contained, into `artifacts/`
   as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
-  `licences/ffmpeg/`, `licences/dotnet/`, and `packaging/`'s README and notices). ~30 s.
+  `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, and `packaging/`'s README and notices).
+  Not single-file nor trimmed: the LGPL binaries stay separate files. ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04). `.github/dependabot.yml`: actions and NuGet weekly.

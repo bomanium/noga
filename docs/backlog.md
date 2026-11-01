@@ -10,17 +10,18 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- The shot list: ShotDetector's shots in the report, on both paths
-  - Why: The description promises the shot list; decisions/2026-11-01-frames-bitrate-shots.md: information only,
-    PySceneDetect detect-adaptive's through ShotDetector (trusted, checked there), the managed path feeding
-    ManagedCodecs' frames through ShotDetector.FastYuv (LGPL, shipped as a separate DLL with its licence)
-  - Status: Open
+Nothing: the report has every check the description names. What comes next is the owner's to choose (Maybe below;
+a local web UI is decisions/2026-10-31-product-shape.md's later option).
 
 ## Waiting
 
 Nothing.
 
 ## Maybe
+
+- A local web UI: `mediaqc serve`, a page in the browser to drop files on and read their reports
+  - Why: decisions/2026-10-31-product-shape.md kept it for later, on the same core
+  - Status: Maybe
 
 - A release workflow: on a tag, CI runs tools/publish.sh and attaches the archives to a GitHub release
   - Why: today a release is built by hand (tools/publish.sh) and CI only checks it builds and runs

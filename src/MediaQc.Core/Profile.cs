@@ -90,6 +90,9 @@ public sealed record Profile
     /// <summary>What the bitrate is checked against.</summary>
     public static string BitrateFilter => "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,size (summed per second, exact)";
 
+    /// <summary>What the shot list is checked against: not FFmpeg, which has no detector that gives these shots.</summary>
+    public static string ShotsFilter => "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)";
+
     /// <summary>Judges <paramref name="measured"/> by this profile.</summary>
     public QcReport Evaluate(Measurements measured)
     {
@@ -119,6 +122,7 @@ public sealed record Profile
                     "frames" => PictureTypesFilter,
                     "keyframes" => KeyframesFilter,
                     "bitrate" => BitrateFilter,
+                    "shots" => ShotsFilter,
                     "timecode" => TimecodeTag.CheckedAgainst,
                     _ => "nothing yet",
                 },
@@ -161,6 +165,7 @@ public sealed record Profile
         PictureTypes(findings, measured.PictureTypes);
         Keyframes(findings, measured, At);
         Bitrate(findings, measured, At);
+        Shots(findings, measured.Shots, At);
         Spans(findings, "silence", "Silence", measured.Silences, MinSilence, SilenceFilter);
         if (measured.LoudnessFrom > 0 && measured.Loudness is not null)
         {
@@ -378,6 +383,37 @@ public sealed record Profile
             End = at(Math.Min(second + 1, measured.Duration)),
             CheckedAgainst = BitrateFilter,
         });
+    }
+
+    // Information only: how many and the shortest, then each shot ("shot", which the command line doesn't print).
+    static void Shots(List<Finding> into, IReadOnlyList<TimeRange>? shots, Func<double, Position> at)
+    {
+        if (shots is not { Count: > 0 })
+            return;
+        var shortest = shots.MinBy(s => s.Duration);
+        into.Add(new Finding
+        {
+            Check = "shots",
+            Severity = Severity.Info,
+            Message = shots.Count == 1 ? "1 shot" : Invariant($"{shots.Count} shots, the shortest {shortest.Duration:0.00} s"),
+            Value = shots.Count,
+            Unit = "shots",
+            CheckedAgainst = ShotsFilter,
+        });
+        foreach (var (shot, i) in shots.Select((s, i) => (s, i + 1)))
+        {
+            into.Add(new Finding
+            {
+                Check = "shot",
+                Severity = Severity.Info,
+                Message = Invariant($"Shot {i}, {shot.Duration:0.00} s"),
+                Value = shot.Duration,
+                Unit = "s",
+                Start = at(shot.Start),
+                End = at(shot.End),
+                CheckedAgainst = ShotsFilter,
+            });
+        }
     }
 
     static string Invariant(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);

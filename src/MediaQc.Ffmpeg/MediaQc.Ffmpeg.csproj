@@ -12,6 +12,8 @@
     <PackageReference Include="FrameReader" />
     <!-- FrameReader's own bindings, for the packet scan (Packets). -->
     <PackageReference Include="FFmpeg.AutoGen" />
+    <!-- The shot list (Shots). -->
+    <PackageReference Include="ShotDetector" />
     <!-- CI's and the owner's platforms; others come with packaging. -->
     <PackageReference Include="FrameReader.Native.linux-x64" />
     <PackageReference Include="FrameReader.Native.win-x64" />

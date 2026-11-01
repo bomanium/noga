@@ -139,6 +139,9 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal(ffmpeg.WorstOutOfRange, managed.WorstOutOfRange);
         Assert.Equal(ffmpeg.Crop, managed.Crop);
         Assert.Equal(ffmpeg.PictureTypes, managed.PictureTypes);
+        Assert.NotNull(ffmpeg.Shots);
+        Assert.NotNull(managed.Shots);
+        Assert.Equal(ffmpeg.Shots, managed.Shots);
         Assert.NotNull(ffmpeg.Packets);
         Assert.NotNull(managed.Packets);
         var (p, q) = (ffmpeg.Packets, managed.Packets);
