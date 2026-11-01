@@ -47,6 +47,10 @@ jobs:
       - name: Build
         run: dotnet build MediaQc.slnx -c Release --no-restore -warnaserror
 
+      # make-samples.sh's programme as ProRes, DNxHR and H.264 (~45 s, ~480 MB); the tests check each against ffmpeg.
+      - name: Samples
+        run: tools/make-samples.sh samples
+
       - name: Test
         run: dotnet test MediaQc.slnx -c Release --no-build --logger GitHubActions
 
