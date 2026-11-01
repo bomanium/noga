@@ -42,6 +42,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         string file = Path.Combine(_samples.Folder, programme);
         var measured = FfmpegMeasurer.Measure(file, Profile.EbuR128);
 
+        FfmpegCli.AssertStartTimecode(file, measured);
         FfmpegCli.AssertLoudness(file, measured);
         FfmpegCli.AssertSilences(file, measured);
         FfmpegCli.AssertTone(file, measured.Tone[0]);
@@ -88,6 +89,7 @@ public sealed class SampleTests : IClassFixture<Samples>
             Assert.Equal(x.Level, y.Level, 0.1);
         }
 
+        FfmpegCli.AssertStartTimecode(file, managed);
         FfmpegCli.AssertLoudness(file, managed);
         FfmpegCli.AssertSilences(file, managed);
         FfmpegCli.AssertTone(file, managed.Tone[0]);
