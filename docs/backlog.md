@@ -19,6 +19,11 @@ Nothing.
 
 ## Maybe
 
+- Every audio track measured and judged, each with its own findings
+  - Why: The report judges the first track only and says so (decisions/2026-11-01-open-films.md); deliveries often
+    carry stereo and 5.1, or split stems
+  - Status: Maybe
+
 - The web UI's next steps: a shared-machine mode (listening beyond localhost, with a token), a thin
   native shell around the page (native drag and drop of paths, an icon)
   - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start (the watch

@@ -224,4 +224,22 @@ public class ProfileTests
         Assert.Equal([new RangeSpan(10, 11.62, 0.03), new RangeSpan(12.62, 13, 0.02)], merged);
         Assert.Equal(spans, RangeSpan.Merge(spans, 0));
     }
+
+    [Fact]
+    public void TheAudioTrackMeasuredIsNamedAndTheOthersSaidNotJudged()
+    {
+        string json = """
+            {"streams":[{"codec_type":"video","codec_name":"h264"},
+            {"codec_type":"audio","codec_name":"mp3","channels":2,"channel_layout":"stereo"},
+            {"codec_type":"audio","codec_name":"ac3","channels":6,"channel_layout":"5.1(side)"}]}
+            """;
+
+        var track = AudioTrack.First(json);
+        var finding = Only(Profile.EbuR128.Evaluate(Programme() with { AudioTrack = track }), "audio");
+
+        Assert.Equal(new AudioTrack(2, "mp3", 2, "stereo"), track);
+        Assert.Equal("Audio measured: track 1 of 2: mp3, 2 channels (stereo); the other track isn't judged", finding.Message);
+        Assert.Equal(Severity.Info, finding.Severity);
+        Assert.Null(AudioTrack.First("""{"streams":[{"codec_type":"video"}]}"""));
+    }
 }

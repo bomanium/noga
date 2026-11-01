@@ -35,6 +35,20 @@ Choices:
 
 Answer: 1. `Profile.RangeMergeGap` (1 s for ebu-r128), `RangeSpan.Merge`.
 
+Question 4: the first film run found Big Buck Bunny's loudness 0.38 LU off ffmpeg's: it has two audio tracks (MP3
+stereo, then AC-3 5.1); mediaqc measures the first (-18.7 LUFS), ffmpeg on its own picks the one with the most
+channels (-19.1 LUFS). Which track(s) should a report judge?
+
+Choices:
+
+1. The first track, and the report says which (recommended): an "audio" finding names it ("track 1 of 2: mp3, 2
+   channels (stereo)") and that the others aren't judged; the comparisons map it (-map 0:a:0). Every track later
+   (backlog).
+2. Every track, each with its own findings.
+3. ffmpeg's choice, the track with the most channels.
+
+Answer: 1.
+
 With the code: tools/get-films.sh downloads both into films/ (ignored by git) and checks their SHA-256;
 tests/MediaQc.FilmTests compares each figure with the ffmpeg command line through the sample tests' FfmpegCli; it
 runs only where MEDIAQC_FILMS names the folder (elsewhere a runsettings file filters every test out, so `dotnet test

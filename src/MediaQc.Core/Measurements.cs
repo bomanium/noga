@@ -24,6 +24,9 @@ public sealed record Measurements
     /// </summary>
     public double LoudnessFrom { get; init; }
 
+    /// <summary>The audio track measured (the first); null when the file has none or its tags weren't read.</summary>
+    public AudioTrack? AudioTrack { get; init; }
+
     /// <summary>The programme loudness from <see cref="LoudnessFrom"/>, or null when the file has no audio.</summary>
     public LoudnessMeasure? Loudness { get; init; }
 
