@@ -22,6 +22,7 @@ public sealed record Profile
         MinSilence = 2,
         SilenceNoise = -60,
         MaxOutOfRange = 0.01,
+        RangeMergeGap = 1,
     };
 
     /// <summary>The profile's name in reports and on the command line.</summary>
@@ -60,26 +61,32 @@ public sealed record Profile
     /// </summary>
     public required double MaxOutOfRange { get; init; }
 
+    /// <summary>
+    /// Spans of pixels outside broadcast range less than this many seconds apart are one warning
+    /// (docs/decisions/2026-11-01-open-films.md); 0 keeps every span.
+    /// </summary>
+    public double RangeMergeGap { get; init; }
+
     /// <summary>What pixels outside broadcast range are checked against.</summary>
-    public static string RangeFilter => "signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out";
+    public string RangeFilter => Invariant($"signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under {RangeMergeGap:0.#} s apart joined");
 
     /// <summary>What the active picture is checked against.</summary>
     public static string CropFilter => "cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact)";
 
     /// <summary>The FFmpeg filter the loudness figures are checked against (exact: FrameReader runs ebur128 itself on the FFmpeg path).</summary>
-    public static string LoudnessFilter => "ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)";
+    public static string LoudnessFilter => "-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)";
 
     /// <summary>The FFmpeg filter black spans are checked against.</summary>
     public string BlackFilter => Invariant($"blackdetect=d={MinBlack}:pix_th={BlackPixelThreshold:0.00}:pic_th={BlackPictureThreshold:0.00} (each end within one frame)");
 
     /// <summary>The FFmpeg filter silences are checked against.</summary>
-    public string SilenceFilter => Invariant($"silencedetect=n={SilenceNoise}dB:d={MinSilence} (each end within 10 ms)");
+    public string SilenceFilter => Invariant($"-map 0:a:0 -af silencedetect=n={SilenceNoise}dB:d={MinSilence} (each end within 10 ms)");
 
     /// <summary>What bars are checked against (signalstats on each bar's patch).</summary>
     public static string BarsFilter => "signalstats on each bar of smptebars/smptehdbars (each end within one frame)";
 
     /// <summary>What line-up tone is checked against.</summary>
-    public static string ToneFilter => "astats per channel (RMS level within 0.1 dB) and a 1 kHz bandpass (each end within 20 ms)";
+    public static string ToneFilter => "-map 0:a:0, astats per channel (RMS level within 0.1 dB) and a 1 kHz bandpass (each end within 20 ms)";
 
     /// <summary>What picture types are checked against.</summary>
     public static string PictureTypesFilter => "ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame's, exact)";
@@ -177,6 +184,23 @@ public sealed record Profile
                 Start = At(measured.LoudnessFrom),
                 End = At(measured.Duration),
                 CheckedAgainst = Invariant($"ffmpeg -ss {measured.LoudnessFrom:0.###} -i FILE -af ebur128=peak=true (the same figures)"),
+            });
+        }
+
+        if (measured.AudioTrack is { } track)
+        {
+            findings.Add(new Finding
+            {
+                Check = "audio",
+                Severity = Severity.Info,
+                Message = track.Count == 1
+                    ? Invariant($"Audio measured: {track}")
+                    : track.Count == 2
+                        ? Invariant($"Audio measured: {track}; the other track isn't judged")
+                        : Invariant($"Audio measured: {track}; the other {track.Count - 1} tracks aren't judged"),
+                Value = track.Count,
+                Unit = "tracks",
+                CheckedAgainst = "ffprobe -show_streams (the first audio stream: ffmpeg's 0:a:0)",
             });
         }
 

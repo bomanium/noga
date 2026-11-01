@@ -76,13 +76,14 @@ What is next, in order: docs/backlog.md.
 - `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
   `Directory.Packages.props` (central package versions); `global.json` (SDK 10.0.1xx or later).
 - `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
-  bars, tone, pixels outside broadcast range, the active picture, picture types, keyframes and bytes a second
+  bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
   v1's, `Evaluate` gives a `QcReport`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
-  `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
+  `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `AudioTrack.First`: the audio track measured, the
+  first (ffmpeg's 0:a:0), which the report names. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone. `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
@@ -109,6 +110,9 @@ What is next, in order: docs/backlog.md.
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
   aren't there or an older script made them (`samples/.make-samples.sha256`) (bash, ffmpeg with libx264; ~1 min the first time).
+- `tests/MediaQc.FilmTests`: every figure on Blender's open films against the ffmpeg command line (FfmpegCli, linked
+  from MediaQc.Tests). Runs only where MEDIAQC_FILMS names the films' folder (`tools/get-films.sh [folder]`, default
+  `films/`, ~650 MB, pinned by SHA-256); elsewhere `no.runsettings` filters every test out. ~30 min.
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence; timecode from 10:00:00:00) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
@@ -119,4 +123,5 @@ What is next, in order: docs/backlog.md.
   Not single-file nor trimmed: the LGPL binaries stay separate files. ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is
-  `v` + Version, also a GitHub release with the archives, published at once (decisions/2026-11-01-release-workflow.md). `.github/dependabot.yml`: actions and NuGet weekly.
+  `v` + Version, also a GitHub release with the archives, published at once (decisions/2026-11-01-release-workflow.md). `.github/workflows/films.yml`: the film tests, Monday nights and on demand, films cached. `.github/dependabot.yml`:
+  actions and NuGet weekly.

@@ -10,7 +10,7 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-Nothing: the report has every check the description names, a release workflow and a local web UI with a watch folder. What comes next
+Nothing: the report has every check the description names, a release workflow, a local web UI with a watch folder, and weekly checks on open films. What comes next
 is the owner's to choose (Maybe below).
 
 ## Waiting
@@ -18,6 +18,11 @@ is the owner's to choose (Maybe below).
 Nothing.
 
 ## Maybe
+
+- Every audio track measured and judged, each with its own findings
+  - Why: The report judges the first track only and says so (decisions/2026-11-01-open-films.md); deliveries often
+    carry stereo and 5.1, or split stems
+  - Status: Maybe
 
 - The web UI's next steps: a shared-machine mode (listening beyond localhost, with a token), a thin
   native shell around the page (native drag and drop of paths, an icon)
@@ -38,11 +43,6 @@ Nothing.
   - Why: Software with an H.264 decoder falls under the Via LA AVC pool (the first 100,000 units a year carry no
     royalty, then $0.20 a unit). Check the current terms, and whether decoding through FFmpeg's libraries changes it,
     before the first sale (docs/notes/origin.md)
-  - Status: Maybe
-
-- Open films in CI
-  - Why: Generated files have known answers but not real pictures; Blender's open films, downloaded and pinned by
-    SHA-256 (as shotdetector's realworld.py does), would check the measures on real material, nightly
   - Status: Maybe
 
 - Captions, ad markers and platform spec templates

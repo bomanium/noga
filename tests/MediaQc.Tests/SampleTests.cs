@@ -27,6 +27,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal(20, measured.Duration, 0.05);
         Assert.Equal((25, 1), (measured.RateNumerator, measured.RateDenominator));
         Assert.Equal("10:00:00:00", measured.StartTimecode);
+        Assert.Equal(1, Assert.IsType<AudioTrack>(measured.AudioTrack).Count);
         Assert.Empty(measured.NotMeasured);
         var tone = Assert.Single(measured.Tone);
         Assert.Equal((0, 5), Rounded(tone.Start, tone.End));
@@ -113,6 +114,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal((ffmpeg.RateNumerator, ffmpeg.RateDenominator), (managed.RateNumerator, managed.RateDenominator));
         Assert.Equal(ffmpeg.NotMeasured, managed.NotMeasured);
         Assert.Equal(ffmpeg.StartTimecode, managed.StartTimecode);
+        Assert.Equal(ffmpeg.AudioTrack, managed.AudioTrack);
         Assert.Equal(ffmpeg.LoudnessFrom, managed.LoudnessFrom, 0.02);
         var (a, b) = (Assert.NotNull(ffmpeg.Loudness), Assert.NotNull(managed.Loudness));
         Assert.Equal(Assert.NotNull(a.Integrated), Assert.NotNull(b.Integrated), 0.1);

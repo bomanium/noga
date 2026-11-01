@@ -76,7 +76,7 @@ public static class Pictures
         {
             Black = [.. pictures.BlackSpans(profile.MinBlack).Select(s => new TimeRange(s.StartPts * unit, BlackEnd(s)))],
             Bars = [.. pictures.BarsSpans().Select(s => new TimeRange(s.StartPts * unit, s.EndFrame < pictures.FirstFrame + pictures.Count ? s.EndPts * unit : After(s.EndFrame - pictures.FirstFrame - 1)))],
-            OutOfRange = spans,
+            OutOfRange = RangeSpan.Merge(spans, profile.RangeMergeGap),
             WorstOutOfRange = worst,
             Crop = crop is null ? null : new ActivePicture(pictures.Width, pictures.Height, crop.W, crop.H, crop.X, crop.Y),
             PictureTypes = pictures.Types(),

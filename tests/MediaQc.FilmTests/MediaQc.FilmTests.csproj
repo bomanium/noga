@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The weekly film tests (.github/workflows/films.yml; docs/decisions/2026-11-01-open-films.md): each figure on
+    Blender's open films, which tools/get-films.sh downloads, against the ffmpeg command line. They take ~30 min and
+    ~650 MB of films, so they run only where MEDIAQC_FILMS names the films' folder; elsewhere (dotnet test
+    MediaQc.slnx, CI's build) no.runsettings filters every test out.
+  -->
+  <PropertyGroup>
+    <ContinuousIntegrationBuild>false</ContinuousIntegrationBuild>
+    <RunSettingsFilePath Condition="'$(MEDIAQC_FILMS)' == ''">$(MSBuildThisFileDirectory)no.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <!-- The same comparisons with the ffmpeg command line as the sample tests'. -->
+    <Compile Include="..\MediaQc.Tests\FfmpegCli.cs" Link="FfmpegCli.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MediaQc.Core\MediaQc.Core.csproj" />
+    <ProjectReference Include="..\..\src\MediaQc.Ffmpeg\MediaQc.Ffmpeg.csproj" />
+  </ItemGroup>
+
+</Project>

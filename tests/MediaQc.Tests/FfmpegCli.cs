@@ -90,7 +90,7 @@ internal static partial class FfmpegCli
     /// <summary>The loudness is ebur128's from the same point (ffmpeg -ss), within 0.1 LU and 0.1 dB.</summary>
     public static void AssertLoudness(string file, Measurements measured)
     {
-        var ffmpeg = Run(file, "-af ebur128=peak=true:framelog=quiet", measured.LoudnessFrom > 0 ? Invariant($"-ss {measured.LoudnessFrom}") : "");
+        var ffmpeg = Run(file, "-map 0:a:0 -af ebur128=peak=true:framelog=quiet", measured.LoudnessFrom > 0 ? Invariant($"-ss {measured.LoudnessFrom}") : "");
         var loudness = Assert.NotNull(measured.Loudness);
 
         Assert.Equal(Number(ffmpeg, @"I:\s+(-?[\d.]+) LUFS"), Assert.NotNull(loudness.Integrated), 0.1);
@@ -101,7 +101,7 @@ internal static partial class FfmpegCli
     /// <summary>The silences are silencedetect's with the profile's options, each end within 10 ms.</summary>
     public static void AssertSilences(string file, Measurements measured)
     {
-        var expected = Spans(Run(file, $"-af {FfmpegMeasurer.SilenceGraph(Profile.EbuR128)}"));
+        var expected = Spans(Run(file, $"-map 0:a:0 -af {FfmpegMeasurer.SilenceGraph(Profile.EbuR128)}"));
 
         Assert.Equal(expected.Count, measured.Silences.Count);
         foreach (var (want, got) in expected.Zip(measured.Silences))
@@ -118,10 +118,10 @@ internal static partial class FfmpegCli
     public static void AssertTone(string file, ToneSpan tone)
     {
         Assert.Equal(1000, tone.Frequency);
-        var quiet = Spans(Run(file, "-af bandpass=f=1000,silencedetect=n=-40dB:d=1"));
+        var quiet = Spans(Run(file, "-map 0:a:0 -af bandpass=f=1000,silencedetect=n=-40dB:d=1"));
         Assert.Equal(quiet[0].Start, tone.End, 0.02);
 
-        string stats = Run(file, Invariant($"-af atrim=start={tone.Start}:end={tone.End},astats=measure_perchannel=RMS_level:measure_overall=none"));
+        string stats = Run(file, Invariant($"-map 0:a:0 -af atrim=start={tone.Start}:end={tone.End},astats=measure_perchannel=RMS_level:measure_overall=none"));
         double rms = RmsLevel().Matches(stats).Max(m => Parse(m.Groups[1].Value));
         Assert.Equal(rms + (20 * Math.Log10(Math.Sqrt(2))), tone.Level, 0.1);
     }

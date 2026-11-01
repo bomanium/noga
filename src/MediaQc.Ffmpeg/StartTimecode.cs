@@ -3,7 +3,7 @@ using FrameReader;
 namespace MediaQc.Ffmpeg;
 
 /// <summary>
-/// Reads a file's start timecode in-process: FrameReader's MediaProbe.ProbeJson (ffprobe's JSON, tags included) and
+/// Reads a file's start timecode and its first audio track's description (<see cref="AudioTrack"/>) in-process: FrameReader's MediaProbe.ProbeJson (ffprobe's JSON, tags included) and
 /// <see cref="TimecodeTag.Pick"/>. Both decoding paths use it; the managed path loads FFmpeg's libraries for it alone
 /// (docs/decisions/2026-11-01-start-timecode.md).
 /// </summary>
@@ -29,6 +29,10 @@ public static class StartTimecode
             return measured with { StartTimecode = null, NotMeasured = [.. measured.NotMeasured, "timecode"] };
         }
 
-        return measured with { StartTimecode = TimecodeTag.Pick(json, measured.RateNumerator, measured.RateDenominator) };
+        return measured with
+        {
+            StartTimecode = TimecodeTag.Pick(json, measured.RateNumerator, measured.RateDenominator),
+            AudioTrack = AudioTrack.First(json),
+        };
     }
 }

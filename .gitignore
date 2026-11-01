@@ -502,3 +502,6 @@ BenchmarkDotNet.Artifacts/
 *.wav
 *.y4m
 *.yuv
+
+# Open films for the weekly film tests (tools/get-films.sh), downloaded and pinned by SHA-256, never committed
+films/

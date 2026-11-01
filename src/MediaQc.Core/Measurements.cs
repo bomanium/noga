@@ -24,6 +24,9 @@ public sealed record Measurements
     /// </summary>
     public double LoudnessFrom { get; init; }
 
+    /// <summary>The audio track measured (the first); null when the file has none or its tags weren't read.</summary>
+    public AudioTrack? AudioTrack { get; init; }
+
     /// <summary>The programme loudness from <see cref="LoudnessFrom"/>, or null when the file has no audio.</summary>
     public LoudnessMeasure? Loudness { get; init; }
 
@@ -87,7 +90,28 @@ public readonly record struct ToneSpan(double Start, double End, double Frequenc
 public readonly record struct LoudnessMeasure(double? Integrated, double Range, double TruePeak);
 
 /// <summary>A span (seconds) where frames have too many pixels outside broadcast range, and the worst frame's share (0 to 1).</summary>
-public readonly record struct RangeSpan(double Start, double End, double WorstShare);
+public readonly record struct RangeSpan(double Start, double End, double WorstShare)
+{
+    /// <summary>
+    /// <paramref name="spans"/> (in order) with those less than <paramref name="gap"/> seconds apart joined into one,
+    /// from the first's start to the last's end with the worst share among them: frames hovering about the threshold
+    /// make one warning, not one per frame (docs/decisions/2026-11-01-open-films.md).
+    /// </summary>
+    public static IReadOnlyList<RangeSpan> Merge(IEnumerable<RangeSpan> spans, double gap)
+    {
+        ArgumentNullException.ThrowIfNull(spans);
+        var merged = new List<RangeSpan>();
+        foreach (var span in spans)
+        {
+            if (merged.Count > 0 && span.Start - merged[^1].End < gap)
+                merged[^1] = new RangeSpan(merged[^1].Start, Math.Max(merged[^1].End, span.End), Math.Max(merged[^1].WorstShare, span.WorstShare));
+            else
+                merged.Add(span);
+        }
+
+        return merged;
+    }
+}
 
 /// <summary>One frame's share (0 to 1) of something, at <paramref name="Seconds"/>.</summary>
 public readonly record struct FrameShare(double Seconds, double Share);
