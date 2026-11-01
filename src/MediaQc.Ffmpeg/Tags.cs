@@ -82,5 +82,22 @@ public sealed record Tags(
         throw new InvalidDataException($"{path} has no video stream.");
     }
 
+    /// <summary>
+    /// How many audio tracks <paramref name="path"/> has (its headers, through FFmpeg's libraries); 1 when the libraries
+    /// don't load or the file can't be opened, so the caller's own reading decides.
+    /// </summary>
+    public static int AudioTrackCount(string path, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Libraries.Load();
+            return MediaProbe.Probe(path, new ProbeOptions { CancellationToken = cancellationToken }).Streams.Count(s => s.Type == StreamType.Audio);
+        }
+        catch (FrameReaderException)
+        {
+            return 1;
+        }
+    }
+
     static string? Text(JsonElement element, string name) => element.TryGetProperty(name, out var value) ? value.ToString() : null;
 }

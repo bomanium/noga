@@ -49,16 +49,30 @@ public static class FfmpegMeasurer
         if (!info.HasAudio)
             return measured;
 
-        var silences = FindSilences(path, profile, cancellationToken);
-        var tone = FindTone(path, cancellationToken);
-        double from = LineUp.End(tone, silences, measured.Duration);
+        // Every audio track, each from the end of its own line-up (docs/decisions/2026-11-01-every-audio-track.md);
+        // the first's figures are the file's, the others' each a TrackMeasures.
+        int tracks = Math.Max(1, measured.AudioTrack?.Count ?? 1);
+        var all = Enumerable.Range(0, tracks).Select(stream => MeasureTrack(path, profile, stream, measured.Duration, cancellationToken)).ToList();
+        var first = all[0];
         return measured with
         {
-            Silences = silences,
-            Tone = tone,
-            LoudnessFrom = from,
-            Loudness = MeasureLoudness(path, from, cancellationToken),
+            Silences = first.Silences,
+            Tone = first.Tone,
+            LoudnessFrom = first.LoudnessFrom,
+            Loudness = first.Loudness,
+            OtherTracks = [.. all.Skip(1)],
         };
+    }
+
+    // One audio track (ffmpeg's 0:a:STREAM): its silences and tone, which say where its line-up ends, then its loudness
+    // from there.
+    static TrackMeasures MeasureTrack(string path, Profile profile, int stream, double duration, CancellationToken cancellationToken)
+    {
+        var options = new AudioReaderOptions { Stream = stream, CancellationToken = cancellationToken };
+        var silences = FindSilences(path, profile, options, cancellationToken);
+        var tone = FindTone(path, options, cancellationToken);
+        double from = LineUp.End(tone, silences, duration);
+        return new TrackMeasures(stream + 1, from, MeasureLoudness(path, from, options, cancellationToken), silences, tone);
     }
 
     /// <summary>The filter graph silences are found with: silencedetect with the profile's level and length.</summary>
@@ -69,9 +83,9 @@ public static class FfmpegMeasurer
     }
 
     // From the end of the line-up: the reader seeks as ffmpeg's -ss does, so the figures are ffmpeg -ss FROM's.
-    static LoudnessMeasure MeasureLoudness(string path, double from, CancellationToken cancellationToken)
+    static LoudnessMeasure MeasureLoudness(string path, double from, AudioReaderOptions options, CancellationToken cancellationToken)
     {
-        using var audio = new AudioReader(path, new AudioReaderOptions { CancellationToken = cancellationToken });
+        using var audio = new AudioReader(path, options);
         if (from > 0)
             audio.Seek(TimeSpan.FromSeconds(from));
         var loudness = Loudness.Measure(audio, cancellationToken);
@@ -81,9 +95,9 @@ public static class FfmpegMeasurer
 
     // silencedetect attaches lavfi.silence_start and lavfi.silence_end to the frames where a silence starts (once it
     // has lasted d) and ends, as its log prints them; a silence still running at the end has no end, and ends there.
-    static List<TimeRange> FindSilences(string path, Profile profile, CancellationToken cancellationToken)
+    static List<TimeRange> FindSilences(string path, Profile profile, AudioReaderOptions options, CancellationToken cancellationToken)
     {
-        using var audio = new AudioReader(path, new AudioReaderOptions { CancellationToken = cancellationToken });
+        using var audio = new AudioReader(path, options);
         using var filter = new AudioFilter(audio, SilenceGraph(profile));
         var silences = new List<TimeRange>();
         double? start = null;
@@ -109,9 +123,9 @@ public static class FfmpegMeasurer
     static double? Seconds(AudioFilter filter, string key) =>
         filter.Metadata.TryGetValue(key, out string? value) ? double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture) : null;
 
-    static List<ToneSpan> FindTone(string path, CancellationToken cancellationToken)
+    static List<ToneSpan> FindTone(string path, AudioReaderOptions options, CancellationToken cancellationToken)
     {
-        using var audio = new AudioReader(path, new AudioReaderOptions { CancellationToken = cancellationToken });
+        using var audio = new AudioReader(path, options);
         var segments = ReferenceTone.Find(audio, new ReferenceToneOptions { Frequency = ToneFrequency }, cancellationToken);
         return [.. segments.Select(s => new ToneSpan(s.Start.TotalSeconds, s.End.TotalSeconds, ToneFrequency, s.Level))];
     }

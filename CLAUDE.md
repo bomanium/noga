@@ -82,11 +82,11 @@ What is next, in order: docs/backlog.md.
   against; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
-  `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `AudioTrack.First`: the audio track measured, the
-  first (ffmpeg's 0:a:0), which the report names. `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
+  `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `AudioTrack.All`: every audio track (ffmpeg's 0:a:N);
+  each is measured (`Measurements.OtherTracks`, `TrackMeasures`) and judged, its findings naming it (`Finding.Track`). `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
-  silences (silencedetect), line-up tone. `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
+  silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
   bars, BRNG, cropdetect, picture types) for both paths, and FFmpeg's frames into it. `Packets.Read`: the video
   packets (av_read_frame through FFmpeg.AutoGen: keyframes and bitrate, as ffprobe -show_packets). `Shots`: the
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
@@ -94,7 +94,8 @@ What is next, in order: docs/backlog.md.
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths.
 - `src/MediaQc.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
   `Measure`) demuxes and decodes the H.264 and AAC with ManagedCodecs and measures with FrameReader's managed meters
-  (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter), the packets from its demuxer, and the shots from
+  (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter) for files with one audio track (several go to the
+  FFmpeg path), the packets from its demuxer, and the shots from
   ShotDetector on the same decoded frames (ShotDetector.FastYuv converts them; LGPL, its own DLL): the same figures as the FFmpeg path, which a
   test checks on make-samples.sh's MP4.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail]`

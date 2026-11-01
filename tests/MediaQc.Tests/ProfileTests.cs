@@ -237,7 +237,7 @@ public class ProfileTests
         var track = AudioTrack.First(json);
         var finding = Only(Profile.EbuR128.Evaluate(Programme() with { AudioTrack = track }), "audio");
 
-        Assert.Equal(new AudioTrack(2, "mp3", 2, "stereo"), track);
+        Assert.Equal(new AudioTrack(1, 2, "mp3", 2, "stereo"), track);
         Assert.Equal("Audio measured: track 1 of 2: mp3, 2 channels (stereo); the other track isn't judged", finding.Message);
         Assert.Equal(Severity.Info, finding.Severity);
         Assert.Null(AudioTrack.First("""{"streams":[{"codec_type":"video"}]}"""));

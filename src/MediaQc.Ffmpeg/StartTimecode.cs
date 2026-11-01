@@ -33,6 +33,7 @@ public static class StartTimecode
         {
             StartTimecode = TimecodeTag.Pick(json, measured.RateNumerator, measured.RateDenominator),
             AudioTrack = AudioTrack.First(json),
+            AudioTracks = AudioTrack.All(json),
         };
     }
 }

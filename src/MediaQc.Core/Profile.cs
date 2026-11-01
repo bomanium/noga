@@ -151,20 +151,7 @@ public sealed record Profile
             });
         }
 
-        foreach (var tone in measured.Tone)
-        {
-            findings.Add(new Finding
-            {
-                Check = "tone",
-                Severity = Severity.Info,
-                Message = Invariant($"Line-up tone, {tone.Frequency:0} Hz at {tone.Level:0.0} dBFS, for {tone.End - tone.Start:0.00} s"),
-                Value = tone.Level,
-                Unit = "dBFS",
-                Start = At(tone.Start),
-                End = At(tone.End),
-                CheckedAgainst = ToneFilter,
-            });
-        }
+        Tone(findings, measured.Tone);
 
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
         Range(findings, measured, At);
@@ -174,20 +161,23 @@ public sealed record Profile
         Bitrate(findings, measured, At);
         Shots(findings, measured.Shots, At);
         Spans(findings, "silence", "Silence", measured.Silences, MinSilence, SilenceFilter);
-        if (measured.LoudnessFrom > 0 && measured.Loudness is not null)
-        {
-            findings.Add(new Finding
-            {
-                Check = "loudness.from",
-                Severity = Severity.Info,
-                Message = "Loudness is measured after the line-up tone",
-                Start = At(measured.LoudnessFrom),
-                End = At(measured.Duration),
-                CheckedAgainst = Invariant($"ffmpeg -ss {measured.LoudnessFrom:0.###} -i FILE -af ebur128=peak=true (the same figures)"),
-            });
-        }
+        From(findings, measured.LoudnessFrom, measured.Loudness);
 
-        if (measured.AudioTrack is { } track)
+        if (measured.OtherTracks.Count > 0)
+        {
+            foreach (var each in measured.AudioTracks)
+            {
+                findings.Add(new Finding
+                {
+                    Check = "audio",
+                    Severity = Severity.Info,
+                    Message = Invariant($"Audio {each}"),
+                    Track = each.Number,
+                    CheckedAgainst = Invariant($"ffprobe -show_streams (the audio stream ffmpeg's 0:a:{each.Number - 1} reads)"),
+                });
+            }
+        }
+        else if (measured.AudioTrack is { } track)
         {
             findings.Add(new Finding
             {
@@ -206,7 +196,61 @@ public sealed record Profile
 
         Loudness(findings, measured.Loudness);
 
+        // Every track's findings say which track (docs/decisions/2026-11-01-every-audio-track.md): the first's above,
+        // then each other's in turn, each compared with its own -map 0:a:N.
+        if (measured.OtherTracks.Count > 0)
+        {
+            for (int i = 0; i < findings.Count; i++)
+            {
+                if (IsTrackCheck(findings[i].Check) && findings[i].Track is null)
+                    findings[i] = OnTrack(findings[i], 1);
+            }
+
+            foreach (var other in measured.OtherTracks)
+            {
+                var own = new List<Finding>();
+                Tone(own, other.Tone);
+                Spans(own, "silence", "Silence", other.Silences, MinSilence, SilenceFilter);
+                From(own, other.LoudnessFrom, other.Loudness);
+                Loudness(own, other.Loudness);
+                findings.AddRange(own.Select(f => OnTrack(f, other.Number)));
+            }
+        }
+
         return new QcReport { Profile = Name, StartTimecode = timecode.At(0), DropFrame = timecode.DropFrame, Findings = findings };
+
+        void Tone(List<Finding> into, IReadOnlyList<ToneSpan> tones)
+        {
+            foreach (var tone in tones)
+            {
+                into.Add(new Finding
+                {
+                    Check = "tone",
+                    Severity = Severity.Info,
+                    Message = Invariant($"Line-up tone, {tone.Frequency:0} Hz at {tone.Level:0.0} dBFS, for {tone.End - tone.Start:0.00} s"),
+                    Value = tone.Level,
+                    Unit = "dBFS",
+                    Start = At(tone.Start),
+                    End = At(tone.End),
+                    CheckedAgainst = ToneFilter,
+                });
+            }
+        }
+
+        void From(List<Finding> into, double from, LoudnessMeasure? loudness)
+        {
+            if (from <= 0 || loudness is null)
+                return;
+            into.Add(new Finding
+            {
+                Check = "loudness.from",
+                Severity = Severity.Info,
+                Message = "Loudness is measured after the line-up tone",
+                Start = At(from),
+                End = At(measured.Duration),
+                CheckedAgainst = Invariant($"ffmpeg -ss {from:0.###} -i FILE -map 0:a:0 -af ebur128=peak=true (the same figures)"),
+            });
+        }
 
         // A span that touches the first or the last frame is the programme's head or tail (reported); any other is a
         // warning (docs/decisions/2026-10-31-exit-codes-head-tail-timecode.md).
@@ -439,6 +483,17 @@ public sealed record Profile
             });
         }
     }
+
+    // The checks each audio track has.
+    static bool IsTrackCheck(string check) => check is "tone" or "silence" || check.StartsWith("loudness.", StringComparison.Ordinal);
+
+    // A finding of audio track number (from 1): it says so, and is compared with that track's -map.
+    static Finding OnTrack(Finding finding, int number) => finding with
+    {
+        Track = number,
+        Message = Invariant($"Track {number}: {finding.Message}"),
+        CheckedAgainst = finding.CheckedAgainst.Replace("0:a:0", Invariant($"0:a:{number - 1}"), StringComparison.Ordinal),
+    };
 
     static string Invariant(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
 }

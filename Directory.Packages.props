@@ -7,9 +7,9 @@
     <!-- Moves with the format tool in .config/dotnet-tools.json, in one PR. -->
     <PackageVersion Include="StyleBro.Analyzers" Version="0.8.0-alpha.1" />
     <!-- FFmpeg through FrameReader (MIT) and FFmpeg's shared libraries (LGPL, separate and replaceable). They move together. -->
-    <PackageVersion Include="FrameReader" Version="2.19.0" />
-    <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.19.0" />
-    <PackageVersion Include="FrameReader.Native.win-x64" Version="2.19.0" />
+    <PackageVersion Include="FrameReader" Version="2.21.0" />
+    <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.21.0" />
+    <PackageVersion Include="FrameReader.Native.win-x64" Version="2.21.0" />
     <!-- FrameReader's bindings to FFmpeg (MIT), used directly to read packets: FrameReader's version. -->
     <PackageVersion Include="FFmpeg.AutoGen" Version="8.1.0" />
     <!-- The shot list: PySceneDetect's detectors (MIT), at FrameReader's version; FastYuv (LGPL-2.1-or-later) converts

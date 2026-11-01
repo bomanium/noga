@@ -88,10 +88,21 @@ internal static partial class FfmpegCli
         Assert.Equal(TimecodeTag.Pick(Probe(file), measured.RateNumerator, measured.RateDenominator), measured.StartTimecode);
 
     /// <summary>The loudness is ebur128's from the same point (ffmpeg -ss), within 0.1 LU and 0.1 dB.</summary>
-    public static void AssertLoudness(string file, Measurements measured)
+    public static void AssertLoudness(string file, Measurements measured) =>
+        AssertLoudness(file, Assert.NotNull(measured.Loudness), measured.LoudnessFrom, 1);
+
+    /// <summary>Every figure of an audio track after the first, against ffmpeg -map 0:a:N as for the first.</summary>
+    public static void AssertTrack(string file, TrackMeasures track)
     {
-        var ffmpeg = Run(file, "-map 0:a:0 -af ebur128=peak=true:framelog=quiet", measured.LoudnessFrom > 0 ? Invariant($"-ss {measured.LoudnessFrom}") : "");
-        var loudness = Assert.NotNull(measured.Loudness);
+        AssertLoudness(file, track.Loudness, track.LoudnessFrom, track.Number);
+        AssertSilences(file, track.Silences, track.Number);
+        if (track.Tone.Count > 0)
+            AssertTone(file, track.Tone[0], track.Number);
+    }
+
+    static void AssertLoudness(string file, LoudnessMeasure loudness, double from, int track)
+    {
+        var ffmpeg = Run(file, Invariant($"-map 0:a:{track - 1} -af ebur128=peak=true:framelog=quiet"), from > 0 ? Invariant($"-ss {from}") : "");
 
         Assert.Equal(Number(ffmpeg, @"I:\s+(-?[\d.]+) LUFS"), Assert.NotNull(loudness.Integrated), 0.1);
         Assert.Equal(Number(ffmpeg, @"LRA:\s+([\d.]+) LU"), loudness.Range, 0.1);
@@ -99,12 +110,14 @@ internal static partial class FfmpegCli
     }
 
     /// <summary>The silences are silencedetect's with the profile's options, each end within 10 ms.</summary>
-    public static void AssertSilences(string file, Measurements measured)
-    {
-        var expected = Spans(Run(file, $"-map 0:a:0 -af {FfmpegMeasurer.SilenceGraph(Profile.EbuR128)}"));
+    public static void AssertSilences(string file, Measurements measured) => AssertSilences(file, measured.Silences, 1);
 
-        Assert.Equal(expected.Count, measured.Silences.Count);
-        foreach (var (want, got) in expected.Zip(measured.Silences))
+    static void AssertSilences(string file, IReadOnlyList<TimeRange> silences, int track)
+    {
+        var expected = Spans(Run(file, Invariant($"-map 0:a:{track - 1} -af {FfmpegMeasurer.SilenceGraph(Profile.EbuR128)}")));
+
+        Assert.Equal(expected.Count, silences.Count);
+        foreach (var (want, got) in expected.Zip(silences))
         {
             Assert.Equal(want.Start, got.Start, 0.01);
             Assert.Equal(want.End, got.End, 0.01);
@@ -115,13 +128,13 @@ internal static partial class FfmpegCli
     /// The first tone ends where a 1 kHz bandpass falls below -40 dBFS (the finder's own threshold), within 20 ms, and
     /// its level is the loudest channel's astats RMS over it as a sine's peak (+3.01 dB), within 0.1 dB.
     /// </summary>
-    public static void AssertTone(string file, ToneSpan tone)
+    public static void AssertTone(string file, ToneSpan tone, int track = 1)
     {
         Assert.Equal(1000, tone.Frequency);
-        var quiet = Spans(Run(file, "-map 0:a:0 -af bandpass=f=1000,silencedetect=n=-40dB:d=1"));
+        var quiet = Spans(Run(file, Invariant($"-map 0:a:{track - 1} -af bandpass=f=1000,silencedetect=n=-40dB:d=1")));
         Assert.Equal(quiet[0].Start, tone.End, 0.02);
 
-        string stats = Run(file, Invariant($"-map 0:a:0 -af atrim=start={tone.Start}:end={tone.End},astats=measure_perchannel=RMS_level:measure_overall=none"));
+        string stats = Run(file, Invariant($"-map 0:a:{track - 1} -af atrim=start={tone.Start}:end={tone.End},astats=measure_perchannel=RMS_level:measure_overall=none"));
         double rms = RmsLevel().Matches(stats).Max(m => Parse(m.Groups[1].Value));
         Assert.Equal(rms + (20 * Math.Log10(Math.Sqrt(2))), tone.Level, 0.1);
     }

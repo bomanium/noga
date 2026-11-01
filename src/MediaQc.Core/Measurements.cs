@@ -24,8 +24,17 @@ public sealed record Measurements
     /// </summary>
     public double LoudnessFrom { get; init; }
 
-    /// <summary>The audio track measured (the first); null when the file has none or its tags weren't read.</summary>
+    /// <summary>The first audio track, whose figures these are; null when the file has none or its tags weren't read.</summary>
     public AudioTrack? AudioTrack { get; init; }
+
+    /// <summary>Every audio track's description, in order (ffprobe's); empty when none or the tags weren't read.</summary>
+    public IReadOnlyList<AudioTrack> AudioTracks { get; init; } = [];
+
+    /// <summary>
+    /// The audio tracks after the first, each measured as the first is (its own line-up, silences and loudness); empty
+    /// when the file has one, or the decoder path measures only the first.
+    /// </summary>
+    public IReadOnlyList<TrackMeasures> OtherTracks { get; init; } = [];
 
     /// <summary>The programme loudness from <see cref="LoudnessFrom"/>, or null when the file has no audio.</summary>
     public LoudnessMeasure? Loudness { get; init; }
@@ -82,6 +91,12 @@ public readonly record struct TimeRange(double Start, double End)
     /// <summary>The span's length in seconds.</summary>
     public double Duration => End - Start;
 }
+
+/// <summary>
+/// One audio track's measures (<paramref name="Number"/> from 1, as the report counts them; ffmpeg's 0:a:Number-1): where its
+/// loudness is measured from (the end of its line-up), its loudness, silences and line-up tone.
+/// </summary>
+public sealed record TrackMeasures(int Number, double LoudnessFrom, LoudnessMeasure Loudness, IReadOnlyList<TimeRange> Silences, IReadOnlyList<ToneSpan> Tone);
 
 /// <summary>A span of line-up tone: its frequency in Hz and its level in dBFS (the loudest channel's RMS as a sine's peak).</summary>
 public readonly record struct ToneSpan(double Start, double End, double Frequency, double Level);

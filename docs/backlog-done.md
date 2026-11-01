@@ -107,3 +107,11 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-01, decisions/2026-11-01-open-films.md: Big Buck Bunny and Tears of Steel, every figure
     against the ffmpeg command line, weekly and on demand (films.yml); range spans under 1 s apart now join, which the
     first run on Big Buck Bunny showed was needed)
+
+- Every audio track measured and judged, each with its own findings
+  - Why: The report judged the first track only (decisions/2026-11-01-open-films.md); deliveries often carry stereo
+    and 5.1, or split stems
+  - Status: Done (2026-11-01, decisions/2026-11-01-every-audio-track.md: FrameReader 2.21.0's
+    `AudioReaderOptions.Stream` (bisforboman/shotdetector#697); each track measured from its own line-up and judged by
+    the same profile, its findings marked with the track and compared with ffmpeg -map 0:a:N; files with several audio
+    tracks go through the FFmpeg path)
