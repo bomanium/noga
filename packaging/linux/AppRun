@@ -1,0 +1,12 @@
+#!/bin/sh
+# The AppImage's entry point (docs/decisions/2026-11-02-installers.md): the desktop app, or the mediaqc command when
+# its first argument is one of the command's (check, serve, --help, --version) or the AppImage is run through a link
+# named mediaqc (ln -s mediaqc-VERSION-x86_64.AppImage ~/.local/bin/mediaqc).
+here=$(dirname "$(readlink -f "$0")")
+case "${1:-}" in
+  check | serve | -h | --help | --version) exec "$here/mediaqc" "$@" ;;
+esac
+case "$(basename "${ARGV0:-$0}")" in
+  mediaqc) exec "$here/mediaqc" "$@" ;;
+esac
+exec "$here/mediaqc-app" "$@"
