@@ -136,6 +136,25 @@ public sealed class AppTests : IDisposable
         Assert.Contains(window.DropZone.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.StartsWith("No video files", StringComparison.Ordinal) == true);
     }
 
+    // The window has the app's icon, the embedded 256 px PNG (tools/make-icons.sh). The headless platform keeps no
+    // image to read back, so the resource itself is checked.
+    [AvaloniaFact]
+    public void TheWindowHasTheAppIcon()
+    {
+        using var model = new AppModel(Check);
+        var window = new MainWindow(model);
+        window.Show();
+
+        Assert.NotNull(window.Icon);
+        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("MediaQc.App.icon.png");
+        Assert.NotNull(stream);
+        var header = new byte[24];
+        stream.ReadExactly(header);
+        Assert.Equal([0x89, (byte)'P', (byte)'N', (byte)'G'], header[..4]);
+        Assert.Equal(256, System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(header.AsSpan(16))); // IHDR's width
+        Assert.Equal(256, System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(header.AsSpan(20))); // and height
+    }
+
     static IStorageItem Storage(TopLevel top, string path) =>
         (Directory.Exists(path)
             ? top.StorageProvider.TryGetFolderFromPathAsync(path).GetAwaiter().GetResult()

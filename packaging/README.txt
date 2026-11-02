@@ -17,7 +17,10 @@ of those, and the thresholds it changes, e.g. "maxTruePeak": -3); mediaqc --help
 
 The desktop app: mediaqc-app (mediaqc-app.exe on Windows) opens a window to drop video files or folders on; each is
 checked where it is, with the profile chosen in the window, and its reports open from the list. "mediaqc-app FILE..."
-queues files at start. On Linux it needs a desktop (X11) and fontconfig, which desktop systems have.
+queues files at start. On Linux it needs a desktop (X11) and fontconfig, which desktop systems have; to have it in the
+desktop's menu (and "Open with" for video files), run ./install-desktop-entry.sh in this folder: it writes
+mediaqc-app.desktop into ~/.local/share/applications pointing at this folder's mediaqc-app and mediaqc-app.png. Run it
+again after moving the folder; ./install-desktop-entry.sh --uninstall takes the entry out.
 
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
