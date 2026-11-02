@@ -15,13 +15,18 @@ is the owner's to choose (Maybe below).
 
 ## Waiting
 
-Nothing.
+- The desktop app's icon: the chosen drawing in place of the provisional one
+  - Why: the window icon, the Windows executable's icon, tools/make-icons.sh and the Linux desktop entry are wired
+    (decisions/2026-11-02-app-icon-wiring.md) on branch claude/app-icon-desktop, its PR not merged until the icon is
+    decided; a separate session researches concepts and asks the owner (decisions/2026-11-02-app-icon.md)
+  - Status: Waiting (on the owner's choice of icon)
 
 ## Maybe
 
-- The desktop app's next steps: an icon and installers (MSI or MSIX on Windows, a .desktop file and AppImage on
-  Linux), macOS (osx-arm64, signed and notarised), code signing on Windows
-  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned, without an icon
+- The desktop app's next steps: installers (MSI or MSIX on Windows, an AppImage on Linux), macOS (osx-arm64, signed
+  and notarised), code signing on Windows
+  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned; the icon and a Linux
+    desktop entry are under way (Waiting above, decisions/2026-11-02-app-icon-wiring.md)
   - Status: Maybe
 
 - The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate)
