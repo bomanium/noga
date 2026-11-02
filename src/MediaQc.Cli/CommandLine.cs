@@ -1,3 +1,5 @@
+using MediaQc.Checking;
+
 namespace MediaQc.Cli;
 
 /// <summary>

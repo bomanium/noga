@@ -1,3 +1,5 @@
+using MediaQc.Checking;
+
 namespace MediaQc.Cli.Serve;
 
 /// <summary>
@@ -64,7 +66,7 @@ sealed class Watcher : IDisposable
         {
             string path = file.FullName;
             if (_queued.Contains(path) || file.Name.StartsWith('.') || Folders.IsReport(file.Name)
-                || !Folders.MediaExtensions.Contains(file.Extension) || File.Exists(path + ".qc.json")
+                || !MediaFiles.IsMedia(file.Name) || File.Exists(path + ".qc.json")
                 || Path.GetRelativePath(Folder, path).Split(Path.DirectorySeparatorChar).Any(p => p.StartsWith('.')))
             {
                 continue;

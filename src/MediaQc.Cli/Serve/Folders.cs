@@ -1,3 +1,5 @@
+using MediaQc.Checking;
+
 namespace MediaQc.Cli.Serve;
 
 /// <summary>A folder's contents for the page's file picker: its subfolders, then its files, hidden ones left out.</summary>
@@ -12,15 +14,8 @@ sealed record Entry(string Name, string Path, bool IsFolder, long? Size, bool Is
 /// </summary>
 static class Folders
 {
-    /// <summary>The file extensions marked as media (the picker shows other files too, dimmed).</summary>
-    public static readonly HashSet<string> MediaExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".mov", ".mp4", ".m4v", ".mxf", ".mkv", ".avi", ".mts", ".m2ts", ".ts", ".mpg", ".mpeg", ".webm", ".wav", ".mp3", ".m4a",
-    };
-
-    /// <summary>Whether <paramref name="name"/> is a report mediaqc wrote (FILE.qc.html or FILE.qc.json).</summary>
-    public static bool IsReport(string name) =>
-        name.EndsWith(".qc.html", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".qc.json", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Whether <paramref name="name"/> is a report mediaqc wrote.</summary>
+    public static bool IsReport(string name) => MediaFiles.IsReport(name);
 
     /// <summary>Where the picker starts: the user's home folder.</summary>
     public static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -61,7 +56,7 @@ static class Folders
         var files = folder.EnumerateFiles("*", options)
             .Where(f => !f.Name.StartsWith('.') && !IsReport(f.Name) && (!limited || f.LinkTarget is null))
             .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(f => new Entry(f.Name, f.FullName, false, f.Length, MediaExtensions.Contains(f.Extension)));
+            .Select(f => new Entry(f.Name, f.FullName, false, f.Length, MediaFiles.IsMedia(f.Name)));
         string? parent = limited && roots!.IsRoot(folder.FullName)
             ? Drives
             : folder.Parent?.FullName ?? (OperatingSystem.IsWindows() ? Drives : null);

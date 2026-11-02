@@ -134,6 +134,11 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-01, decisions/2026-11-01-profiles.md: atsc-a85, op-59 and arib-tr-b32 beside ebu-r128, and
     profile files (JSON, basedOn a shipped one), chosen with --profile on check and serve)
 
+- A desktop app
+  - Why: A native window with drag and drop of real file paths, beside the browser page
+  - Status: Done (2026-11-01, decisions/2026-11-01-desktop-app.md: mediaqc-app, Avalonia 12, in the same release
+    folder; Checker and Jobs shared through src/MediaQc.Checking; tested headless and run on Xvfb)
+
 - OP-59's and ARIB TR-B32's figures checked against the originals
   - Why: decisions/2026-11-01-profiles.md took them from vendor summaries (ARIB's tolerance not found, ±1 LU assumed);
     a customer relying on op-59 or arib-tr-b32 needs them confirmed

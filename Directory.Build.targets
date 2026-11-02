@@ -1,0 +1,9 @@
+<Project>
+  <!--
+    Avalonia.BuildServices (an Avalonia dependency) sends build telemetry to avaloniaui.net from its AvaloniaStats
+    target on every build that uses Avalonia (MediaQc.App). This repository's builds send nothing anywhere: the target
+    is replaced by an empty one, which this file (imported after the packages' targets) can do, rather than relying on
+    every machine and CI job setting AVALONIA_TELEMETRY_OPTOUT=1.
+  -->
+  <Target Name="AvaloniaStats" />
+</Project>
