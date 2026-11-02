@@ -3,11 +3,16 @@
 # FFmpeg's libraries with it) and its archive, a .tar.gz for Linux and a .zip for Windows, then checks that each holds
 # its licences (CLAUDE.md's licence rule: FFmpeg's LGPL libraries ship separate, with their licence, configure line and
 # SBOM beside them, ShotDetector.FastYuv's assembly with its licence; MediaQc.Cli.csproj's PublishLicences puts them there).
+# Then the installers (docs/decisions/2026-11-02-installers.md): for win-x64 a setup.exe (NSIS's makensis, from the
+# nsis package), for linux-x64 an AppImage (tools/get-appimage-tools.sh fetches appimagetool and its runtime, pinned),
+# each from the same folder and checked; --no-installers leaves them out.
 #
-#   tools/publish.sh [rid ...]      default: linux-x64 win-x64
+#   tools/publish.sh [--no-installers] [rid ...]      default: linux-x64 win-x64
 set -euo pipefail
 cd "$(dirname "$0")/.."
 version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
+installers=1
+if [ "${1:-}" = "--no-installers" ]; then installers=0; shift; fi
 rids=("$@")
 [ ${#rids[@]} -gt 0 ] || rids=(linux-x64 win-x64)
 mkdir -p artifacts
@@ -54,5 +59,56 @@ for rid in "${rids[@]}"; do
   case "$rid" in
     win-*) (cd artifacts && rm -f "$name.zip" && zip -qr "$name.zip" "$name") && echo "publish: artifacts/$name.zip" ;;
     *) tar -czf "artifacts/$name.tar.gz" -C artifacts "$name" && echo "publish: artifacts/$name.tar.gz" ;;
+  esac
+done
+
+[ "$installers" -eq 1 ] || exit 0
+for rid in "${rids[@]}"; do
+  name="mediaqc-$version-$rid"
+  out="artifacts/$name"
+  case "$rid" in
+    win-x64)
+      # The setup.exe: the folder as it is, and the list of its files for the uninstaller (deepest first, then the
+      # folders, so it removes what it installed and nothing else a user put there).
+      command -v makensis > /dev/null || { echo "publish: no makensis (apt install nsis), or pass --no-installers" >&2; exit 1; }
+      files=$(pwd)/artifacts/$name-files.nsh
+      (cd "$out" && { find . -type f | sort -r | sed -e 's|^\./||' -e 's|/|\\|g' -e 's|.*|  Delete "$INSTDIR\\&"|'
+                      find . -mindepth 1 -type d | sort -r | sed -e 's|^\./||' -e 's|/|\\|g' -e 's|.*|  RMDir "$INSTDIR\\&"|'; }) > "$files"
+      setup="artifacts/$name-setup.exe"
+      makensis -V2 -DVERSION="$version" -DVERSION4="$(echo "${version%%-*}" | cut -d. -f1-3).0" -DSOURCE="$(pwd)/$out" \
+        -DFILES="$files" -DOUTFILE="$(pwd)/$setup" packaging/windows/mediaqc.nsi > /dev/null
+      rm "$files"
+      # What it holds: every file of the folder and the uninstaller (7-Zip reads NSIS installers), when 7z is there.
+      if command -v 7z > /dev/null; then
+        listed=$(7z l -ba -slt "$setup" | sed -n 's/^Path = //p' | tr '\\' '/' | grep -v '^\$PLUGINSDIR' | sort)
+        expected=$({ (cd "$out" && find . -type f | sed 's|^\./||'); echo uninstall.exe; } | sort)
+        [ "$listed" = "$expected" ] || { echo "publish: $setup doesn't hold $out's files:" >&2; diff <(echo "$expected") <(echo "$listed") >&2; exit 1; }
+      fi
+      echo "publish: $setup"
+      ;;
+    linux-x64)
+      # The AppImage: the folder with AppRun (the app, or the command for check, serve, --help and --version), the
+      # icon, and the runtime's licences; not install-desktop-entry.sh, as the AppImage's own folder is gone once it ends.
+      tools=$(tools/get-appimage-tools.sh)
+      appdir="artifacts/$name.AppDir"
+      rm -rf "$appdir"
+      cp -a "$out" "$appdir"
+      rm "$appdir/install-desktop-entry.sh"
+      install -m 755 packaging/linux/AppRun "$appdir/AppRun"
+      ln -s mediaqc-app.png "$appdir/.DirIcon"
+      install -D -m 644 packaging/linux/appimage-runtime-licences.txt "$appdir/licences/appimage-runtime/LICENCES.txt"
+      image="artifacts/mediaqc-$version-x86_64.AppImage"
+      rm -f "$image"
+      ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tools/appimagetool-x86_64.AppImage" --no-appstream \
+        --runtime-file "$tools/runtime-x86_64" "$appdir" "$image" > /dev/null 2>&1 \
+        || { echo "publish: appimagetool failed:" >&2; ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tools/appimagetool-x86_64.AppImage" --no-appstream --runtime-file "$tools/runtime-x86_64" "$appdir" "$image" >&2; exit 1; }
+      rm -rf "$appdir"
+      cp packaging/linux/appimage-runtime-licences.txt "artifacts/mediaqc-$version-x86_64.AppImage.licences.txt"
+      # It runs: the command through AppRun says its version (unpacked, so FUSE isn't needed).
+      said=$(APPIMAGE_EXTRACT_AND_RUN=1 "$image" --version)
+      [[ "$said" == *"$version"* ]] || { echo "publish: $image --version said: $said" >&2; exit 1; }
+      echo "publish: $image"
+      ;;
+    *) echo "publish: no installer for $rid" ;;
   esac
 done
