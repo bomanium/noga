@@ -8,7 +8,7 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <Authors>Jakob Boman</Authors>
     <Copyright>Copyright (c) Jakob Boman</Copyright>
-    <Version>0.1.0-alpha.1</Version>
+    <Version>0.1.0-alpha.2</Version>
     <!-- A private, commercial product: nothing here is published to NuGet (CLAUDE.md, hard rules). -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
