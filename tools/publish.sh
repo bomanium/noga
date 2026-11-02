@@ -78,10 +78,11 @@ for rid in "${rids[@]}"; do
       makensis -V2 -DVERSION="$version" -DVERSION4="$(echo "${version%%-*}" | cut -d. -f1-3).0" -DSOURCE="$(pwd)/$out" \
         -DFILES="$files" -DOUTFILE="$(pwd)/$setup" packaging/windows/mediaqc.nsi > /dev/null
       rm "$files"
-      # What it holds: every file of the folder and the uninstaller (7-Zip reads NSIS installers), when 7z is there.
+      # What it holds: every file of the folder (7-Zip reads NSIS installers), when 7z is there; the uninstaller, which
+      # some 7-Zip versions list (23.01) and others don't (Ubuntu 26.04's), is left out.
       if command -v 7z > /dev/null; then
-        listed=$(7z l -ba -slt "$setup" | sed -n 's/^Path = //p' | tr '\\' '/' | grep -v '^\$PLUGINSDIR' | sort)
-        expected=$({ (cd "$out" && find . -type f | sed 's|^\./||'); echo uninstall.exe; } | sort)
+        listed=$(7z l -ba -slt "$setup" | sed -n 's/^Path = //p' | tr '\\' '/' | grep -v -e '^\$PLUGINSDIR' -e '^uninstall\.exe$' | sort)
+        expected=$(cd "$out" && find . -type f | sed 's|^\./||' | sort)
         [ "$listed" = "$expected" ] || { echo "publish: $setup doesn't hold $out's files:" >&2; diff <(echo "$expected") <(echo "$listed") >&2; exit 1; }
       fi
       echo "publish: $setup"
