@@ -49,7 +49,7 @@ Nothing.
   - Why: Out of scope at first (docs/notes/origin.md); what customers ask for after the first version decides which
   - Status: Maybe
 
-- OP-59's and ARIB TR-B32's figures checked against the originals
-  - Why: decisions/2026-11-01-profiles.md took them from vendor summaries (ARIB's tolerance not found, ±1 LU assumed);
-    a customer relying on op-59 or arib-tr-b32 needs them confirmed
+- ARIB TR-B32 1.7's chapter 2 checked against arib-tr-b32
+  - Why: decisions/2026-11-02-op59-arib-figures.md read the English edition, 1.5-E1 (2016); 1.7 (2026-09-10) is in
+    Japanese and sold to non-members, and its amendment notes don't mention changing the target, tolerance or true peak
   - Status: Maybe
