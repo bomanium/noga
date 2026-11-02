@@ -19,10 +19,10 @@ Nothing.
 
 ## Maybe
 
-- The desktop app's next steps: installers (MSI or MSIX on Windows, an AppImage on Linux), macOS (osx-arm64, signed
-  and notarised), code signing on Windows
-  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned; the icon and a Linux
-    desktop entry are done (decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md)
+- The desktop app's next steps: macOS (osx-arm64, signed and notarised), code signing on Windows
+  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned; the icon, a Linux
+    desktop entry (decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md) and installers (a setup.exe and an
+    AppImage: decisions/2026-11-02-installers.md) are done
   - Status: Maybe
 
 - The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate)
@@ -37,7 +37,8 @@ Nothing.
   - Status: Maybe
 
 - Code signing for the Windows build
-  - Why: an unsigned mediaqc.exe from a download is blocked or warned about by SmartScreen
+  - Why: an unsigned mediaqc.exe or setup.exe from a download is blocked or warned about by SmartScreen; signing would
+    also allow an MSIX (decisions/2026-11-02-installers.md)
   - Status: Maybe
 
 - The AVC patent pool before selling

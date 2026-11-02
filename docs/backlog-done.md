@@ -148,3 +148,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 - The desktop app's icon and Linux desktop entry
   - Why: mediaqc-app shipped without an icon, and Linux had no menu entry
   - Status: Done (2026-11-02: decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md)
+
+- Installers for the desktop app: an NSIS setup.exe for Windows and an AppImage for Linux, the archives kept
+  - Status: Done (2026-11-02, decisions/2026-11-02-installers.md)
