@@ -16,6 +16,10 @@ and .config/dotnet-tools.json.
 | FFmpeg.AutoGen (FrameReader's dependency; MediaQc.Ffmpeg's packet scan uses it directly, at FrameReader's version) | MIT (8.x; older versions were LGPL-3.0) | A managed assembly: the bindings to FFmpeg's libraries |
 | .NET runtime (Microsoft.NETCore.App, self-contained in a release) | MIT, with third-party notices | Its licence and THIRD-PARTY-NOTICES.TXT in a release's licences/dotnet/ |
 | ASP.NET Core (Microsoft.AspNetCore.App, self-contained in a release) | MIT, with third-party notices | `mediaqc serve`'s server (decisions/2026-11-01-web-ui.md); its LICENSE.txt and THIRD-PARTY-NOTICES.TXT in a release's licences/aspnetcore/ |
+| Avalonia, Avalonia.Desktop, Avalonia.Themes.Fluent (with Avalonia.Win32, .X11, .Native, .Skia, .HarfBuzz, .FreeDesktop) | MIT | Managed assemblies (MediaQc.App, the desktop app; decisions/2026-11-01-desktop-app.md) |
+| SkiaSharp, HarfBuzzSharp (and their NativeAssets) | MIT; the native libSkiaSharp and libHarfBuzzSharp include Skia (BSD-3-Clause), HarfBuzz (MIT), FreeType (FreeType licence), libpng, libjpeg-turbo, libwebp, expat and others under permissive licences | Native libraries beside the app; their THIRD-PARTY-NOTICES.txt in a release's licences/skiasharp/ (libmicrohttpd and giflib, which the notices also list, aren't compiled in: checked) |
+| Avalonia.Angle.Windows.Natives (ANGLE) | BSD-3-Clause | av_libglesv2.dll on Windows; its LICENSE in licences/angle/ |
+| MicroCom.Runtime, Tmds.DBus.Protocol | MIT | Managed assemblies (Avalonia's COM interop; D-Bus on Linux) |
 | FrameReader.Native.linux-x64, .win-x64 | LGPL-2.1-or-later (FFmpeg 8 without `--enable-gpl`; dav1d BSD-2-Clause, libwebp BSD-3-Clause, OpenSSL Apache-2.0 linked in) | Separate shared libraries under `runtimes/<rid>/native/`, loaded at run time and replaceable; the package's COPYING files, configure line, SBOM and README go to a release's licences/ffmpeg/ (tools/publish.sh) |
 
 ## Build and test only (not shipped)
@@ -25,9 +29,11 @@ and .config/dotnet-tools.json.
 | StyleBro.Analyzers | MIT | Style analyzers on build (`PrivateAssets="all"`: not in any output) |
 | StyleBro.Tool (`bro`) | MIT | The formatter (`dotnet tool run bro format`), local tool |
 | xunit | Apache-2.0 | Tests |
+| Avalonia.BuildServices (Avalonia's dependency) | MIT | Build time only: its AvaloniaStats target would send build telemetry to avaloniaui.net; Directory.Build.targets replaces it with an empty one, so no build sends anything |
+| xunit.v3, Avalonia.Headless.XUnit | Apache-2.0, MIT | The desktop app's tests (MediaQc.AppTests), headless |
 | xunit.runner.visualstudio | Apache-2.0 | Test runner |
 | Microsoft.NET.Test.Sdk | MIT | Test host |
-| GitHubActionsTestLogger | MIT | Failed tests as CI annotations |
+| GitHubActionsTestLogger | MIT | Failed tests as CI annotations (2.4.1 in MediaQc.AppTests: 3.x needs a newer test platform than xunit.v3 3.2) |
 
 ## Tools (not shipped)
 

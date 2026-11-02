@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using MediaQc.Checking;
 using MediaQc.Cli;
 using MediaQc.Cli.Serve;
 using Microsoft.AspNetCore.Builder;

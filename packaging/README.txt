@@ -15,6 +15,10 @@ mediaqc --help says the same.
 Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
 of those, and the thresholds it changes, e.g. "maxTruePeak": -3); mediaqc --help lists them with their figures.
 
+The desktop app: mediaqc-app (mediaqc-app.exe on Windows) opens a window to drop video files or folders on; each is
+checked where it is, with the profile chosen in the window, and its reports open from the list. "mediaqc-app FILE..."
+queues files at start. On Linux it needs a desktop (X11) and fontconfig, which desktop systems have.
+
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
 This folder holds everything mediaqc needs: the .NET runtime and FFmpeg's libraries come with it.

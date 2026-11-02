@@ -2,13 +2,13 @@ using FrameReader;
 using MediaQc.Ffmpeg;
 using MediaQc.Managed;
 
-namespace MediaQc.Cli;
+namespace MediaQc.Checking;
 
 /// <summary>
 /// One file's check, for the command line and the web UI alike: measured on its path (docs/decisions/2026-10-31-decoding.md:
 /// ManagedCodecs for H.264/AAC in MP4, FFmpeg for the rest), judged by the profile, both reports written.
 /// </summary>
-static class Checker
+public static class Checker
 {
     /// <summary>
     /// Checks <paramref name="file"/> by <paramref name="profile"/> (ebu-r128 when null) and writes FILE.qc.html and
@@ -46,10 +46,10 @@ static class Checker
 }
 
 /// <summary>A check's report and where its HTML and JSON went.</summary>
-sealed record CheckResult(QcReport Report, string Html, string Json);
+public sealed record CheckResult(QcReport Report, string Html, string Json);
 
 /// <summary>A file that couldn't be checked: not there, or not readable media.</summary>
-sealed class CheckException : Exception
+public sealed class CheckException : Exception
 {
     public CheckException()
     {

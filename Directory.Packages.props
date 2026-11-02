@@ -16,11 +16,18 @@
          the managed path's frames, a separate, replaceable assembly with its licence beside it. They move together. -->
     <PackageVersion Include="ShotDetector" Version="3.25.0" />
     <PackageVersion Include="ShotDetector.FastYuv" Version="3.25.0" />
+    <!-- The desktop app (MediaQc.App): Avalonia (MIT), its Skia and HarfBuzz renderers (MIT) come with it. They move together. -->
+    <PackageVersion Include="Avalonia" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.4" />
     <!-- Pure managed H.264/AAC decoding and MP4 demuxing (MIT). -->
     <PackageVersion Include="ManagedCodecs" Version="0.4.0" />
     <!-- Tests only. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
+    <!-- The desktop app's tests: Avalonia.Headless.XUnit needs xunit v3, at the version it builds on. -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <!-- Each failed test as a check-run annotation in CI. -->
     <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.5" />

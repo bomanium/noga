@@ -19,11 +19,15 @@ Nothing.
 
 ## Maybe
 
-- The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate), a thin native shell around
-  the page (native drag and drop of paths, an icon)
+- The desktop app's next steps: an icon and installers (MSI or MSIX on Windows, a .desktop file and AppImage on
+  Linux), macOS (osx-arm64, signed and notarised), code signing on Windows
+  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned, without an icon
+  - Status: Maybe
+
+- The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate)
   - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start; the watch folder
-    (decisions/2026-11-01-watch-folder.md) and the shared-machine mode (decisions/2026-11-01-shared-machine.md, plain
-    HTTP for trusted networks) are done
+    (decisions/2026-11-01-watch-folder.md), the shared-machine mode (decisions/2026-11-01-shared-machine.md, plain
+    HTTP for trusted networks) and a desktop app (decisions/2026-11-01-desktop-app.md) are done
   - Status: Maybe
 
 - macOS (osx-arm64) and Linux arm64 releases

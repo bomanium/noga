@@ -17,12 +17,14 @@ for rid in "${rids[@]}"; do
   out="artifacts/$name"
   rm -rf "$out"
   dotnet publish src/MediaQc.Cli -c Release -r "$rid" --self-contained -p:DebugType=none -o "$out" > /dev/null
+  # The desktop app beside it, in the same folder (one .NET runtime, its own executable).
+  dotnet publish src/MediaQc.App -c Release -r "$rid" --self-contained -p:DebugType=none -o "$out" > /dev/null
 
   case "$rid" in
-    win-*) libs=(avcodec-62.dll avformat-62.dll avfilter-11.dll avutil-60.dll swresample-6.dll swscale-9.dll); exe=mediaqc.exe ;;
-    *) libs=(libavcodec.so.62 libavformat.so.62 libavfilter.so.11 libavutil.so.60 libswresample.so.6 libswscale.so.9); exe=mediaqc ;;
+    win-*) libs=(avcodec-62.dll avformat-62.dll avfilter-11.dll avutil-60.dll swresample-6.dll swscale-9.dll libSkiaSharp.dll licences/angle/LICENSE); exe=mediaqc.exe; app=mediaqc-app.exe ;;
+    *) libs=(libavcodec.so.62 libavformat.so.62 libavfilter.so.11 libavutil.so.60 libswresample.so.6 libswscale.so.9 libSkiaSharp.so); exe=mediaqc; app=mediaqc-app ;;
   esac
-  for file in "$exe" "${libs[@]}" README.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
+  for file in "$exe" "$app" "${libs[@]}" licences/skiasharp/THIRD-PARTY-NOTICES.txt README.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
               licences/ffmpeg/configure.txt licences/ffmpeg/sbom.spdx.json licences/dotnet/LICENSE.TXT \
               licences/dotnet/THIRD-PARTY-NOTICES.TXT ShotDetector.FastYuv.dll licences/shotdetector-fastyuv/COPYING.LGPL \
               Microsoft.AspNetCore.dll licences/aspnetcore/LICENSE.txt licences/aspnetcore/THIRD-PARTY-NOTICES.TXT; do

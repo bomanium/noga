@@ -1,9 +1,9 @@
 using System.Threading.Channels;
 
-namespace MediaQc.Cli.Serve;
+namespace MediaQc.Checking;
 
 /// <summary>Where a check is: waiting its turn, being measured, done (with its report) or failed (with why).</summary>
-enum JobState
+public enum JobState
 {
     /// <summary>Waiting for the checks before it.</summary>
     Queued,
@@ -19,7 +19,7 @@ enum JobState
 }
 
 /// <summary>One file's check in the web UI.</summary>
-sealed record Job(int Id, string File, JobState State, DateTimeOffset Added)
+public sealed record Job(int Id, string File, JobState State, DateTimeOffset Added)
 {
     /// <summary>When its measuring started.</summary>
     public DateTimeOffset? Started { get; init; }
@@ -47,7 +47,7 @@ sealed record Job(int Id, string File, JobState State, DateTimeOffset Added)
 /// The checks asked for, run one at a time in the order asked (a check already keeps the cores busy), each with its
 /// reports beside its file as the command line writes them. Anyone waiting on <see cref="Changed"/> hears of each change.
 /// </summary>
-sealed class Jobs : IDisposable
+public sealed class Jobs : IDisposable
 {
     readonly Lock _lock = new();
     readonly List<Job> _jobs = [];
