@@ -1,6 +1,9 @@
 namespace MediaQc.Tests;
 
-/// <summary>The shipped profiles' thresholds and profile files (docs/decisions/2026-11-01-profiles.md).</summary>
+/// <summary>
+/// The shipped profiles' thresholds (docs/decisions/2026-11-01-profiles.md; OP-59's and ARIB TR-B32's from their own
+/// documents, docs/decisions/2026-11-02-op59-arib-figures.md) and profile files.
+/// </summary>
 public sealed class ProfilesTests : IDisposable
 {
     readonly string _folder = Directory.CreateTempSubdirectory("mediaqc-profiles-").FullName;
@@ -24,10 +27,16 @@ public sealed class ProfilesTests : IDisposable
     [InlineData("atsc-a85", -24.0, Severity.Pass)]
     [InlineData("atsc-a85", -22.0, Severity.Pass)]
     [InlineData("atsc-a85", -26.1, Severity.Failure)]
+    [InlineData("op-59", -24.0, Severity.Pass)]
+    [InlineData("op-59", -23.0, Severity.Pass)]
+    [InlineData("op-59", -22.9, Severity.Failure)]
     [InlineData("op-59", -25.0, Severity.Pass)]
     [InlineData("op-59", -25.1, Severity.Failure)]
+    [InlineData("arib-tr-b32", -24.0, Severity.Pass)]
     [InlineData("arib-tr-b32", -23.0, Severity.Pass)]
     [InlineData("arib-tr-b32", -22.9, Severity.Failure)]
+    [InlineData("arib-tr-b32", -25.0, Severity.Pass)]
+    [InlineData("arib-tr-b32", -25.1, Severity.Failure)]
     public void EachProfileHoldsItsLoudnessTarget(string name, double integrated, Severity expected) =>
         Assert.Equal(expected, Verdict(Profiles.Get(name), "loudness.integrated", integrated, -6));
 
@@ -35,6 +44,7 @@ public sealed class ProfilesTests : IDisposable
     [InlineData("ebu-r128", -1.5, Severity.Pass)]
     [InlineData("atsc-a85", -1.5, Severity.Failure)]
     [InlineData("atsc-a85", -2.0, Severity.Pass)]
+    [InlineData("op-59", -2.0, Severity.Pass)]
     [InlineData("op-59", -1.9, Severity.Failure)]
     [InlineData("arib-tr-b32", -1.0, Severity.Pass)]
     [InlineData("arib-tr-b32", -0.9, Severity.Failure)]
