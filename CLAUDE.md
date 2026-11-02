@@ -119,7 +119,7 @@ What is next, in order: docs/backlog.md.
   (the queue, testable without a window). Published into the CLI's release folder; its PublishLicences ships
   SkiaSharp's notices and ANGLE's licence, and on Linux the desktop entry (`packaging/linux/`: `mediaqc-app.desktop`,
   `install-desktop-entry.sh`, which writes it with the folder's absolute paths into ~/.local/share/applications) with
-  `mediaqc-app.png`. `Assets/`: `icon.svg` (provisional until decided: decisions/2026-11-02-app-icon-wiring.md) and the
+  `mediaqc-app.png`. `Assets/`: `icon.svg` (a check cut out of colour bars: decisions/2026-11-02-app-icon.md, wired: 2026-11-02-app-icon-wiring.md) and the
   PNGs and `icon.ico` that `tools/make-icons.sh` generates from it (committed): the window's icon (`MainWindow.AppIcon`,
   embedded) and the Windows executable's (`ApplicationIcon`).
 - `tests/MediaQc.AppTests`: the app on Avalonia's headless platform (xunit v3, which Avalonia.Headless.XUnit needs).

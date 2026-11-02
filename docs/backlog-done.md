@@ -138,3 +138,7 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: A native window with drag and drop of real file paths, beside the browser page
   - Status: Done (2026-11-01, decisions/2026-11-01-desktop-app.md: mediaqc-app, Avalonia 12, in the same release
     folder; Checker and Jobs shared through src/MediaQc.Checking; tested headless and run on Xvfb)
+
+- The desktop app's icon and Linux desktop entry
+  - Why: mediaqc-app shipped without an icon, and Linux had no menu entry
+  - Status: Done (2026-11-02: decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md)

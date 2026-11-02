@@ -31,7 +31,8 @@ Answer: 1.
 
 With the code:
 
-- `src/MediaQc.App/Assets/icon.svg`, and `tools/make-icons.sh` generating `icon-{16,24,32,48,64,128,256}.png` and
+- `src/MediaQc.App/Assets/icon.svg`: the chosen drawing (a check cut out of the seven colour bars, PR #25,
+  2026-11-02-app-icon.md) replaced the provisional one before merging, and `tools/make-icons.sh` generating `icon-{16,24,32,48,64,128,256}.png` and
   `icon.ico` (16 to 256 px) beside it with rsvg-convert and ImageMagick. The generated files are committed (the output
   is byte-for-byte the same on each run), so a build needs neither tool.
 - The window's icon: `MainWindow.AppIcon()`, `icon-256.png` embedded (`MediaQc.App.icon.png`). The Windows
