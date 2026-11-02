@@ -66,11 +66,20 @@ jobs:
         run: dotnet test MediaQc.slnx -c Release --no-build --logger GitHubActions
 
       # The release folders and archives for Linux and Windows, with their licences (tools/publish.sh checks them),
-      # then the Linux one run on a sample: it exits 1, as the sample fails loudness on purpose.
+      # and the installers (docs/decisions/2026-11-02-installers.md: makensis builds the setup.exe, 7-Zip lists it;
+      # publish.sh fetches the AppImage's tools, pinned), then the Linux folder and the AppImage run on a sample: each
+      # exits 1, as the sample fails loudness on purpose.
+      - name: Installer tools
+        run: |
+          command -v makensis && command -v 7z || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends nsis p7zip-full; }
+          makensis -VERSION
+
       - name: Publish
         run: |
           tools/publish.sh
           code=0; artifacts/mediaqc-*-linux-x64/mediaqc check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
+          test "$code" -eq 1
+          code=0; APPIMAGE_EXTRACT_AND_RUN=1 artifacts/mediaqc-*-x86_64.AppImage check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
           test "$code" -eq 1
 
       - name: make-samples.sh parses
@@ -84,6 +93,9 @@ jobs:
           path: |
             artifacts/*.tar.gz
             artifacts/*.zip
+            artifacts/*-setup.exe
+            artifacts/*.AppImage
+            artifacts/*.AppImage.licences.txt
           if-no-files-found: error
           retention-days: 7
 
