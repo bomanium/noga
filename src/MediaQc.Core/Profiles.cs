@@ -19,7 +19,11 @@ public static class Profiles
         MaxTruePeak = -2,
     };
 
-    /// <summary>Free TV OP-59 (Australia): -24 LKFS within ±1 LU, true peak at most -2 dBTP (secondary sources).</summary>
+    /// <summary>
+    /// Free TV OP-59 (Australia), Issue 4 (October 2018): -24 LKFS within ±1 LU (4(c)), true peak at most -2 dBTP (5(h)),
+    /// full mix with BS.1770's gate. Its exception for programmes "where exact normalisation to target level is not
+    /// practicable" is left to a profile file (docs/decisions/2026-11-02-op59-arib-figures.md).
+    /// </summary>
     public static Profile Op59 { get; } = Profile.EbuR128 with
     {
         Name = "op-59",
@@ -30,8 +34,10 @@ public static class Profiles
     };
 
     /// <summary>
-    /// ARIB TR-B32 (Japan): -24 LKFS, true peak at most -1 dBTP (secondary sources); its tolerance wasn't found, ±1 LU
-    /// is assumed.
+    /// ARIB TR-B32 (Japan), version 1.5-E1 (2016-09-29): -24 LKFS within ±1 LU (2.1.4, 2.1.5), true peak at most
+    /// -1 dBTP on every channel (2.2.4), full mix with BS.1770's gate. Its exception for programmes made quieter for
+    /// "creative production requirements" (2.1.6) is left to a profile file
+    /// (docs/decisions/2026-11-02-op59-arib-figures.md).
     /// </summary>
     public static Profile AribTrB32 { get; } = Profile.EbuR128 with
     {

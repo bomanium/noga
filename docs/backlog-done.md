@@ -133,3 +133,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     spec templates")
   - Status: Done (2026-11-01, decisions/2026-11-01-profiles.md: atsc-a85, op-59 and arib-tr-b32 beside ebu-r128, and
     profile files (JSON, basedOn a shipped one), chosen with --profile on check and serve)
+
+- OP-59's and ARIB TR-B32's figures checked against the originals
+  - Why: decisions/2026-11-01-profiles.md took them from vendor summaries (ARIB's tolerance not found, ±1 LU assumed);
+    a customer relying on op-59 or arib-tr-b32 needs them confirmed
+  - Status: Done (2026-11-02, decisions/2026-11-02-op59-arib-figures.md: OP-59 Issue 4 (2018) and ARIB TR-B32 1.5-E1
+    (2016) give the figures mediaqc ships, ARIB's ±1 included; their exceptions are left to profile files)
