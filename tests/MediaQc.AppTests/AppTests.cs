@@ -57,18 +57,22 @@ public sealed class AppTests : IDisposable
         return path;
     }
 
-    // Runs the UI thread's jobs until every check is done or failed.
-    static void Settle(AppModel model)
+    // Runs the UI thread's jobs until every check is done or failed and the window shows each as the queue has it
+    // (the window redraws from a background wait, so its rows lag the queue a little); fails after 10 s.
+    static void Settle(AppModel model, MainWindow window)
     {
-        for (int i = 0; i < 200 && model.Jobs.Any(j => j.State is JobState.Queued or JobState.Measuring); i++)
+        var until = DateTime.UtcNow.AddSeconds(10);
+        while (DateTime.UtcNow < until)
         {
             Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            var jobs = model.Jobs;
+            var shown = window.Rows.Select(r => ((r as Border)?.Child as Control)?.Tag as Job).ToList();
+            if (jobs.All(j => j.State is JobState.Done or JobState.Failed) && shown.SequenceEqual(jobs))
+                return;
             Thread.Sleep(10);
         }
 
-        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        Thread.Sleep(50);
-        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Fail("The checks didn't finish, or the window didn't show them, within 10 s.");
     }
 
     static string Text(Control row) =>
@@ -89,7 +93,7 @@ public sealed class AppTests : IDisposable
         foreach (string path in (string[])[good, bad, Path.Combine(_folder, "show")])
             data.Add(DataTransferItem.CreateFile(Storage(window, path)));
         window.Dropped(data);
-        Settle(model);
+        Settle(model, window);
 
         Assert.Equal(["good.mov", "bad.mov", "ep01.mxf"], _checked.Select(c => c.File));
         var rows = window.Rows.Select(Text).ToList();
@@ -111,7 +115,7 @@ public sealed class AppTests : IDisposable
 
         profiles.SelectedIndex = Profiles.All.ToList().IndexOf(Profiles.AtscA85);
         model.Add([Touch("good.mov")]);
-        Settle(model);
+        Settle(model, window);
 
         Assert.Equal([("good.mov", "atsc-a85")], _checked);
     }

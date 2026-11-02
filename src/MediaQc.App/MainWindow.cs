@@ -118,15 +118,16 @@ sealed class MainWindow : Window
         _model.Add(files.Select(f => f.TryGetLocalPath()).OfType<string>());
     }
 
-    // The checks, redrawn at each change until the window closes.
+    // The checks, redrawn at each change until the window closes. The next change's signal is taken before each redraw,
+    // so a change during the redraw wakes the loop again rather than waiting for one after it (which, after the last
+    // check, would never come and leave its verdict unshown).
     async Task FollowAsync()
     {
         while (!_closing.IsCancellationRequested)
         {
-            await _model.Changed.WaitAsync(_closing.Token).ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-            if (_closing.IsCancellationRequested)
-                return;
+            var changed = _model.Changed;
             await Dispatcher.UIThread.InvokeAsync(Render);
+            await changed.WaitAsync(_closing.Token).ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
 

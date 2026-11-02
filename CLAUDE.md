@@ -75,7 +75,8 @@ What is next, in order: docs/backlog.md.
 ## Layout
 
 - `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
-  `Directory.Packages.props` (central package versions); `global.json` (SDK 10.0.1xx or later).
+  `Directory.Packages.props` (central package versions); `Directory.Build.targets` (turns off Avalonia's build
+  telemetry); `global.json` (SDK 10.0.1xx or later).
 - `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is

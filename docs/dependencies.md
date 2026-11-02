@@ -29,6 +29,7 @@ and .config/dotnet-tools.json.
 | StyleBro.Analyzers | MIT | Style analyzers on build (`PrivateAssets="all"`: not in any output) |
 | StyleBro.Tool (`bro`) | MIT | The formatter (`dotnet tool run bro format`), local tool |
 | xunit | Apache-2.0 | Tests |
+| Avalonia.BuildServices (Avalonia's dependency) | MIT | Build time only: its AvaloniaStats target would send build telemetry to avaloniaui.net; Directory.Build.targets replaces it with an empty one, so no build sends anything |
 | xunit.v3, Avalonia.Headless.XUnit | Apache-2.0, MIT | The desktop app's tests (MediaQc.AppTests), headless |
 | xunit.runner.visualstudio | Apache-2.0 | Test runner |
 | Microsoft.NET.Test.Sdk | MIT | Test host |
