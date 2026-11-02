@@ -133,3 +133,8 @@ Finished items from [backlog.md](backlog.md), oldest first.
     spec templates")
   - Status: Done (2026-11-01, decisions/2026-11-01-profiles.md: atsc-a85, op-59 and arib-tr-b32 beside ebu-r128, and
     profile files (JSON, basedOn a shipped one), chosen with --profile on check and serve)
+
+- A desktop app
+  - Why: A native window with drag and drop of real file paths, beside the browser page
+  - Status: Done (2026-11-01, decisions/2026-11-01-desktop-app.md: mediaqc-app, Avalonia 12, in the same release
+    folder; Checker and Jobs shared through src/MediaQc.Checking; tested headless and run on Xvfb)

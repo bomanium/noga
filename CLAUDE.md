@@ -25,7 +25,8 @@ Unparked on 2026-10-31 (docs/decisions/2026-10-31-unparked.md); working towards 
 - Decoding: ManagedCodecs for H.264/AAC in MP4, FFmpeg through FrameReader for the rest; a test keeps both paths'
   measures the same on the same MP4 (2026-10-31-decoding.md).
 - A CLI: `mediaqc check <file>` writes an HTML and a JSON report and exits with a code for pipelines; a local web
-  UI on the same core, `mediaqc serve` (2026-10-31-product-shape.md, 2026-11-01-web-ui.md).
+  UI on the same core, `mediaqc serve` (2026-10-31-product-shape.md, 2026-11-01-web-ui.md); a desktop app,
+  `mediaqc-app` (2026-11-01-desktop-app.md).
 
 What is next, in order: docs/backlog.md.
 
@@ -102,7 +103,7 @@ What is next, in order: docs/backlog.md.
 - `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by the profile (ebu-r128 unless --profile names another or a file), writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings. `Checker.Run`:
-  one file's check, for both commands. `mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
+  one file's check (`src/MediaQc.Checking`), for both commands. `mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
   [--watch FOLDER] [--token TOKEN] [--profile PROFILE] [--no-open]` (`Serve/`): the web UI on 127.0.0.1 (default 8722), or shared on the
   network (`ServeOptions.Shared`: only the `--root` folders, `Roots`, and only with the token link's cookie;
   decisions/2026-11-01-shared-machine.md), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
@@ -110,6 +111,13 @@ What is next, in order: docs/backlog.md.
   streams them (server-sent events), `Watcher` scans a watched folder every 2 s and queues its media files without a
   report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts (localhost) or requests without the token (shared), and changes without the
   X-MediaQc header or from another Origin.
+- `src/MediaQc.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `Jobs`
+  (checks run one at a time) and `MediaFiles` (what counts as media), shared by the CLI, its web UI and the app.
+- `src/MediaQc.App`: `mediaqc-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
+  (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports), `AppModel`
+  (the queue, testable without a window). Published into the CLI's release folder; its PublishLicences ships
+  SkiaSharp's notices and ANGLE's licence.
+- `tests/MediaQc.AppTests`: the app on Avalonia's headless platform (xunit v3, which Avalonia.Headless.XUnit needs).
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
@@ -123,7 +131,7 @@ What is next, in order: docs/backlog.md.
 - `tools/publish.sh [rid ...]`: the release builds (default linux-x64 and win-x64), self-contained, into `artifacts/`
   as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
   `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, `licences/aspnetcore/`, and `packaging/`'s
-  README and notices).
+  README and notices), with the desktop app (`mediaqc-app`) in the same folder (`licences/skiasharp/`, `licences/angle/`).
   Not single-file nor trimmed: the LGPL binaries stay separate files. ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is

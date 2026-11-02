@@ -1,11 +1,14 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/MediaQc.Core/MediaQc.Core.csproj" />
+    <Project Path="src/MediaQc.App/MediaQc.App.csproj" />
+    <Project Path="src/MediaQc.Checking/MediaQc.Checking.csproj" />
     <Project Path="src/MediaQc.Cli/MediaQc.Cli.csproj" />
     <Project Path="src/MediaQc.Ffmpeg/MediaQc.Ffmpeg.csproj" />
     <Project Path="src/MediaQc.Managed/MediaQc.Managed.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/MediaQc.AppTests/MediaQc.AppTests.csproj" />
     <Project Path="tests/MediaQc.FilmTests/MediaQc.FilmTests.csproj" />
     <Project Path="tests/MediaQc.Tests/MediaQc.Tests.csproj" />
   </Folder>
