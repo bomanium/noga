@@ -24,6 +24,7 @@ sealed class MainWindow : Window
     {
         _model = model;
         Title = $"{Product.Name} {Product.Version}";
+        Icon = AppIcon();
         Width = 760;
         Height = 560;
         MinWidth = 420;
@@ -89,6 +90,17 @@ sealed class MainWindow : Window
 
         Render();
         _ = FollowAsync();
+    }
+
+    /// <summary>
+    /// The app's icon (Assets/icon-256.png, embedded; tools/make-icons.sh draws it from Assets/icon.svg) for the title
+    /// bar, the taskbar and the dock.
+    /// </summary>
+    internal static WindowIcon AppIcon()
+    {
+        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("MediaQc.App.icon.png")
+            ?? throw new InvalidOperationException("mediaqc-app has no embedded icon (MediaQc.App.icon.png)");
+        return new WindowIcon(stream);
     }
 
     /// <summary>Where files are dropped (tests drop on it).</summary>

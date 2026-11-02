@@ -19,9 +19,10 @@ Nothing.
 
 ## Maybe
 
-- The desktop app's next steps: an icon and installers (MSI or MSIX on Windows, a .desktop file and AppImage on
-  Linux), macOS (osx-arm64, signed and notarised), code signing on Windows
-  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned, without an icon
+- The desktop app's next steps: installers (MSI or MSIX on Windows, an AppImage on Linux), macOS (osx-arm64, signed
+  and notarised), code signing on Windows
+  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned; the icon and a Linux
+    desktop entry are done (decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md)
   - Status: Maybe
 
 - The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate)

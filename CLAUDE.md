@@ -117,7 +117,11 @@ What is next, in order: docs/backlog.md.
 - `src/MediaQc.App`: `mediaqc-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
   (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports), `AppModel`
   (the queue, testable without a window). Published into the CLI's release folder; its PublishLicences ships
-  SkiaSharp's notices and ANGLE's licence.
+  SkiaSharp's notices and ANGLE's licence, and on Linux the desktop entry (`packaging/linux/`: `mediaqc-app.desktop`,
+  `install-desktop-entry.sh`, which writes it with the folder's absolute paths into ~/.local/share/applications) with
+  `mediaqc-app.png`. `Assets/`: `icon.svg` (a check cut out of colour bars: decisions/2026-11-02-app-icon.md, wired: 2026-11-02-app-icon-wiring.md) and the
+  PNGs and `icon.ico` that `tools/make-icons.sh` generates from it (committed): the window's icon (`MainWindow.AppIcon`,
+  embedded) and the Windows executable's (`ApplicationIcon`).
 - `tests/MediaQc.AppTests`: the app on Avalonia's headless platform (xunit v3, which Avalonia.Headless.XUnit needs).
 - `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
@@ -129,10 +133,13 @@ What is next, in order: docs/backlog.md.
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence; timecode from 10:00:00:00) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
+- `tools/make-icons.sh`: the app's icons from `src/MediaQc.App/Assets/icon.svg` (rsvg-convert and ImageMagick); run
+  after changing the SVG and commit what it writes.
 - `tools/publish.sh [rid ...]`: the release builds (default linux-x64 and win-x64), self-contained, into `artifacts/`
   as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
   `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, `licences/aspnetcore/`, and `packaging/`'s
-  README and notices), with the desktop app (`mediaqc-app`) in the same folder (`licences/skiasharp/`, `licences/angle/`).
+  README and notices), with the desktop app (`mediaqc-app`) in the same folder (`licences/skiasharp/`, `licences/angle/`;
+  on Linux its desktop entry, which it installs into a scratch folder and checks).
   Not single-file nor trimmed: the LGPL binaries stay separate files. ~30 s.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is

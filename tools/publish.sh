@@ -22,7 +22,8 @@ for rid in "${rids[@]}"; do
 
   case "$rid" in
     win-*) libs=(avcodec-62.dll avformat-62.dll avfilter-11.dll avutil-60.dll swresample-6.dll swscale-9.dll libSkiaSharp.dll licences/angle/LICENSE); exe=mediaqc.exe; app=mediaqc-app.exe ;;
-    *) libs=(libavcodec.so.62 libavformat.so.62 libavfilter.so.11 libavutil.so.60 libswresample.so.6 libswscale.so.9 libSkiaSharp.so); exe=mediaqc; app=mediaqc-app ;;
+    *) libs=(libavcodec.so.62 libavformat.so.62 libavfilter.so.11 libavutil.so.60 libswresample.so.6 libswscale.so.9 libSkiaSharp.so
+             mediaqc-app.png mediaqc-app.desktop install-desktop-entry.sh); exe=mediaqc; app=mediaqc-app ;;
   esac
   for file in "$exe" "$app" "${libs[@]}" licences/skiasharp/THIRD-PARTY-NOTICES.txt README.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
               licences/ffmpeg/configure.txt licences/ffmpeg/sbom.spdx.json licences/dotnet/LICENSE.TXT \
@@ -30,6 +31,25 @@ for rid in "${rids[@]}"; do
               Microsoft.AspNetCore.dll licences/aspnetcore/LICENSE.txt licences/aspnetcore/THIRD-PARTY-NOTICES.TXT; do
     [ -f "$out/$file" ] || { echo "publish: $out has no $file" >&2; exit 1; }
   done
+
+  # Linux: the desktop entry. install-desktop-entry.sh, run into a scratch data folder, writes a valid entry whose Exec and
+  # Icon are this folder's mediaqc-app and its icon (a 256 px PNG).
+  case "$rid" in
+    linux-*)
+      [ -x "$out/install-desktop-entry.sh" ] || { echo "publish: $out/install-desktop-entry.sh isn't executable" >&2; exit 1; }
+      file "$out/mediaqc-app.png" | grep -q 'PNG image data, 256 x 256' || { echo "publish: $out/mediaqc-app.png isn't a 256 px PNG" >&2; exit 1; }
+      data=$(mktemp -d)
+      XDG_DATA_HOME="$data" "$out/install-desktop-entry.sh" > /dev/null
+      entry="$data/applications/mediaqc-app.desktop"
+      folder=$(cd "$out" && pwd)
+      grep -qxF "Exec=\"$folder/mediaqc-app\" %F" "$entry" && grep -qxF "Icon=$folder/mediaqc-app.png" "$entry" \
+        || { echo "publish: install-desktop-entry.sh wrote no Exec or Icon for $folder:" >&2; cat "$entry" >&2; exit 1; }
+      ! command -v desktop-file-validate > /dev/null || desktop-file-validate "$entry" "$out/mediaqc-app.desktop"
+      XDG_DATA_HOME="$data" "$out/install-desktop-entry.sh" --uninstall > /dev/null
+      [ ! -e "$entry" ] || { echo "publish: install-desktop-entry.sh --uninstall left $entry" >&2; exit 1; }
+      rm -rf "$data"
+      ;;
+  esac
 
   case "$rid" in
     win-*) (cd artifacts && rm -f "$name.zip" && zip -qr "$name.zip" "$name") && echo "publish: artifacts/$name.zip" ;;

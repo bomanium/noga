@@ -144,3 +144,7 @@ Finished items from [backlog.md](backlog.md), oldest first.
     a customer relying on op-59 or arib-tr-b32 needs them confirmed
   - Status: Done (2026-11-02, decisions/2026-11-02-op59-arib-figures.md: OP-59 Issue 4 (2018) and ARIB TR-B32 1.5-E1
     (2016) give the figures mediaqc ships, ARIB's ±1 included; their exceptions are left to profile files)
+
+- The desktop app's icon and Linux desktop entry
+  - Why: mediaqc-app shipped without an icon, and Linux had no menu entry
+  - Status: Done (2026-11-02: decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md)

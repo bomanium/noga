@@ -31,5 +31,8 @@ static class Program
     public static int Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
     /// <summary>The app on the platform it runs on (the designer and the tests build their own).</summary>
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect();
+    // The X11 window's class is the desktop entry's StartupWMClass (packaging/linux/mediaqc-app.desktop), which matches
+    // the window to the entry's name and icon in docks and task switchers.
+    public static AppBuilder BuildAvaloniaApp() =>
+        AppBuilder.Configure<App>().UsePlatformDetect().With(new X11PlatformOptions { WmClass = "mediaqc-app" });
 }
