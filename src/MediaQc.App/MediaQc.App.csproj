@@ -7,7 +7,15 @@
     <AssemblyName>mediaqc-app</AssemblyName>
     <RootNamespace>MediaQc.App</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The Windows executable's icon (Explorer, the taskbar before the window opens). Built into the .exe on every
+         platform, so the .ico is committed (tools/make-icons.sh generates it from Assets/icon.svg). -->
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The window's icon (MainWindow.AppIcon), embedded. -->
+    <EmbeddedResource Include="Assets\icon-256.png" LogicalName="MediaQc.App.icon.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" />
@@ -34,6 +42,13 @@
       <AngleLicence Include="$(NuGetPackageRoot)avalonia.angle.windows.natives/*/LICENSE" />
       <ResolvedFileToPublish Include="@(SkiaNoticeFile)" RelativePath="licences/skiasharp/THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="@(AngleLicence)" RelativePath="licences/angle/LICENSE" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+    <!-- On Linux, the desktop entry: the icon, a .desktop file that runs mediaqc-app from the folder it is in, and
+         install-desktop-entry.sh, which puts both into the desktop's menu (packaging/README.txt). -->
+    <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('linux'))">
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)Assets/icon-256.png" RelativePath="mediaqc-app.png" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/linux/mediaqc-app.desktop" RelativePath="mediaqc-app.desktop" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/linux/install-desktop-entry.sh" RelativePath="install-desktop-entry.sh" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
     <Error Condition="'@(SkiaNoticeFile)' == ''" Text="No SkiaSharp THIRD-PARTY-NOTICES.txt: the app ships its renderers' notices." />
   </Target>
