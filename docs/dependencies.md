@@ -21,6 +21,8 @@ and .config/dotnet-tools.json.
 | Avalonia.Angle.Windows.Natives (ANGLE) | BSD-3-Clause | av_libglesv2.dll on Windows; its LICENSE in licences/angle/ |
 | MicroCom.Runtime, Tmds.DBus.Protocol | MIT | Managed assemblies (Avalonia's COM interop; D-Bus on Linux) |
 | FrameReader.Native.linux-x64, .win-x64 | LGPL-2.1-or-later (FFmpeg 8 without `--enable-gpl`; dav1d BSD-2-Clause, libwebp BSD-3-Clause, OpenSSL Apache-2.0 linked in) | Separate shared libraries under `runtimes/<rid>/native/`, loaded at run time and replaceable; the package's COPYING files, configure line, SBOM and README go to a release's licences/ffmpeg/ (tools/publish.sh) |
+| NSIS's installer stub (in mediaqc-VERSION-win-x64-setup.exe) | zlib; its LZMA decompressor CPL-1.0 with an exception for linked code (packaging/windows/nsis-COPYING.txt) | The setup.exe's own code, not installed; the zlib licence asks no notice in binaries, the LZMA exception frees what it compresses from the CPL (decisions/2026-11-02-installers.md) |
+| AppImage's type2-runtime 20251108 (at the start of mediaqc-VERSION-x86_64.AppImage) | MIT; statically links libfuse (LGPL-2.1), squashfuse (BSD-2-Clause), musl (MIT), zstd (BSD-3-Clause), zlib (zlib) | A separate executable that mounts the AppImage's files; mediaqc doesn't link to it, and it can be replaced by repacking with any type2-runtime (`--appimage-extract`, `appimagetool --runtime-file`). Pinned by SHA-256 (tools/get-appimage-tools.sh); its licences and source in packaging/linux/appimage-runtime-licences.txt, inside the AppImage (licences/appimage-runtime/) and beside it on the release (decisions/2026-11-02-installers.md) |
 
 ## Build and test only (not shipped)
 
@@ -41,6 +43,9 @@ and .config/dotnet-tools.json.
 | --- | --- | --- |
 | ffmpeg and ffprobe (whatever is on PATH; CI installs Ubuntu's) | LGPL-2.1 or GPL, by build | `tools/make-samples.sh` makes test files with it, and the tests compare the measures (and the timecode tag) with them; nothing from it is shipped, so a GPL build (libx264) is fine there |
 | rsvg-convert (librsvg, LGPL-2.1-or-later) and ImageMagick (ImageMagick licence, Apache-2.0 style) | as named | `tools/make-icons.sh` renders the app's icon.svg into its PNGs and .ico, which are committed; the tools aren't needed to build and nothing from them is shipped |
+| makensis (NSIS 3, CI installs Ubuntu's nsis package) | zlib (the compiler; CPL-1.0 for its LZMA module) | Builds the Windows setup.exe on Linux (tools/publish.sh) |
+| appimagetool 1.9.1 (with its mksquashfs, desktop-file-validate and zsyncmake) | MIT (the tool; squashfs-tools GPL-2.0, run as a program, nothing of it shipped) | Builds the AppImage (tools/publish.sh), pinned by SHA-256 (tools/get-appimage-tools.sh) |
+| 7-Zip (p7zip-full) | LGPL-2.1 with unRAR restriction | publish.sh lists the setup.exe's files with it to check them; nothing shipped |
 | GitHub Actions: actions/checkout, actions/setup-dotnet | MIT | CI, pinned by commit SHA |
 
 ## Candidates (the open decisions, docs/backlog.md)

@@ -22,6 +22,15 @@ desktop's menu (and "Open with" for video files), run ./install-desktop-entry.sh
 mediaqc-app.desktop into ~/.local/share/applications pointing at this folder's mediaqc-app and mediaqc-app.png. Run it
 again after moving the folder; ./install-desktop-entry.sh --uninstall takes the entry out.
 
+The installers: the release also has mediaqc-VERSION-win-x64-setup.exe and mediaqc-VERSION-x86_64.AppImage, the same
+files as this folder. The setup.exe installs for your user only, without administrator rights, into
+%LOCALAPPDATA%\Programs\mediaqc, with a Start-menu shortcut (and a desktop one, and mediaqc on your PATH, if you
+choose); Settings, Apps uninstalls it. The AppImage runs as it is (chmod +x it first): it opens the desktop app, or runs
+the command when its first argument is check, serve, --help or --version, or when it is run through a link named
+mediaqc (ln -s ~/Applications/mediaqc-VERSION-x86_64.AppImage ~/.local/bin/mediaqc). It needs FUSE, which desktop
+systems have; elsewhere set APPIMAGE_EXTRACT_AND_RUN=1. Its runtime's licences (libfuse's LGPL among them) are in
+mediaqc-VERSION-x86_64.AppImage.licences.txt and inside it, in licences/appimage-runtime/.
+
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
 This folder holds everything mediaqc needs: the .NET runtime and FFmpeg's libraries come with it.
