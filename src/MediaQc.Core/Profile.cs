@@ -27,6 +27,7 @@ public sealed record Profile
         ClipRun = 3,
         FreezeNoise = 0.001,
         MinFreeze = 2,
+        ToneLevel = -18,
     };
 
     /// <summary>The profile's name in reports and on the command line.</summary>
@@ -85,6 +86,27 @@ public sealed record Profile
 
     /// <summary>The shortest freeze reported (seconds; freezedetect's d).</summary>
     public double MinFreeze { get; init; } = 2;
+
+    /// <summary>
+    /// The line-up tone's level (dBFS, a sine's peak as AES17 has it): EBU R 68's -18 for ebu-r128; null, not judged
+    /// (docs/decisions/2026-11-03-line-up-and-head-tail.md). A tone further from it than <see cref="ToneTolerance"/> warns.
+    /// </summary>
+    public double? ToneLevel { get; init; }
+
+    /// <summary>How far from <see cref="ToneLevel"/> the tone may be (dB).</summary>
+    public double ToneTolerance { get; init; } = 0.5;
+
+    /// <summary>The bars the head must start with (seconds at least); null: not required. Short or missing fails.</summary>
+    public double? HeadBars { get; init; }
+
+    /// <summary>The line-up tone the head must start with (seconds at least); null: not required.</summary>
+    public double? HeadTone { get; init; }
+
+    /// <summary>The black, with silence, before the programme (seconds at least: after the head's bars, or from the start); null: not required.</summary>
+    public double? HeadBlack { get; init; }
+
+    /// <summary>The black, with silence, the file must end with (seconds at least); null: not required.</summary>
+    public double? TailBlack { get; init; }
 
     /// <summary>What freezes are checked against.</summary>
     public string FreezeFilter => Invariant($"freezedetect=n={FreezeNoise}:d={MinFreeze} (each end within one frame), black and bars left out");
@@ -200,6 +222,7 @@ public sealed record Profile
         Tone(findings, measured.Tone);
 
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
+        HeadAndTail(findings, measured, frame, At);
 
         // A black picture or bars are still by nature (black and bars report them): a freeze counts outside them.
         var still = measured.Black.Concat(measured.Bars).OrderBy(s => s.Start).ToList();
@@ -275,11 +298,15 @@ public sealed record Profile
         {
             foreach (var tone in tones)
             {
+                // Judged at the report's precision (0.1 dB), as loudness is.
+                bool off = ToneLevel is { } level && Math.Round(Math.Abs(tone.Level - level), 1) > ToneTolerance;
                 into.Add(new Finding
                 {
                     Check = "tone",
-                    Severity = Severity.Info,
-                    Message = Invariant($"Line-up tone, {tone.Frequency:0} Hz at {tone.Level:0.0} dBFS, for {tone.End - tone.Start:0.00} s"),
+                    Severity = ToneLevel is null ? Severity.Info : off ? Severity.Warning : Severity.Pass,
+                    Message = ToneLevel is { } expected
+                        ? Invariant($"Line-up tone, {tone.Frequency:0} Hz at {tone.Level:0.0} dBFS (expected {expected:0.#} dBFS within {ToneTolerance:0.0#} dB), for {tone.End - tone.Start:0.00} s")
+                        : Invariant($"Line-up tone, {tone.Frequency:0} Hz at {tone.Level:0.0} dBFS, for {tone.End - tone.Start:0.00} s"),
                     Value = tone.Level,
                     Unit = "dBFS",
                     Start = At(tone.Start),
@@ -556,6 +583,56 @@ public sealed record Profile
                 CheckedAgainst = ShotsFilter,
             });
         }
+    }
+
+    // What the profile asks for at the head and the tail (docs/decisions/2026-11-03-line-up-and-head-tail.md), each a
+    // pass or a failure: bars and tone from the start, black with silence before the programme (after the head's bars,
+    // or from the start) and at the end.
+    void HeadAndTail(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
+    {
+        var bars = measured.Bars.FirstOrDefault(b => b.Start < frame / 2);
+        if (HeadBars is { } headBars)
+        {
+            double got = bars.Duration;
+            into.Add(Need("head.bars", got, headBars, got > 0 ? Invariant($"Bars at the head for {got:0.00} s") : "No bars at the head", BarsFilter, bars));
+        }
+
+        if (HeadTone is { } headTone)
+        {
+            var tone = measured.Tone.FirstOrDefault(t => t.Start < 0.5);
+            double got = tone.End - tone.Start;
+            into.Add(Need("head.tone", got, headTone, got > 0 ? Invariant($"Line-up tone at the head for {got:0.00} s") : "No line-up tone at the head", ToneFilter, new TimeRange(tone.Start, tone.End)));
+        }
+
+        if (HeadBlack is { } headBlack)
+        {
+            double from = bars.Duration > 0 ? bars.End : 0;
+            var black = measured.Black.FirstOrDefault(b => b.Start <= from + frame && b.End > from);
+            double got = Silent(black);
+            into.Add(Need("head.black", got, headBlack, got > 0 ? Invariant($"Black with silence before the programme for {got:0.00} s") : "No black with silence before the programme", BlackFilter + "; " + SilenceFilter, black));
+        }
+
+        if (TailBlack is { } tailBlack)
+        {
+            var black = measured.Black.FirstOrDefault(b => b.End > measured.Duration - (frame / 2));
+            double got = Silent(black);
+            into.Add(Need("tail.black", got, tailBlack, got > 0 ? Invariant($"Black with silence at the tail for {got:0.00} s") : "No black with silence at the tail", BlackFilter + "; " + SilenceFilter, black));
+        }
+
+        // How much of a black span is silent too.
+        double Silent(TimeRange black) => black.Duration <= 0 ? 0 : measured.Silences.Sum(s => Math.Max(0, Math.Min(s.End, black.End) - Math.Max(s.Start, black.Start)));
+
+        Finding Need(string check, double got, double needed, string what, string filter, TimeRange span) => new()
+        {
+            Check = check,
+            Severity = Math.Round(got, 2) >= needed ? Severity.Pass : Severity.Failure,
+            Message = Invariant($"{what} (at least {needed:0.##} s)"),
+            Value = got,
+            Unit = "s",
+            Start = span.Duration > 0 ? at(span.Start) : null,
+            End = span.Duration > 0 ? at(span.End) : null,
+            CheckedAgainst = filter,
+        };
     }
 
     // The checks each audio track has.
