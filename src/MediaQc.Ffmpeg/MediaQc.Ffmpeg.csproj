@@ -14,8 +14,9 @@
     <PackageReference Include="FFmpeg.AutoGen" />
     <!-- The shot list (Shots). -->
     <PackageReference Include="ShotDetector" />
-    <!-- CI's and the owner's platforms; others come with packaging. -->
+    <!-- The release platforms (tools/publish.sh): CI's, the owner's, and Linux on ARM (decisions/2026-11-03-linux-arm64.md). -->
     <PackageReference Include="FrameReader.Native.linux-x64" />
+    <PackageReference Include="FrameReader.Native.linux-arm64" />
     <PackageReference Include="FrameReader.Native.win-x64" />
   </ItemGroup>
 
