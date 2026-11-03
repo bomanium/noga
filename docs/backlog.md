@@ -25,9 +25,10 @@ Nothing.
     AppImage: decisions/2026-11-02-installers.md) are done
   - Status: Maybe
 
-- macOS (osx-arm64) and Linux arm64 releases
-  - Why: FrameReader.Native has osx-arm64 and linux-arm64 packages; CI can't run them (ubuntu only, macOS minutes cost
-    10x), and macOS wants a signed, notarised binary
+- A macOS (osx-arm64) release
+  - Why: FrameReader.Native has an osx-arm64 package; CI can't run it (ubuntu only, macOS minutes cost 10x, and qemu
+    doesn't run macOS binaries), and macOS wants a signed, notarised binary. Linux arm64 is done
+    (decisions/2026-11-03-linux-arm64.md)
   - Status: Maybe
 
 - Code signing for the Windows build

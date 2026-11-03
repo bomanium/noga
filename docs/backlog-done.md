@@ -154,3 +154,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - HTTPS for a shared server: --cert's certificate, else a self-signed one kept in the profile; --http opts out
   - Status: Done (2026-11-03, decisions/2026-11-03-shared-https.md)
+
+- A Linux arm64 release: the folder, its tar.gz and an aarch64 AppImage, checked under qemu against x64's findings
+  - Status: Done (2026-11-03, decisions/2026-11-03-linux-arm64.md)
