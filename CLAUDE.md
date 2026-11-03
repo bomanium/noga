@@ -136,7 +136,7 @@ What is next, in order: docs/backlog.md.
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `tools/make-icons.sh`: the app's icons from `src/MediaQc.App/Assets/icon.svg` (rsvg-convert and ImageMagick); run
   after changing the SVG and commit what it writes.
-- `tools/publish.sh [--no-installers] [rid ...]`: the release builds (default linux-x64 and win-x64), self-contained, into `artifacts/`
+- `tools/publish.sh [--no-installers] [rid ...]`: the release builds (default linux-x64, linux-arm64 and win-x64), self-contained, into `artifacts/`
   as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
   `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, `licences/aspnetcore/`, and `packaging/`'s
   README and notices), with the desktop app (`mediaqc-app`) in the same folder (`licences/skiasharp/`, `licences/angle/`;
@@ -146,7 +146,12 @@ What is next, in order: docs/backlog.md.
   per user, shortcuts, PATH, an uninstaller that deletes the files it installed; checked with 7-Zip) and
   `mediaqc-VERSION-x86_64.AppImage` (`packaging/linux/AppRun`: the app, or the command for check, serve, --help,
   --version; appimagetool and type2-runtime pinned by `tools/get-appimage-tools.sh`; the runtime links libfuse, LGPL:
-  `packaging/linux/appimage-runtime-licences.txt` goes inside it and beside it on the release). ~2 min.
+  `packaging/linux/appimage-runtime-licences.txt` goes inside it and beside it on the release), and
+  `mediaqc-VERSION-aarch64.AppImage` for linux-arm64. ~3 min.
+- `tools/arm64-check.sh [sample ...]`: the linux-arm64 release on x64 under qemu-user (`qemu-aarch64-static`, or qemu-user's `qemu-aarch64` on Ubuntu 26.04, `-L` an
+  Ubuntu arm64 base image pinned by SHA-256, so no binfmt handler; tiered compilation off, which qemu-user crashes):
+  its AppImage unpacked and run, and each sample's findings the same as x64's (decisions/2026-11-03-linux-arm64.md).
+  ~2-3 min; CI runs it after publish.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is
   `v` + Version, also a GitHub release with the archives and installers, published at once (decisions/2026-11-01-release-workflow.md). `.github/workflows/films.yml`: the film tests, Monday nights and on demand, films cached. `.github/dependabot.yml`:

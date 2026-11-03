@@ -7,14 +7,17 @@
 # nsis package), for linux-x64 an AppImage (tools/get-appimage-tools.sh fetches appimagetool and its runtime, pinned),
 # each from the same folder and checked; --no-installers leaves them out.
 #
-#   tools/publish.sh [--no-installers] [rid ...]      default: linux-x64 win-x64
+#   tools/publish.sh [--no-installers] [rid ...]      default: linux-x64 linux-arm64 win-x64
+#
+# linux-arm64 (decisions/2026-11-03-linux-arm64.md) is built on x64 like the rest; its AppImage's --version runs here
+# only on ARM: tools/arm64-check.sh runs it, and checks samples with it, under qemu-user.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
 installers=1
 if [ "${1:-}" = "--no-installers" ]; then installers=0; shift; fi
 rids=("$@")
-[ ${#rids[@]} -gt 0 ] || rids=(linux-x64 win-x64)
+[ ${#rids[@]} -gt 0 ] || rids=(linux-x64 linux-arm64 win-x64)
 mkdir -p artifacts
 
 for rid in "${rids[@]}"; do
@@ -87,7 +90,7 @@ for rid in "${rids[@]}"; do
       fi
       echo "publish: $setup"
       ;;
-    linux-x64)
+    linux-x64 | linux-arm64)
       # The AppImage: the folder with AppRun (the app, or the command for check, serve, --help and --version), the
       # icon, and the runtime's licences; not install-desktop-entry.sh, as the AppImage's own folder is gone once it ends.
       tools=$(tools/get-appimage-tools.sh)
@@ -98,16 +101,21 @@ for rid in "${rids[@]}"; do
       install -m 755 packaging/linux/AppRun "$appdir/AppRun"
       ln -s mediaqc-app.png "$appdir/.DirIcon"
       install -D -m 644 packaging/linux/appimage-runtime-licences.txt "$appdir/licences/appimage-runtime/LICENCES.txt"
-      image="artifacts/mediaqc-$version-x86_64.AppImage"
+      arch=$([ "$rid" = linux-arm64 ] && echo aarch64 || echo x86_64)
+      image="artifacts/mediaqc-$version-$arch.AppImage"
       rm -f "$image"
-      ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tools/appimagetool-x86_64.AppImage" --no-appstream \
-        --runtime-file "$tools/runtime-x86_64" "$appdir" "$image" > /dev/null 2>&1 \
-        || { echo "publish: appimagetool failed:" >&2; ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$tools/appimagetool-x86_64.AppImage" --no-appstream --runtime-file "$tools/runtime-x86_64" "$appdir" "$image" >&2; exit 1; }
+      pack() { ARCH=$arch APPIMAGE_EXTRACT_AND_RUN=1 "$tools/appimagetool-x86_64.AppImage" --no-appstream --runtime-file "$tools/runtime-$arch" "$appdir" "$image"; }
+      pack > /dev/null 2>&1 || { echo "publish: appimagetool failed:" >&2; pack >&2; exit 1; }
       rm -rf "$appdir"
-      cp packaging/linux/appimage-runtime-licences.txt "artifacts/mediaqc-$version-x86_64.AppImage.licences.txt"
-      # It runs: the command through AppRun says its version (unpacked, so FUSE isn't needed).
-      said=$(APPIMAGE_EXTRACT_AND_RUN=1 "$image" --version)
-      [[ "$said" == *"$version"* ]] || { echo "publish: $image --version said: $said" >&2; exit 1; }
+      cp packaging/linux/appimage-runtime-licences.txt "$image.licences.txt"
+      # It runs: the command through AppRun says its version (unpacked, so FUSE isn't needed), on this machine's
+      # architecture (tools/arm64-check.sh runs an aarch64 one on x64).
+      if [ "$(uname -m)" = "$arch" ]; then
+        said=$(APPIMAGE_EXTRACT_AND_RUN=1 "$image" --version)
+        [[ "$said" == *"$version"* ]] || { echo "publish: $image --version said: $said" >&2; exit 1; }
+      else
+        echo "publish: $image not run here ($(uname -m)): tools/arm64-check.sh runs it under qemu"
+      fi
       echo "publish: $image"
       ;;
     *) echo "publish: no installer for $rid" ;;

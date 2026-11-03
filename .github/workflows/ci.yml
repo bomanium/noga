@@ -24,7 +24,7 @@ jobs:
   build:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -65,13 +65,15 @@ jobs:
       - name: Test
         run: dotnet test MediaQc.slnx -c Release --no-build --logger GitHubActions
 
-      # The release folders and archives for Linux and Windows, with their licences (tools/publish.sh checks them),
+      # The release folders and archives for Linux (x64 and arm64) and Windows, with their licences (tools/publish.sh checks them),
       # and the installers (docs/decisions/2026-11-02-installers.md: makensis builds the setup.exe, 7-Zip lists it;
       # publish.sh fetches the AppImage's tools, pinned), then the Linux folder and the AppImage run on a sample: each
       # exits 1, as the sample fails loudness on purpose.
       - name: Installer tools
         run: |
-          command -v makensis && command -v 7z || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends nsis p7zip-full; }
+          # qemu-user: Ubuntu 26.04's qemu-user-static is only a virtual package; qemu-user holds the emulators there.
+          command -v makensis && command -v 7z && { command -v qemu-aarch64-static || command -v qemu-aarch64; } \
+            || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends nsis p7zip-full qemu-user; }
           makensis -VERSION
 
       - name: Publish
@@ -81,6 +83,11 @@ jobs:
           test "$code" -eq 1
           code=0; APPIMAGE_EXTRACT_AND_RUN=1 artifacts/mediaqc-*-x86_64.AppImage check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
           test "$code" -eq 1
+
+      # The linux-arm64 release under qemu-user (decisions/2026-11-03-linux-arm64.md): its AppImage unpacks and runs,
+      # and it finds what x64 finds on the ProRes and H.264 samples (~3 min).
+      - name: ARM64 under emulation
+        run: tools/arm64-check.sh
 
       - name: make-samples.sh parses
         run: bash -n tools/make-samples.sh
