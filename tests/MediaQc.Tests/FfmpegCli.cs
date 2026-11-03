@@ -254,6 +254,27 @@ internal static partial class FfmpegCli
         }
     }
 
+    /// <summary>
+    /// The freezes are freezedetect's with the profile's n and d, each end within one frame (one still frozen at the end,
+    /// which freezedetect leaves open, ends with the video).
+    /// </summary>
+    public static void AssertFreezes(string file, Measurements measured, Profile profile)
+    {
+        string log = Run(file, Invariant($"-an -vf freezedetect=n={profile.FreezeNoise}:d={profile.MinFreeze}"));
+        var starts = FreezeStart().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+        var ends = FreezeEnd().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+        double frame = (double)measured.RateDenominator / measured.RateNumerator;
+        Assert.Equal(starts.Count, measured.Freezes.Count);
+        for (int i = 0; i < starts.Count; i++)
+        {
+            Assert.Equal(starts[i], measured.Freezes[i].Start, frame);
+            if (i < ends.Count)
+                Assert.Equal(ends[i], measured.Freezes[i].End, frame);
+            else
+                Assert.Equal(measured.Duration, measured.Freezes[i].End, frame);
+        }
+    }
+
     static double Number(string text, string pattern)
     {
         var match = Regex.Match(text, pattern);
@@ -275,6 +296,12 @@ internal static partial class FfmpegCli
 
     [GeneratedRegex(@"silence_start: (-?[\d.]+)")]
     private static partial Regex SilenceStart();
+
+    [GeneratedRegex(@"freeze_start: (-?[\d.]+)")]
+    private static partial Regex FreezeStart();
+
+    [GeneratedRegex(@"freeze_end: (-?[\d.]+)")]
+    private static partial Regex FreezeEnd();
 
     // astats' per-channel block: its RMS level, then (further on) its Peak count.
     [GeneratedRegex(@"Channel: \d+[\s\S]*?RMS level dB: (-?[\d.]+|-inf)[\s\S]*?Peak count: (\d+)")]

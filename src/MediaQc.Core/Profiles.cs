@@ -103,7 +103,7 @@ public static class Profiles
     /// any of its thresholds and settings to change (camelCase: <c>targetLoudness</c>, <c>loudnessPass</c>,
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
-    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
@@ -145,6 +145,8 @@ public static class Profiles
             RangeMergeGap = file.RangeMergeGap ?? start.RangeMergeGap,
             MinPhase = file.MinPhase ?? start.MinPhase,
             ClipRun = file.ClipRun ?? start.ClipRun,
+            FreezeNoise = file.FreezeNoise ?? start.FreezeNoise,
+            MinFreeze = file.MinFreeze ?? start.MinFreeze,
             Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
@@ -155,6 +157,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: blackPixelThreshold, blackPictureThreshold and maxOutOfRange are 0 to 1.", nameof(json));
         if (profile.MinPhase is < -1 or > 1 || profile.ClipRun < 1)
             throw new ArgumentException($"{source}: minPhase is -1 to 1, clipRun at least 1.", nameof(json));
+        if (profile.FreezeNoise is < 0 or > 1 || profile.MinFreeze <= 0)
+            throw new ArgumentException($"{source}: freezeNoise is 0 to 1, minFreeze positive.", nameof(json));
         if (profile.Format is { } format)
             Check(format, source);
         return profile;
@@ -178,6 +182,8 @@ internal sealed record ProfileFile(
     double? RangeMergeGap,
     double? MinPhase,
     int? ClipRun,
+    double? FreezeNoise,
+    double? MinFreeze,
     FormatSpec? Format);
 
 [JsonSourceGenerationOptions(

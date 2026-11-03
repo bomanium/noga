@@ -41,8 +41,10 @@ public static class FfmpegMeasurer
             NotMeasured = ["bars", "black"],
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
-        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken), profile) with
+        var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
+        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes), profile) with
         {
+            Freezes = freezes.Finish(),
             Packets = Packets.Read(path, cancellationToken),
         };
         measured = Shots.Add(measured, Shots.Detect(path, cancellationToken));

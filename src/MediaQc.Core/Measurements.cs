@@ -48,6 +48,9 @@ public sealed record Measurements
     /// <summary>The silences (silencedetect's), in order.</summary>
     public IReadOnlyList<TimeRange> Silences { get; init; } = [];
 
+    /// <summary>The frozen pictures (freezedetect's), in order (docs/decisions/2026-11-03-freeze-frames.md).</summary>
+    public IReadOnlyList<TimeRange> Freezes { get; init; } = [];
+
     /// <summary>The first audio track's channels one by one; null when not measured.</summary>
     public ChannelMeasures? Channels { get; init; }
 
