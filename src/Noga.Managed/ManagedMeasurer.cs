@@ -42,10 +42,21 @@ public static class ManagedMeasurer
         ArgumentNullException.ThrowIfNull(path);
         try
         {
-            bool managed;
-            using (var demuxer = Demuxer.Open(path) as Mp4Demuxer)
-                managed = demuxer?.Video?.Codec == CodecIds.H264 && (demuxer.Audio is null || demuxer.Audio.Codec == CodecIds.Aac);
-            return managed && Tags.AudioTrackCount(path) <= 1;
+            // The video track's headers alone, and the audio's codecs from FFmpeg's: a QuickTime file's PCM track has one
+            // sample an audio sample, and a demuxer of every track builds its whole table (29 bytes a sample) only to
+            // answer no: 1.6 GB for 10 minutes of ProRes with stereo PCM (docs/notes/performance.md).
+            using var file = File.OpenRead(path);
+            using (var video = new Mp4Demuxer(file, MediaTypes.Video, leaveOpen: true))
+            {
+                if (video.Video?.Codec != CodecIds.H264)
+                    return false;
+            }
+
+            if (Tags.AudioCodecs(path) is { } codecs)
+                return codecs is [] or ["aac"];
+            file.Position = 0;
+            using var audio = new Mp4Demuxer(file, MediaTypes.Audio, leaveOpen: true);
+            return audio.Audio is null || audio.Audio.Codec == CodecIds.Aac;
         }
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or IOException or ArgumentException)
         {
