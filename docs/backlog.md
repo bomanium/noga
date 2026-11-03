@@ -10,8 +10,18 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-Nothing: the report has every check the description names, a release workflow, a local web UI with a watch folder, and weekly checks on open films. What comes next
-is the owner's to choose (Maybe below).
+- Robustness on odd files: generated broken and unusual files (truncated, no moov, variable frame rate, audio-only,
+  video-only, 10-bit 4:2:2 and 4K, HDR-tagged, several video streams), each a clean report or a clear read error
+  (exit 2), never an unhandled exception
+  - Why: small shops get messy files, and a crash on the first one costs trust; no test reads a broken file yet
+    (decisions/2026-11-03-launch-readiness.md)
+  - Status: Open
+
+- Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
+  worst fixed, the figure in the README
+  - Why: deliveries run 30 to 90 minutes of ProRes HQ, and nothing says how long a check takes or what memory it
+    needs (decisions/2026-11-03-launch-readiness.md)
+  - Status: Open
 
 ## Waiting
 
