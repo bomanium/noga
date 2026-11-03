@@ -103,7 +103,7 @@ public static class Profiles
     /// any of its thresholds and settings to change (camelCase: <c>targetLoudness</c>, <c>loudnessPass</c>,
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
-    /// <c>rangeMergeGap</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
@@ -143,6 +143,8 @@ public static class Profiles
             SilenceNoise = file.SilenceNoise ?? start.SilenceNoise,
             MaxOutOfRange = file.MaxOutOfRange ?? start.MaxOutOfRange,
             RangeMergeGap = file.RangeMergeGap ?? start.RangeMergeGap,
+            MinPhase = file.MinPhase ?? start.MinPhase,
+            ClipRun = file.ClipRun ?? start.ClipRun,
             Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
@@ -151,6 +153,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: minBlack and minSilence are positive, rangeMergeGap at least 0.", nameof(json));
         if (profile.BlackPixelThreshold is < 0 or > 1 || profile.BlackPictureThreshold is < 0 or > 1 || profile.MaxOutOfRange is < 0 or > 1)
             throw new ArgumentException($"{source}: blackPixelThreshold, blackPictureThreshold and maxOutOfRange are 0 to 1.", nameof(json));
+        if (profile.MinPhase is < -1 or > 1 || profile.ClipRun < 1)
+            throw new ArgumentException($"{source}: minPhase is -1 to 1, clipRun at least 1.", nameof(json));
         if (profile.Format is { } format)
             Check(format, source);
         return profile;
@@ -172,6 +176,8 @@ internal sealed record ProfileFile(
     double? SilenceNoise,
     double? MaxOutOfRange,
     double? RangeMergeGap,
+    double? MinPhase,
+    int? ClipRun,
     FormatSpec? Format);
 
 [JsonSourceGenerationOptions(
