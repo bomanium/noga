@@ -23,6 +23,13 @@ is the owner's to choose (Maybe below).
 
 ## Maybe
 
+- Faster checks: run 2 checks at a time in `Jobs`; measure the picture pass while the next frame is decoded; take the
+  shots from the picture pass's frames on the FFmpeg path too, rather than from a second decode
+  - Why: docs/notes/performance.md: a check keeps about 2 of 4 cores busy, and 2 at a time finished a queue 1.6x
+    sooner. PictureMeter runs on one thread (40% of the time), and the shots decode the video again (20%). A 1-hour
+    ProRes HQ master takes about 17 minutes on a 4-core machine
+  - Status: Maybe
+
 - More from the 2026-11-03 review: short-term and momentary loudness limits and a loudness-range window,
   constant-colour frames (EBU 0016B), RGB gamut (EBU R 103),
   audio and video durations that differ, AS-11 UK metadata in MXF (ffprobe's tags); flashing (PSE) only as an
