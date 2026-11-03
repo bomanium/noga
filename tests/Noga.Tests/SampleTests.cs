@@ -124,6 +124,16 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.False(ManagedMeasurer.CanMeasure(_samples["programme_dnxhr.mxf"]));
     }
 
+    // The ProRes file's PCM track has a sample an audio sample: asking whether the managed path reads it mustn't build
+    // that track's sample table (some 50 MB for these 20 s, 1.6 GB for 10 minutes: docs/notes/performance.md).
+    [Fact]
+    public void AskingTheManagedPathDoesNotReadAPcmTrack()
+    {
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        Assert.False(ManagedMeasurer.CanMeasure(_samples["programme_prores.mov"]));
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 4 << 20);
+    }
+
     // docs/decisions/2026-10-31-decoding.md: the same MP4 through both paths gives the same measures, within the
     // tolerances each figure states (the picture's exactly: ManagedCodecs' H.264 is bit-exact with FFmpeg's), and the
     // managed path's figures are ffmpeg's too.

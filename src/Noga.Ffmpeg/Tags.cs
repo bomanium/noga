@@ -83,19 +83,19 @@ public sealed record Tags(
     }
 
     /// <summary>
-    /// How many audio tracks <paramref name="path"/> has (its headers, through FFmpeg's libraries); 1 when the libraries
-    /// don't load or the file can't be opened, so the caller's own reading decides.
+    /// The codec of each of <paramref name="path"/>'s audio tracks, as ffprobe names it (its headers, through FFmpeg's
+    /// libraries); null when the libraries don't load or the file can't be opened, so the caller's own reading decides.
     /// </summary>
-    public static int AudioTrackCount(string path, CancellationToken cancellationToken = default)
+    public static IReadOnlyList<string>? AudioCodecs(string path, CancellationToken cancellationToken = default)
     {
         try
         {
             Libraries.Load();
-            return MediaProbe.Probe(path, new ProbeOptions { CancellationToken = cancellationToken }).Streams.Count(s => s.Type == StreamType.Audio);
+            return [.. MediaProbe.Probe(path, new ProbeOptions { CancellationToken = cancellationToken }).Streams.Where(s => s.Type == StreamType.Audio).Select(s => s.Codec)];
         }
         catch (FrameReaderException)
         {
-            return 1;
+            return null;
         }
     }
 
