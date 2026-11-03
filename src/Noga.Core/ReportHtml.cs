@@ -19,7 +19,7 @@ public static class ReportHtml
         th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid #ddd; }
         th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #555; }
         td.tc { font-family: ui-monospace, monospace; white-space: nowrap; }
-        td.against { color: #555; font-size: .85rem; }
+        td.against { color: #555; font-size: .85rem; overflow-wrap: anywhere; }
         td.ebu { font-size: .85rem; white-space: nowrap; }
         .pass { background: #e3f4e6; color: #17602a; }
         .info { background: #e8eef7; color: #24466e; }
