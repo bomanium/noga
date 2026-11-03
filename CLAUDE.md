@@ -93,6 +93,8 @@ What is next, in order: docs/backlog.md.
   `ChannelMeasures`: a track's channels one by one (`Measurements.Channels`, `TrackMeasures.Channels`), judged as
   `channel.*` (dead fails; silent, out of phase below `Profile.MinPhase`, clipping from `Profile.ClipRun` warn; dual
   mono reported: decisions/2026-11-03-channel-faults.md), measured by MediaQc.Ffmpeg's `ChannelMeter` on both paths.
+  `Measurements.Freezes`: frozen pictures (MediaQc.Ffmpeg's `FreezeMeter`, freezedetect's arithmetic on both paths'
+  frames), judged as `freeze` like black, black and bars left out (decisions/2026-11-03-freeze-frames.md).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,

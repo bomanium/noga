@@ -19,11 +19,6 @@ Nothing.
 
 ## Maybe
 
-- Freeze frames, judged like black (a warning mid-programme)
-  - Why: a standard QC item and a common sign of a bad render; freezedetect, each end within one frame. Third in the
-    2026-11-03 review
-  - Status: Maybe
-
 - Bars and tone, head and tail judged: the tone's level (-18 dBFS EBU, -20 dBFS US), what a spec wants at the head
   and tail (bars and tone, slate, black, silence)
   - Why: they are reported today, never judged; profile fields like the format's

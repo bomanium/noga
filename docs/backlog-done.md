@@ -163,3 +163,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - Per-channel audio faults: a dead or silent channel, a pair out of phase, clipping, dual mono
   - Status: Done (2026-11-03, decisions/2026-11-03-channel-faults.md)
+
+- Freeze frames, judged like black, black and bars left out
+  - Status: Done (2026-11-03, decisions/2026-11-03-freeze-frames.md)
