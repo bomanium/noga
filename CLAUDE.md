@@ -90,6 +90,9 @@ What is next, in order: docs/backlog.md.
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
   `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `AudioTrack.All`: every audio track (ffmpeg's 0:a:N);
   each is measured (`Measurements.OtherTracks`, `TrackMeasures`) and judged, its findings naming it (`Finding.Track`). `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
+  `ChannelMeasures`: a track's channels one by one (`Measurements.Channels`, `TrackMeasures.Channels`), judged as
+  `channel.*` (dead fails; silent, out of phase below `Profile.MinPhase`, clipping from `Profile.ClipRun` warn; dual
+  mono reported: decisions/2026-11-03-channel-faults.md), measured by MediaQc.Ffmpeg's `ChannelMeter` on both paths.
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,

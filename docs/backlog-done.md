@@ -160,3 +160,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - The delivery format: reported for every file, judged against a profile file's "format", with three templates
   - Status: Done (2026-11-03, decisions/2026-11-03-delivery-format.md)
+
+- Per-channel audio faults: a dead or silent channel, a pair out of phase, clipping, dual mono
+  - Status: Done (2026-11-03, decisions/2026-11-03-channel-faults.md)
