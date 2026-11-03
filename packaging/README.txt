@@ -19,6 +19,11 @@ mediaqc --help says the same.
 Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
 of those, and the thresholds it changes, e.g. "maxTruePeak": -3); mediaqc --help lists them with their figures.
 
+Each audio track's channels are checked one by one: a channel silent throughout while another has sound fails the
+file; a channel silent for 2 s or more while the others have sound, a stereo pair out of phase (its phase correlation
+below -0.3) and clipping (3 or more samples in a row at full scale) are warnings; dual mono is reported. A profile
+file's "minPhase" and "clipRun" change the last two.
+
 Delivery formats: every report lists the file's format (codec and profile, frame size and rate, scan, pixel format,
 bit depth, colour, aspect ratio, each audio track, duration) as ffprobe reads it. A profile file's "format" section
 names what the delivery asks for, and each value given fails the file when it differs: "container", "videoCodec",

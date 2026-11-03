@@ -82,9 +82,11 @@ public static class ManagedMeasurer
         // First the tone and the silences, which say where the line-up ends; then the loudness from there.
         var silences = new SilenceFinder(audio.SampleRate, audio.Channels, profile.SilenceNoise, TimeSpan.FromSeconds(profile.MinSilence));
         var tone = new ReferenceToneFinder(audio.SampleRate, audio.Channels, new ReferenceToneOptions { Frequency = ToneFrequency });
+        var channels = new ChannelMeter(audio.SampleRate, audio.Channels, profile.SilenceNoise, TimeSpan.FromSeconds(profile.MinSilence), profile.ClipRun);
         long samples = Decode(path, cancellationToken, (chunk, position) =>
         {
             silences.Add(chunk);
+            channels.Add(chunk);
             tone.Add(chunk, TimeSpan.FromSeconds((double)position / audio.SampleRate));
         });
         var silenceSpans = silences.Finish().Select(s => new TimeRange((double)s.StartSample / audio.SampleRate, (double)s.EndSample / audio.SampleRate)).ToList();
@@ -106,6 +108,7 @@ public static class ManagedMeasurer
         {
             Duration = duration,
             Silences = silenceSpans,
+            Channels = channels.Finish(),
             Tone = toneSpans,
             LoudnessFrom = from,
             Loudness = new LoudnessMeasure(loudness.Integrated <= -70 ? null : loudness.Integrated, loudness.Range, loudness.TruePeak),

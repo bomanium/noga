@@ -23,6 +23,8 @@ public sealed record Profile
         SilenceNoise = -60,
         MaxOutOfRange = 0.01,
         RangeMergeGap = 1,
+        MinPhase = -0.3,
+        ClipRun = 3,
     };
 
     /// <summary>The profile's name in reports and on the command line.</summary>
@@ -66,6 +68,27 @@ public sealed record Profile
     /// (docs/decisions/2026-11-01-open-films.md); 0 keeps every span.
     /// </summary>
     public double RangeMergeGap { get; init; }
+
+    /// <summary>
+    /// The lowest mean phase correlation of a track's first two channels that passes (1 in phase, 0 unrelated, -1
+    /// inverted): below it the pair is out of phase, a warning (docs/decisions/2026-11-03-channel-faults.md).
+    /// </summary>
+    public double MinPhase { get; init; } = -0.3;
+
+    /// <summary>A run of this many samples or more at full scale on a channel is clipping, a warning.</summary>
+    public int ClipRun { get; init; } = 3;
+
+    /// <summary>What a channel's silences are checked against (channel N, from 1).</summary>
+    public string ChannelSilenceFilter(int channel) => Invariant($"-map 0:a:0 -af pan=mono|c0=c{channel - 1},silencedetect=n={SilenceNoise}dB:d={MinSilence} (each end within 10 ms)");
+
+    /// <summary>What the phase is checked against.</summary>
+    public static string PhaseFilter => "-map 0:a:0 -af pan=stereo|c0=c0|c1=c1,asetnsamples=n=4800,aphasemeter=video=0 (the mean of lavfi.aphasemeter.phase, within 0.01)";
+
+    /// <summary>What clipping is checked against.</summary>
+    public string ClippingFilter => Invariant($"-map 0:a:0 -af astats per channel: Peak count, its samples at full scale when it reaches it up and down (exact; runs of {ClipRun} or more of them are clipping)");
+
+    /// <summary>What dual mono is checked against.</summary>
+    public static string DualMonoFilter => "-map 0:a:0 -af astats per channel (RMS level within 0.1 dB) and aphasemeter (mean phase above 0.999)";
 
     /// <summary>
     /// The format the delivery asks for (a profile file's "format": docs/decisions/2026-11-03-delivery-format.md); null:
@@ -173,6 +196,7 @@ public sealed record Profile
         Bitrate(findings, measured, At);
         Shots(findings, measured.Shots, At);
         Spans(findings, "silence", "Silence", measured.Silences, MinSilence, SilenceFilter);
+        Channels(findings, measured.Channels, measured.Silences, At);
         From(findings, measured.LoudnessFrom, measured.Loudness);
 
         if (measured.OtherTracks.Count > 0)
@@ -223,6 +247,7 @@ public sealed record Profile
                 var own = new List<Finding>();
                 Tone(own, other.Tone);
                 Spans(own, "silence", "Silence", other.Silences, MinSilence, SilenceFilter);
+                Channels(own, other.Channels, other.Silences, At);
                 From(own, other.LoudnessFrom, other.Loudness);
                 Loudness(own, other.Loudness);
                 findings.AddRange(own.Select(f => OnTrack(f, other.Number)));
@@ -519,7 +544,132 @@ public sealed record Profile
     }
 
     // The checks each audio track has.
-    static bool IsTrackCheck(string check) => check is "tone" or "silence" || check.StartsWith("loudness.", StringComparison.Ordinal);
+    static bool IsTrackCheck(string check) => check is "tone" or "silence" || check.StartsWith("loudness.", StringComparison.Ordinal) || check.StartsWith("channel.", StringComparison.Ordinal);
+
+    // A track's channels one by one (docs/decisions/2026-11-03-channel-faults.md): a channel silent throughout while
+    // another has sound fails; one silent for MinSilence or more while another has sound, a pair out of phase, and
+    // clipping warn; dual mono is reported. Silences of every channel at once are the track's own (silence).
+    void Channels(List<Finding> into, ChannelMeasures? channels, IReadOnlyList<TimeRange> together, Func<double, Position> at)
+    {
+        if (channels is not { Channels: > 1 } c)
+        {
+            if (channels is { } mono)
+                Clipping(into, mono);
+            return;
+        }
+
+        bool Dead(int i) => c.Silences[i].Any(s => s.Start <= 0.01 && s.End >= c.Duration - 0.05);
+        var dead = Enumerable.Range(0, c.Channels).Where(Dead).ToList();
+        bool someSound = dead.Count < c.Channels;
+        if (someSound)
+        {
+            foreach (int i in dead)
+            {
+                into.Add(new Finding
+                {
+                    Check = "channel.dead",
+                    Severity = Severity.Failure,
+                    Message = Invariant($"Channel {i + 1} of {c.Channels} is silent throughout while the others have sound"),
+                    Start = at(0),
+                    End = at(c.Duration),
+                    CheckedAgainst = ChannelSilenceFilter(i + 1),
+                });
+            }
+
+            for (int i = 0; i < c.Channels; i++)
+            {
+                if (dead.Contains(i))
+                    continue;
+                foreach (var piece in c.Silences[i].SelectMany(s => Without(s, together)).Where(p => p.Duration >= MinSilence))
+                {
+                    into.Add(new Finding
+                    {
+                        Check = "channel.silence",
+                        Severity = Severity.Warning,
+                        Message = Invariant($"Channel {i + 1} of {c.Channels} silent for {piece.Duration:0.00} s while the others have sound"),
+                        Value = piece.Duration,
+                        Unit = "s",
+                        Start = at(piece.Start),
+                        End = at(piece.End),
+                        CheckedAgainst = ChannelSilenceFilter(i + 1),
+                    });
+                }
+            }
+        }
+
+        if (c.Phase is { } phase && !Dead(0) && !Dead(1))
+        {
+            double shown = Math.Round(phase, 2);
+            into.Add(new Finding
+            {
+                Check = "channel.phase",
+                Severity = shown < MinPhase ? Severity.Warning : Severity.Pass,
+                Message = shown < MinPhase
+                    ? Invariant($"Channels 1 and 2 out of phase: phase correlation {phase:0.00} (at least {MinPhase:0.0#})")
+                    : Invariant($"Phase correlation of channels 1 and 2: {phase:0.00} (at least {MinPhase:0.0#})"),
+                Value = phase,
+                CheckedAgainst = PhaseFilter,
+            });
+            if (phase > 0.999 && Math.Abs(c.RmsLevels[0] - c.RmsLevels[1]) < 0.1 && c.RmsLevels[0] > SilenceNoise)
+            {
+                into.Add(new Finding
+                {
+                    Check = "channel.dual-mono",
+                    Severity = Severity.Info,
+                    Message = "Channels 1 and 2 are the same (dual mono)",
+                    CheckedAgainst = DualMonoFilter,
+                });
+            }
+        }
+
+        Clipping(into, c);
+    }
+
+    void Clipping(List<Finding> into, ChannelMeasures c)
+    {
+        bool any = false;
+        for (int i = 0; i < c.Channels; i++)
+        {
+            if (c.ClippedRuns[i] == 0)
+                continue;
+            any = true;
+            into.Add(new Finding
+            {
+                Check = "channel.clipping",
+                Severity = Severity.Warning,
+                Message = Invariant($"Channel {i + 1} of {c.Channels} clips: {c.ClippedRuns[i]} run{(c.ClippedRuns[i] == 1 ? "" : "s")} of {ClipRun} or more samples at full scale"),
+                Value = c.ClippedRuns[i],
+                Unit = "runs",
+                CheckedAgainst = ClippingFilter,
+            });
+        }
+
+        if (!any)
+        {
+            into.Add(new Finding
+            {
+                Check = "channel.clipping",
+                Severity = Severity.Pass,
+                Message = Invariant($"No clipping: no run of {ClipRun} or more samples at full scale on any channel"),
+                CheckedAgainst = ClippingFilter,
+            });
+        }
+    }
+
+    // The parts of span outside every one of the others.
+    static IEnumerable<TimeRange> Without(TimeRange span, IReadOnlyList<TimeRange> others)
+    {
+        double start = span.Start;
+        foreach (var other in others.Where(o => o.End > span.Start && o.Start < span.End).OrderBy(o => o.Start))
+        {
+            if (other.Start > start)
+                yield return new TimeRange(start, other.Start);
+            start = Math.Max(start, other.End);
+        }
+
+        if (start < span.End)
+            yield return new TimeRange(start, span.End);
+    }
 
     // A finding of audio track number (from 1): it says so, and is compared with that track's -map.
     static Finding OnTrack(Finding finding, int number) => finding with

@@ -48,6 +48,9 @@ public sealed record Measurements
     /// <summary>The silences (silencedetect's), in order.</summary>
     public IReadOnlyList<TimeRange> Silences { get; init; } = [];
 
+    /// <summary>The first audio track's channels one by one; null when not measured.</summary>
+    public ChannelMeasures? Channels { get; init; }
+
     /// <summary>The colour-bar spans, in order.</summary>
     public IReadOnlyList<TimeRange> Bars { get; init; } = [];
 
@@ -99,7 +102,14 @@ public readonly record struct TimeRange(double Start, double End)
 /// One audio track's measures (<paramref name="Number"/> from 1, as the report counts them; ffmpeg's 0:a:Number-1): where its
 /// loudness is measured from (the end of its line-up), its loudness, silences and line-up tone.
 /// </summary>
-public sealed record TrackMeasures(int Number, double LoudnessFrom, LoudnessMeasure Loudness, IReadOnlyList<TimeRange> Silences, IReadOnlyList<ToneSpan> Tone);
+public sealed record TrackMeasures(int Number, double LoudnessFrom, LoudnessMeasure Loudness, IReadOnlyList<TimeRange> Silences, IReadOnlyList<ToneSpan> Tone, ChannelMeasures? Channels = null);
+
+/// <summary>
+/// An audio track's channels one by one (docs/decisions/2026-11-03-channel-faults.md): each one's silences, RMS level
+/// (dBFS; -∞ for digital silence), runs of samples at full scale and samples there, and the first two's mean phase correlation (1 in
+/// phase, 0 unrelated, -1 inverted; null for a mono track).
+/// </summary>
+public sealed record ChannelMeasures(int Channels, double Duration, IReadOnlyList<IReadOnlyList<TimeRange>> Silences, IReadOnlyList<double> RmsLevels, IReadOnlyList<int> ClippedRuns, IReadOnlyList<long> FullScaleSamples, double? Phase);
 
 /// <summary>A span of line-up tone: its frequency in Hz and its level in dBFS (the loudest channel's RMS as a sine's peak).</summary>
 public readonly record struct ToneSpan(double Start, double End, double Frequency, double Level);

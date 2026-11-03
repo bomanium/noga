@@ -27,6 +27,10 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "frames" or "keyframes" => new("0046F", "GOP Length - Structure", "1.0"),
         "timecode" => new("0026W", "Timecode", "3.0"),
         "audio" => new("0004F", "Audio Channel Count", "2.0"),
+        "channel.dead" or "channel.silence" => new("0078B", "Audio Silence", "3.0"),
+        "channel.phase" => new("0012B", "Audio Phase Error", "2.0"),
+        "channel.clipping" => new("0005B", "Audio Digital Clipping", "2.0"),
+        "channel.dual-mono" => new("0124B", "Mono Audio", "2.0"),
 
         // The delivery format (docs/decisions/2026-11-03-delivery-format.md), read from the API on 2026-11-03: the
         // essence's (F) items, a wrapper's (W) where the catalogue has no other.

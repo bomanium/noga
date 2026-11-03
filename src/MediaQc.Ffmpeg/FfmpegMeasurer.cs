@@ -57,6 +57,7 @@ public static class FfmpegMeasurer
         return measured with
         {
             Silences = first.Silences,
+            Channels = first.Channels,
             Tone = first.Tone,
             LoudnessFrom = first.LoudnessFrom,
             Loudness = first.Loudness,
@@ -72,7 +73,21 @@ public static class FfmpegMeasurer
         var silences = FindSilences(path, profile, options, cancellationToken);
         var tone = FindTone(path, options, cancellationToken);
         double from = LineUp.End(tone, silences, duration);
-        return new TrackMeasures(stream + 1, from, MeasureLoudness(path, from, options, cancellationToken), silences, tone);
+        return new TrackMeasures(stream + 1, from, MeasureLoudness(path, from, options, cancellationToken), silences, tone, MeasureChannels(path, profile, options, cancellationToken));
+    }
+
+    // Each channel on its own (ChannelMeter), from the decoded samples.
+    static ChannelMeasures MeasureChannels(string path, Profile profile, AudioReaderOptions options, CancellationToken cancellationToken)
+    {
+        using var audio = new AudioReader(path, options);
+        var meter = new ChannelMeter(audio.SampleRate, audio.Channels, profile.SilenceNoise, TimeSpan.FromSeconds(profile.MinSilence), profile.ClipRun);
+        while (audio.TryRead(out var chunk))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            meter.Add(chunk.Samples);
+        }
+
+        return meter.Finish();
     }
 
     /// <summary>The filter graph silences are found with: silencedetect with the profile's level and length.</summary>

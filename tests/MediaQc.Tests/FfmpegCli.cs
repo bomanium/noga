@@ -209,6 +209,51 @@ internal static partial class FfmpegCli
             (crop.Width, crop.Height, crop.X, crop.Y));
     }
 
+    /// <summary>
+    /// A track's channels against the command line (docs/decisions/2026-11-03-channel-faults.md): each channel's
+    /// silences are silencedetect's on that channel alone (pan=mono), each end within 10 ms; its RMS level astats', within
+    /// 0.1 dB; the phase the mean of aphasemeter's over 4800-sample frames, within 0.01; and, with
+    /// <paramref name="fullScaleBothWays"/> (a channel that reaches full scale up and down), its samples at full scale
+    /// astats' Peak count, the samples at its highest and lowest level, exactly.
+    /// </summary>
+    public static void AssertChannels(string file, ChannelMeasures channels, Profile profile, int track = 1, bool fullScaleBothWays = false)
+    {
+        string map = Invariant($"-map 0:a:{track - 1}");
+        for (int c = 0; c < channels.Channels; c++)
+        {
+            var expected = Spans(Run(file, Invariant($"{map} -af pan=mono|c0=c{c},silencedetect=n={profile.SilenceNoise}dB:d={profile.MinSilence}")));
+            Assert.Equal(expected.Count, channels.Silences[c].Count);
+            foreach (var (e, a) in expected.Zip(channels.Silences[c]))
+            {
+                Assert.Equal(e.Start, a.Start, 0.01);
+                Assert.Equal(e.End, a.End, 0.01);
+            }
+        }
+
+        string astats = Run(file, Invariant($"{map} -af astats"));
+        var levels = AstatsChannel().Matches(astats).ToList();
+        Assert.Equal(channels.Channels, levels.Count);
+        for (int c = 0; c < channels.Channels; c++)
+        {
+            string rms = levels[c].Groups[1].Value;
+            int peaks = int.Parse(levels[c].Groups[2].Value, CultureInfo.InvariantCulture);
+            if (rms == "-inf")
+                Assert.True(double.IsNegativeInfinity(channels.RmsLevels[c]));
+            else
+                Assert.Equal(Parse(rms), channels.RmsLevels[c], 0.1);
+            if (fullScaleBothWays && channels.FullScaleSamples[c] > 0)
+                Assert.Equal(peaks, channels.FullScaleSamples[c]);
+        }
+
+        if (channels.Phase is { } phase)
+        {
+            string log = Run(file, Invariant($"{map} -af pan=stereo|c0=c0|c1=c1,asetnsamples=n=4800,aphasemeter=video=0,ametadata=print:key=lavfi.aphasemeter.phase"));
+            var frames = PhaseValue().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+            Assert.NotEmpty(frames);
+            Assert.Equal(frames.Average(), phase, 0.01);
+        }
+    }
+
     static double Number(string text, string pattern)
     {
         var match = Regex.Match(text, pattern);
@@ -230,6 +275,13 @@ internal static partial class FfmpegCli
 
     [GeneratedRegex(@"silence_start: (-?[\d.]+)")]
     private static partial Regex SilenceStart();
+
+    // astats' per-channel block: its RMS level, then (further on) its Peak count.
+    [GeneratedRegex(@"Channel: \d+[\s\S]*?RMS level dB: (-?[\d.]+|-inf)[\s\S]*?Peak count: (\d+)")]
+    private static partial Regex AstatsChannel();
+
+    [GeneratedRegex(@"lavfi\.aphasemeter\.phase=(-?[\d.]+(?:e-?\d+)?)")]
+    private static partial Regex PhaseValue();
 
     [GeneratedRegex(@"silence_end: (-?[\d.]+)")]
     private static partial Regex SilenceEnd();

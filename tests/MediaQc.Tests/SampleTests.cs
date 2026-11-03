@@ -62,6 +62,8 @@ public sealed class SampleTests : IClassFixture<Samples>
 
         FfmpegCli.AssertStartTimecode(file, measured);
         FfmpegCli.AssertFormat(file, measured);
+        Assert.NotNull(measured.Channels);
+        FfmpegCli.AssertChannels(file, measured.Channels, Profile.EbuR128);
         FfmpegCli.AssertLoudness(file, measured);
         FfmpegCli.AssertSilences(file, measured);
         FfmpegCli.AssertTone(file, measured.Tone[0]);
@@ -135,6 +137,8 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal(ffmpeg.NotMeasured, managed.NotMeasured);
         Assert.Equal(ffmpeg.StartTimecode, managed.StartTimecode);
         FfmpegCli.AssertFormat(file, managed);
+        Assert.NotNull(managed.Channels);
+        FfmpegCli.AssertChannels(file, managed.Channels, Profile.EbuR128);
         Assert.Equal(ffmpeg.AudioTrack, managed.AudioTrack);
         Assert.Equal(ffmpeg.LoudnessFrom, managed.LoudnessFrom, 0.02);
         var (a, b) = (Assert.NotNull(ffmpeg.Loudness), Assert.NotNull(managed.Loudness));

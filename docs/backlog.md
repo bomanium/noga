@@ -19,12 +19,6 @@ Nothing.
 
 ## Maybe
 
-- Per-channel audio faults: a dead or missing channel, dual mono sent as stereo, channels out of phase, clipping
-  - Why: silence today needs every channel silent, so a file with a dead channel passes; the review of 2026-11-03
-    (decisions/2026-11-03-delivery-format.md) put it second. Checked against astats (per channel), aphasemeter, and
-    silencedetect on each channel (channelsplit)
-  - Status: Maybe
-
 - Freeze frames, judged like black (a warning mid-programme)
   - Why: a standard QC item and a common sign of a bad render; freezedetect, each end within one frame. Third in the
     2026-11-03 review
