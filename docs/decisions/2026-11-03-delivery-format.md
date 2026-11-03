@@ -40,9 +40,10 @@ came to the same top three.
 - `MediaFormat` (Core): ffprobe's -show_format -show_streams values for the container, the first video stream (not
   cover art) and every audio stream, read from FrameReader's `MediaProbe.ProbeJson` on both decoding paths
   (`StartTimecode.Add`). Tested against the ffprobe command line on make-samples.sh's three programmes (both paths
-  for the MP4) and on an interlaced, colour-tagged ProRes with two audio tracks: exact. An ffprobe older than FFmpeg 8
-  (Ubuntu 24.04's 6.1) leaves a ProRes frame's colour range and matrix unstated, which FFmpeg 8.1 reads; the test
-  lets such a value be stated in-process, nothing else.
+  for the MP4) and on an interlaced, colour-tagged ProRes with two audio tracks: exact. The command line's ffprobe (6.1
+  here, 8.0 on CI) leaves a ProRes file's colour range and matrix unstated, which FrameReader's in-process probe reads
+  from the ProRes frame header; the test lets a colour value ffprobe leaves unstated be stated in-process, nothing
+  else. (So mediaqc can say a matrix where ffprobe says none: the file's own frames carry it.)
 - `FormatSpec` (Core), a profile's `Format`: `container` (one of format_name's names: "mov" also matches an MP4, one
   demuxer reads both), `videoCodec`, `videoProfile` (ignoring case), `width`, `height`, `frameRate` ("25",
   "30000/1001", "29.97": within 0.001 of r_frame_rate), `scan` ("progressive" or "interlaced"), `fieldOrder`,

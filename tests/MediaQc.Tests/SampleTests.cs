@@ -73,7 +73,8 @@ public sealed class SampleTests : IClassFixture<Samples>
     }
 
     // The ProRes programme by the 1080p25 ProRes template: its format is the template's, but make-samples.sh doesn't tag
-    // its primaries and transfer, which a delivery would need (prores_ks writes the matrix and range in each frame).
+    // its colour, which a delivery would need. prores_ks writes a matrix and range in each frame all the same, which
+    // depend on the ffmpeg that made the file (6.1: bt709, 8.0: bt470bg), so only the untagged two are sure to fail.
     [Fact]
     public void TheProResProgrammeMeetsItsTemplateButForTheColourTags()
     {
@@ -81,9 +82,10 @@ public sealed class SampleTests : IClassFixture<Samples>
 
         var format = report.Findings.Where(f => f.Check.StartsWith("format.", StringComparison.Ordinal)).ToList();
         Assert.Equal(17, format.Count);
-        Assert.Equal(
-            ["format.colour-primaries", "format.transfer"],
-            format.Where(f => f.Severity == Severity.Failure).Select(f => f.Check));
+        var failed = format.Where(f => f.Severity == Severity.Failure).Select(f => f.Check).ToList();
+        Assert.Contains("format.colour-primaries", failed);
+        Assert.Contains("format.transfer", failed);
+        Assert.Empty(failed.Except(["format.colour-primaries", "format.transfer", "format.matrix", "format.colour-range"]));
         Assert.Contains(format, f => f is { Check: "format.scan", Severity: Severity.Pass });
         Assert.Contains(format, f => f is { Check: "format.start-timecode", Severity: Severity.Pass });
         Assert.Equal(QcReport.Failed, report.ExitCode());
