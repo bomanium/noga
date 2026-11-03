@@ -275,6 +275,19 @@ internal static partial class FfmpegCli
         }
     }
 
+    /// <summary>idet's totals are the command line's idet's (with its defaults), exactly; the last it prints, as a graph made again prints its own.</summary>
+    public static void AssertInterlace(string file, Measurements measured)
+    {
+        var interlace = Assert.IsType<InterlaceMeasures>(measured.Interlace);
+        string log = Run(file, "-an -vf idet");
+        var single = IdetTotals().Matches(log).Last(m => m.Groups[1].Value == "Single");
+        var multi = IdetTotals().Matches(log).Last(m => m.Groups[1].Value == "Multi");
+        long At(Match m, int i) => long.Parse(m.Groups[i].Value, CultureInfo.InvariantCulture);
+
+        Assert.Equal((At(single, 2), At(single, 3), At(single, 4), At(single, 5)), (interlace.SingleTff, interlace.SingleBff, interlace.SingleProgressive, interlace.SingleUndetermined));
+        Assert.Equal((At(multi, 2), At(multi, 3), At(multi, 4), At(multi, 5)), (interlace.MultiTff, interlace.MultiBff, interlace.MultiProgressive, interlace.MultiUndetermined));
+    }
+
     static double Number(string text, string pattern)
     {
         var match = Regex.Match(text, pattern);
@@ -296,6 +309,9 @@ internal static partial class FfmpegCli
 
     [GeneratedRegex(@"silence_start: (-?[\d.]+)")]
     private static partial Regex SilenceStart();
+
+    [GeneratedRegex(@"(Single|Multi) frame detection: TFF:\s*(\d+) BFF:\s*(\d+) Progressive:\s*(\d+) Undetermined:\s*(\d+)")]
+    private static partial Regex IdetTotals();
 
     [GeneratedRegex(@"freeze_start: (-?[\d.]+)")]
     private static partial Regex FreezeStart();

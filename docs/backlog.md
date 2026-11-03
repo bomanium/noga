@@ -19,8 +19,8 @@ Nothing.
 
 ## Maybe
 
-- More from the 2026-11-03 review: interlacing detected from the picture (idet, against field_order), short-term and
-  momentary loudness limits and a loudness-range window, constant-colour frames (EBU 0016B), RGB gamut (EBU R 103),
+- More from the 2026-11-03 review: short-term and momentary loudness limits and a loudness-range window,
+  constant-colour frames (EBU 0016B), RGB gamut (EBU R 103),
   audio and video durations that differ, AS-11 UK metadata in MXF (ffprobe's tags); flashing (PSE) only as an
   indicative warning, as FFmpeg has nothing to check it against
   - Why: each is a common delivery check; most can be checked against an FFmpeg filter, the review's notes say how

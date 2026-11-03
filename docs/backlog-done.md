@@ -169,3 +169,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - The line-up tone's level, and the head and tail (bars, tone, black before and after) judged
   - Status: Done (2026-11-03, decisions/2026-11-03-line-up-and-head-tail.md)
+
+- Interlacing from the picture (idet), against the stream's field order
+  - Status: Done (2026-11-03, decisions/2026-11-03-interlacing.md)

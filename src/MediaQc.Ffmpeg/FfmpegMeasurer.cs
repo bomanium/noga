@@ -42,9 +42,11 @@ public static class FfmpegMeasurer
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
-        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes), profile) with
+        var interlace = new InterlaceMeter();
+        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes, interlace), profile) with
         {
             Freezes = freezes.Finish(),
+            Interlace = interlace.Finish(),
             Packets = Packets.Read(path, cancellationToken),
         };
         measured = Shots.Add(measured, Shots.Detect(path, cancellationToken));
