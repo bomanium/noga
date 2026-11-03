@@ -4,9 +4,10 @@ File-based quality control (QC) of video deliveries: a cheap, local, scriptable 
 freelancers and archives, before files go to a broadcaster or platform. One report (HTML, JSON and an exit code for
 pipelines) of a file's black spans, colour bars, line-up tone, silences, loudness (EBU R128), pixels outside broadcast
 range, crop/letterbox, frame types, bitrate and keyframes, and its shot list, each figure saying how it is checked
-against FFmpeg. Not a Netflix/DPP compliance replacement. A planned commercial product; `media-qc` and the `mediaqc`
-command are working names until it gets a real one. Repo: `github.com/bomanium/media-qc` (private). Where the idea
-came from, the market and the gaps: docs/notes/origin.md.
+against FFmpeg. Not a Netflix/DPP compliance replacement. MIT (LICENSE), earning from support, integration and custom
+profiles rather than copies (decisions/2026-11-03-mit-licence.md); `media-qc` and the `mediaqc` command are working
+names until it gets a real one, and the repository goes public once it has one. Repo: `github.com/bomanium/media-qc`
+(private until then). Where the idea came from, the market and the gaps: docs/notes/origin.md.
 
 It builds on the owner's public libraries: ManagedCodecs (pure C# H.264/MJPEG/AAC decoding), ShotDetector and
 FrameReader (FrameReader reads anything through FFmpeg in-process), and the picture and sound measures in
@@ -36,12 +37,13 @@ What is next, in order: docs/backlog.md.
   lavfi sources: smptehdbars, testsrc2, color, aevalsrc tone, anullsrc, anoisesrc) into `samples/`, or are open films
   (e.g. Blender's) downloaded and pinned by SHA-256; both stay out of git (.gitignore ignores `samples/` and media
   extensions). A file someone sends to debug with stays on their machine.
-- **Licences allow closed-source commercial use.** MIT, BSD, Apache-2.0 and the like. LGPL (ShotDetector.FastYuv,
+- **The project is MIT; its dependencies' licences allow closed-source commercial use**, so a release stays usable
+  by anyone. MIT, BSD, Apache-2.0 and the like. LGPL (ShotDetector.FastYuv,
   FrameReader.Native's FFmpeg build) only as separate, replaceable, dynamically loaded binaries, with its licence
   shipped beside them. No GPL or AGPL, also not through an FFmpeg build with `--enable-gpl` (libx264 and the like).
   Every dependency and its licence goes in docs/dependencies.md, in the PR that adds it.
-- **Private repository**: nothing is published to NuGet (`IsPackable` is false in Directory.Build.props). CI runs on
-  ubuntu only (private Actions minutes; Windows costs 2x, macOS 10x); external actions are pinned by commit SHA with
+- **Not published to NuGet**: an application (`IsPackable` is false in Directory.Build.props). CI runs on
+  ubuntu only (Actions minutes while private; Windows costs 2x, macOS 10x); external actions are pinned by commit SHA with
   the tag in a comment (`uses: actions/checkout@<sha> # v7`; `git ls-remote https://github.com/<owner>/<repo>
   refs/tags/<tag>`), and each workflow's token defaults to `contents: read`.
 - **Decisions are the owner's.** Ask with the multiple-choice prompt (AskUserQuestion), the recommendation first,

@@ -9,7 +9,7 @@
     <Authors>Jakob Boman</Authors>
     <Copyright>Copyright (c) Jakob Boman</Copyright>
     <Version>0.1.0-alpha.2</Version>
-    <!-- A private, commercial product: nothing here is published to NuGet (CLAUDE.md, hard rules). -->
+    <!-- An application, not a library: nothing here is published to NuGet (CLAUDE.md, hard rules). -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>

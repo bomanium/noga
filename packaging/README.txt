@@ -65,6 +65,8 @@ mediaqc-VERSION-ARCH.AppImage.licences.txt and inside it, in licences/appimage-r
 
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
+mediaqc is under the MIT licence (LICENSE.txt). The libraries it ships keep their own licences, below.
+
 This folder holds everything mediaqc needs: the .NET runtime and FFmpeg's libraries come with it.
 
 FFmpeg's libraries

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <!-- Every package and its licence: docs/dependencies.md (closed-source commercial use; no GPL/AGPL). -->
+  <!-- Every package and its licence: docs/dependencies.md (usable anywhere, closed-source commercial use included; no GPL/AGPL). -->
   <ItemGroup>
     <!-- Moves with the format tool in .config/dotnet-tools.json, in one PR. -->
     <PackageVersion Include="StyleBro.Analyzers" Version="0.8.0-alpha.1" />

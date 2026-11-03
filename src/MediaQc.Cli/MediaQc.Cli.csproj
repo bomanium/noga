@@ -60,6 +60,7 @@
       <ResolvedFileToPublish Include="@(AspNetCoreLicence)" RelativePath="licences/aspnetcore/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/THIRD-PARTY-NOTICES.txt" RelativePath="licences/THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" />
       <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/README.txt" RelativePath="README.txt" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../LICENSE" RelativePath="LICENSE.txt" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
     <Error Condition="!Exists('$(NativeFolder)COPYING.LGPL')" Text="No COPYING.LGPL in $(NativeFolder): a $(RuntimeIdentifier) publish needs $(NativePackage) referenced (MediaQc.Ffmpeg) to ship FFmpeg's libraries with their licence." />
     <Error Condition="!Exists('$(FastYuvFolder)COPYING.LGPL')" Text="No COPYING.LGPL in $(FastYuvFolder): ShotDetector.FastYuv (LGPL) ships with its licence." />

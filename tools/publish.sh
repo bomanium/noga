@@ -33,7 +33,7 @@ for rid in "${rids[@]}"; do
     *) libs=(libavcodec.so.62 libavformat.so.62 libavfilter.so.11 libavutil.so.60 libswresample.so.6 libswscale.so.9 libSkiaSharp.so
              mediaqc-app.png mediaqc-app.desktop install-desktop-entry.sh); exe=mediaqc; app=mediaqc-app ;;
   esac
-  for file in "$exe" "$app" "${libs[@]}" licences/skiasharp/THIRD-PARTY-NOTICES.txt README.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
+  for file in "$exe" "$app" "${libs[@]}" licences/skiasharp/THIRD-PARTY-NOTICES.txt README.txt LICENSE.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
               licences/ffmpeg/configure.txt licences/ffmpeg/sbom.spdx.json licences/dotnet/LICENSE.TXT \
               licences/dotnet/THIRD-PARTY-NOTICES.TXT ShotDetector.FastYuv.dll licences/shotdetector-fastyuv/COPYING.LGPL \
               Microsoft.AspNetCore.dll licences/aspnetcore/LICENSE.txt licences/aspnetcore/THIRD-PARTY-NOTICES.TXT \
