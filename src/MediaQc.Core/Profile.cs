@@ -67,6 +67,12 @@ public sealed record Profile
     /// </summary>
     public double RangeMergeGap { get; init; }
 
+    /// <summary>
+    /// The format the delivery asks for (a profile file's "format": docs/decisions/2026-11-03-delivery-format.md); null:
+    /// the format is reported, not judged.
+    /// </summary>
+    public FormatSpec? Format { get; init; }
+
     /// <summary>What pixels outside broadcast range are checked against.</summary>
     public string RangeFilter => Invariant($"signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under {RangeMergeGap:0.#} s apart joined");
 
@@ -115,9 +121,12 @@ public sealed record Profile
             {
                 Check = check,
                 Severity = Severity.Info,
-                Message = check == "timecode"
-                    ? "Start timecode not read (FFmpeg's libraries didn't load): timecodes count from 00:00:00:00"
-                    : Invariant($"Not checked: this version doesn't measure {check} yet"),
+                Message = check switch
+                {
+                    "timecode" => "Start timecode not read (FFmpeg's libraries didn't load): timecodes count from 00:00:00:00",
+                    "format" => "Format not read (FFmpeg's libraries didn't load)",
+                    _ => Invariant($"Not checked: this version doesn't measure {check} yet"),
+                },
                 CheckedAgainst = check switch
                 {
                     "black" => BlackFilter,
@@ -131,10 +140,13 @@ public sealed record Profile
                     "bitrate" => BitrateFilter,
                     "shots" => ShotsFilter,
                     "timecode" => TimecodeTag.CheckedAgainst,
+                    "format" => MediaFormat.CheckedAgainst,
                     _ => "nothing yet",
                 },
             });
         }
+
+        FormatFindings(findings, measured);
 
         foreach (var bars in measured.Bars)
         {
@@ -274,6 +286,28 @@ public sealed record Profile
                     CheckedAgainst = filter,
                 });
             }
+        }
+    }
+
+    // The format, always (information), then what the profile's format asks for, each a pass or a failure; a profile
+    // that asks for a format fails a file whose format couldn't be read.
+    void FormatFindings(List<Finding> into, Measurements measured)
+    {
+        if (measured.Format is { } format)
+        {
+            into.Add(new Finding { Check = "format", Severity = Severity.Info, Message = $"Format: {format}", CheckedAgainst = $"{MediaFormat.CheckedAgainst} (exact)" });
+            if (Format is { IsEmpty: false } spec)
+                into.AddRange(spec.Judge(format, measured.StartTimecode));
+        }
+        else if (Format is { IsEmpty: false })
+        {
+            into.Add(new Finding
+            {
+                Check = "format.container",
+                Severity = Severity.Failure,
+                Message = Invariant($"The format couldn't be read, so profile {Name}'s format can't be checked"),
+                CheckedAgainst = MediaFormat.CheckedAgainst,
+            });
         }
     }
 

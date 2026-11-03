@@ -23,9 +23,12 @@ static class CommandLine
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
         Profiles (--profile; ebu-r128 unless given): ebu-r128 (EBU R128: -23 LUFS within 0.5 LU, true peak -1 dBTP),
         atsc-a85 (US: -24 LKFS within 2 LU, -2 dBTP), op-59 (Australia: -24 LKFS within 1 LU, -2 dBTP), arib-tr-b32
-        (Japan: -24 LKFS within 1 LU, -1 dBTP), or a profile file (.json: a name, basedOn and the thresholds it
-        changes). Each also checks black, silence, bars and line-up tone, pixels outside broadcast range, and reports
-        crop, frame types, keyframes, bitrate and the shot list.
+        (Japan: -24 LKFS within 1 LU, -1 dBTP), a delivery template from the profiles folder beside mediaqc
+        (hd-1080i25-prores-hq, hd-1080p25-prores-hq, web-1080p-h264-aac), or a profile file (.json: a name, basedOn,
+        the thresholds it changes and, in "format", the delivery's codec, frame size and rate, scan, colour, audio and
+        start timecode, each failing the file when it differs). Each also checks black, silence, bars and line-up
+        tone, pixels outside broadcast range, and reports the format, crop, frame types, keyframes, bitrate and the
+        shot list.
 
         serve runs the web UI on this machine only (http://localhost:8722 unless --port says another), opens it in
         the browser (not with --no-open) and checks the files picked there, writing their reports beside them. With

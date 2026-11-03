@@ -61,6 +61,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         var measured = _samples.Ffmpeg(programme);
 
         FfmpegCli.AssertStartTimecode(file, measured);
+        FfmpegCli.AssertFormat(file, measured);
         FfmpegCli.AssertLoudness(file, measured);
         FfmpegCli.AssertSilences(file, measured);
         FfmpegCli.AssertTone(file, measured.Tone[0]);
@@ -69,6 +70,25 @@ public sealed class SampleTests : IClassFixture<Samples>
         FfmpegCli.AssertCrop(file, measured);
         FfmpegCli.AssertPictureTypes(file, measured);
         FfmpegCli.AssertPackets(file, measured);
+    }
+
+    // The ProRes programme by the 1080p25 ProRes template: its format is the template's, but make-samples.sh doesn't tag
+    // its colour, which a delivery would need. prores_ks writes a matrix and range in each frame all the same, which
+    // depend on the ffmpeg that made the file (6.1: bt709, 8.0: bt470bg), so only the untagged two are sure to fail.
+    [Fact]
+    public void TheProResProgrammeMeetsItsTemplateButForTheColourTags()
+    {
+        var report = Profiles.Get("hd-1080p25-prores-hq").Evaluate(_samples.Ffmpeg("programme_prores.mov"));
+
+        var format = report.Findings.Where(f => f.Check.StartsWith("format.", StringComparison.Ordinal)).ToList();
+        Assert.Equal(17, format.Count);
+        var failed = format.Where(f => f.Severity == Severity.Failure).Select(f => f.Check).ToList();
+        Assert.Contains("format.colour-primaries", failed);
+        Assert.Contains("format.transfer", failed);
+        Assert.Empty(failed.Except(["format.colour-primaries", "format.transfer", "format.matrix", "format.colour-range"]));
+        Assert.Contains(format, f => f is { Check: "format.scan", Severity: Severity.Pass });
+        Assert.Contains(format, f => f is { Check: "format.start-timecode", Severity: Severity.Pass });
+        Assert.Equal(QcReport.Failed, report.ExitCode());
     }
 
     [Fact]
@@ -114,6 +134,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal((ffmpeg.RateNumerator, ffmpeg.RateDenominator), (managed.RateNumerator, managed.RateDenominator));
         Assert.Equal(ffmpeg.NotMeasured, managed.NotMeasured);
         Assert.Equal(ffmpeg.StartTimecode, managed.StartTimecode);
+        FfmpegCli.AssertFormat(file, managed);
         Assert.Equal(ffmpeg.AudioTrack, managed.AudioTrack);
         Assert.Equal(ffmpeg.LoudnessFrom, managed.LoudnessFrom, 0.02);
         var (a, b) = (Assert.NotNull(ffmpeg.Loudness), Assert.NotNull(managed.Loudness));

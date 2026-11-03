@@ -1,0 +1,29 @@
+// A starting point, not a broadcaster's spec: HD 1080i25 in ProRes 422 HQ, PCM 24-bit 48 kHz,
+// BT.709 tagged, starting at 10:00:00:00, loudness by EBU R128. Copy it, rename it and change what your delivery spec
+// says; remove a value to stop checking it. Which field comes first: add "fieldOrder" with what ffprobe
+// prints (field_order) for a good file of yours, as FFmpeg's letters differ by format (ProRes in MOV: tb for top
+// field first). mediaqc check FILE --profile your-copy.json
+{
+  "name": "hd-1080i25-prores-hq",
+  "basedOn": "ebu-r128",
+  "format": {
+    "container": "mov",
+    "videoCodec": "prores",
+    "videoProfile": "HQ",
+    "width": 1920,
+    "height": 1080,
+    "frameRate": "25",
+    "pixelFormat": "yuv422p10le",
+    "bitDepth": 10,
+    "colourPrimaries": "bt709",
+    "transfer": "bt709",
+    "matrix": "bt709",
+    "colourRange": "tv",
+    "displayAspect": "16:9",
+    "audioCodec": "pcm_s24le",
+    "sampleRate": 48000,
+    "audioBitDepth": 24,
+    "startTimecode": "10:00:00:00",
+    "scan": "interlaced"
+  }
+}

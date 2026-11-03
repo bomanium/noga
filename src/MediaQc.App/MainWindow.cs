@@ -30,13 +30,15 @@ sealed class MainWindow : Window
         MinWidth = 420;
         MinHeight = 320;
 
+        // The shipped profiles, then the delivery templates beside the program (docs/decisions/2026-11-03-delivery-format.md).
+        List<string> names = [.. Profiles.All.Select(p => p.Name), .. Profiles.Templates];
         var profiles = new ComboBox
         {
-            ItemsSource = Profiles.All.Select(p => p.Name).ToList(),
+            ItemsSource = names,
             SelectedIndex = 0,
             MinWidth = 160,
         };
-        profiles.SelectionChanged += (_, _) => _model.Profile = Profiles.All[Math.Max(0, profiles.SelectedIndex)];
+        profiles.SelectionChanged += (_, _) => _model.Profile = Profiles.Get(names[Math.Max(0, profiles.SelectedIndex)]);
         AutomationName(profiles, "Profile");
 
         var pick = new Button { Content = "Add files…" };

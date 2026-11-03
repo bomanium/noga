@@ -28,6 +28,12 @@
     <InternalsVisibleTo Include="MediaQc.Tests" />
   </ItemGroup>
 
+  <!-- The delivery templates (docs/decisions/2026-11-03-delivery-format.md), in profiles/ beside the program: what
+       Profiles.Get finds by name. -->
+  <ItemGroup>
+    <Content Include="../../packaging/profiles/*.json" Link="profiles/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!--
     A publish for one platform (tools/publish.sh: self-contained, -r linux-x64 or win-x64) ships the licences beside
     what they cover (CLAUDE.md's licence rule, docs/dependencies.md): FFmpeg's libraries are FrameReader.Native's, LGPL,
