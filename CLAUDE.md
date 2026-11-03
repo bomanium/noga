@@ -172,7 +172,11 @@ What is next, in order: docs/backlog.md.
 - `tools/benchmark.sh [--minutes N] [--queue N] [--jobs "1 2 4"] [folder]`: a check's speed and peak memory on each
   sample and on 10-minute programmes looped from them, and a queue run 1, 2, 4 at a time, into `artifacts/benchmark/`
   (`benchmark.md`); the figures and where the time goes: docs/notes/performance.md. ~8 min.
-- `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`, `notes/performance.md`.
+- `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`, `notes/performance.md`; `example/` (the
+  README's example reports: `noga check samples/programme_prores.mov --out docs/example`) and `images/` (the README's
+  screenshots of that report, `noga serve` and `noga-app`, taken with Playwright and under Xvfb at 2x;
+  decisions/2026-11-03-launch-readiness.md). Both are made by hand: redo them when the report or the UIs change
+  much.
 - `.github/workflows/ci.yml`: ffmpeg, format, build, samples, test, publish (ubuntu-26.04); on a `v*` tag that is
   `v` + Version, also a GitHub release with the archives and installers, published at once (decisions/2026-11-01-release-workflow.md). `.github/workflows/films.yml`: the film tests, Monday nights and on demand, films cached. `.github/dependabot.yml`:
   actions and NuGet weekly.

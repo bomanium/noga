@@ -1,0 +1,433 @@
+{
+  "tool": "Noga",
+  "version": "0.1.0-alpha.2",
+  "file": "programme_prores.mov",
+  "profile": "ebu-r128",
+  "verdict": "Failure",
+  "exitCode": 1,
+  "startTimecode": "10:00:00:00",
+  "dropFrame": false,
+  "findings": [
+    {
+      "check": "format",
+      "severity": "Info",
+      "message": "Format: prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, ?/?/bt709 tv, 16:9; audio: pcm_s24le 48000 Hz 2 ch (stereo) 24-bit; mov,mp4,m4a,3gp,3g2,mj2, 20.00 s",
+      "checkedAgainst": "ffprobe -show_format -show_streams (exact)"
+    },
+    {
+      "check": "bars",
+      "severity": "Info",
+      "message": "Colour bars for 5.00 s",
+      "value": 5,
+      "unit": "s",
+      "start": {
+        "seconds": 0,
+        "timecode": "10:00:00:00"
+      },
+      "end": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "ebuQc": {
+        "id": "0052B",
+        "name": "Video Test Pattern Expected",
+        "version": "3.0",
+        "url": "https://qc.ebu.io/items/0052B"
+      },
+      "checkedAgainst": "signalstats on each bar of smptebars/smptehdbars (each end within one frame)"
+    },
+    {
+      "check": "tone",
+      "severity": "Pass",
+      "message": "Line-up tone, 1000 Hz at -18.0 dBFS (expected -18 dBFS within 0.5 dB), for 5.00 s",
+      "value": -17.999999470833473,
+      "unit": "dBFS",
+      "start": {
+        "seconds": 0,
+        "timecode": "10:00:00:00"
+      },
+      "end": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "ebuQc": {
+        "id": "0014B",
+        "name": "Audio Test Tones",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0014B"
+      },
+      "checkedAgainst": "-map 0:a:0, astats per channel (RMS level within 0.1 dB) and a 1 kHz bandpass (each end within 20 ms)"
+    },
+    {
+      "check": "black",
+      "severity": "Warning",
+      "message": "Black for 3.00 s mid-programme",
+      "value": 3,
+      "unit": "s",
+      "start": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "end": {
+        "seconds": 8,
+        "timecode": "10:00:08:00"
+      },
+      "ebuQc": {
+        "id": "0272B",
+        "name": "Black Frames Report",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0272B"
+      },
+      "checkedAgainst": "blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame)"
+    },
+    {
+      "check": "black",
+      "severity": "Info",
+      "message": "Black for 3.00 s at the tail",
+      "value": 3,
+      "unit": "s",
+      "start": {
+        "seconds": 17,
+        "timecode": "10:00:17:00"
+      },
+      "end": {
+        "seconds": 20,
+        "timecode": "10:00:20:00"
+      },
+      "ebuQc": {
+        "id": "0272B",
+        "name": "Black Frames Report",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0272B"
+      },
+      "checkedAgainst": "blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame)"
+    },
+    {
+      "check": "interlace",
+      "severity": "Info",
+      "message": "The picture looks progressive: 0 frames top field first, 0 bottom field first, 376 progressive, 124 undetermined",
+      "value": 0,
+      "unit": "frames",
+      "ebuQc": {
+        "id": "0048B",
+        "name": "Video Scanning",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0048B"
+      },
+      "checkedAgainst": "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact)"
+    },
+    {
+      "check": "interlace.flag",
+      "severity": "Pass",
+      "message": "The stream says progressive (progressive), as the picture looks",
+      "ebuQc": {
+        "id": "0048B",
+        "name": "Video Scanning",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0048B"
+      },
+      "checkedAgainst": "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact), against ffprobe\u0027s field_order"
+    },
+    {
+      "check": "range",
+      "severity": "Pass",
+      "message": "Pixels outside broadcast range: at most 0.67% of the picture (at most 1%)",
+      "value": 0.6695601851851852,
+      "unit": "%",
+      "start": {
+        "seconds": 12.4,
+        "timecode": "10:00:12:10"
+      },
+      "ebuQc": {
+        "id": "0051B",
+        "name": "Video Signal Levels",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0051B"
+      },
+      "checkedAgainst": "signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under 1 s apart joined"
+    },
+    {
+      "check": "crop",
+      "severity": "Info",
+      "message": "The picture fills the 1920x1080 frame",
+      "ebuQc": {
+        "id": "0015B",
+        "name": "Black Bars",
+        "version": "3.0",
+        "url": "https://qc.ebu.io/items/0015B"
+      },
+      "checkedAgainst": "cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact)"
+    },
+    {
+      "check": "frames",
+      "severity": "Info",
+      "message": "All 500 frames intra-coded (I)",
+      "value": 500,
+      "unit": "frames",
+      "ebuQc": {
+        "id": "0046F",
+        "name": "GOP Length - Structure",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0046F"
+      },
+      "checkedAgainst": "ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame\u0027s, exact)"
+    },
+    {
+      "check": "keyframes",
+      "severity": "Info",
+      "message": "Every frame is a keyframe (500)",
+      "ebuQc": {
+        "id": "0046F",
+        "name": "GOP Length - Structure",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0046F"
+      },
+      "checkedAgainst": "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,flags (the K packets, exact)"
+    },
+    {
+      "check": "bitrate",
+      "severity": "Info",
+      "message": "Video bitrate 35.4 Mb/s on average, at most 70.6 Mb/s in a second",
+      "value": 35.3728544,
+      "unit": "Mb/s",
+      "start": {
+        "seconds": 15,
+        "timecode": "10:00:15:00"
+      },
+      "end": {
+        "seconds": 16,
+        "timecode": "10:00:16:00"
+      },
+      "checkedAgainst": "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,size (summed per second, exact)"
+    },
+    {
+      "check": "shots",
+      "severity": "Info",
+      "message": "4 shots, the shortest 3.00 s",
+      "value": 4,
+      "unit": "shots",
+      "checkedAgainst": "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)"
+    },
+    {
+      "check": "shot",
+      "severity": "Info",
+      "message": "Shot 1, 5.00 s",
+      "value": 5,
+      "unit": "s",
+      "start": {
+        "seconds": 0,
+        "timecode": "10:00:00:00"
+      },
+      "end": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "checkedAgainst": "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)"
+    },
+    {
+      "check": "shot",
+      "severity": "Info",
+      "message": "Shot 2, 3.00 s",
+      "value": 3,
+      "unit": "s",
+      "start": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "end": {
+        "seconds": 8,
+        "timecode": "10:00:08:00"
+      },
+      "checkedAgainst": "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)"
+    },
+    {
+      "check": "shot",
+      "severity": "Info",
+      "message": "Shot 3, 9.00 s",
+      "value": 9,
+      "unit": "s",
+      "start": {
+        "seconds": 8,
+        "timecode": "10:00:08:00"
+      },
+      "end": {
+        "seconds": 17,
+        "timecode": "10:00:17:00"
+      },
+      "checkedAgainst": "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)"
+    },
+    {
+      "check": "shot",
+      "severity": "Info",
+      "message": "Shot 4, 3.00 s",
+      "value": 3,
+      "unit": "s",
+      "start": {
+        "seconds": 17,
+        "timecode": "10:00:17:00"
+      },
+      "end": {
+        "seconds": 20,
+        "timecode": "10:00:20:00"
+      },
+      "checkedAgainst": "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)"
+    },
+    {
+      "check": "silence",
+      "severity": "Warning",
+      "message": "Silence for 3.00 s mid-programme",
+      "value": 3,
+      "unit": "s",
+      "start": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "end": {
+        "seconds": 8,
+        "timecode": "10:00:08:00"
+      },
+      "ebuQc": {
+        "id": "0078B",
+        "name": "Audio Silence",
+        "version": "3.0",
+        "url": "https://qc.ebu.io/items/0078B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af silencedetect=n=-60dB:d=2 (each end within 10 ms)"
+    },
+    {
+      "check": "silence",
+      "severity": "Info",
+      "message": "Silence for 3.00 s at the tail",
+      "value": 2.9999999333333314,
+      "unit": "s",
+      "start": {
+        "seconds": 17,
+        "timecode": "10:00:17:00"
+      },
+      "end": {
+        "seconds": 19.99999993333333,
+        "timecode": "10:00:20:00"
+      },
+      "ebuQc": {
+        "id": "0078B",
+        "name": "Audio Silence",
+        "version": "3.0",
+        "url": "https://qc.ebu.io/items/0078B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af silencedetect=n=-60dB:d=2 (each end within 10 ms)"
+    },
+    {
+      "check": "channel.phase",
+      "severity": "Pass",
+      "message": "Phase correlation of channels 1 and 2: 1.00 (at least -0.3)",
+      "value": 1,
+      "ebuQc": {
+        "id": "0012B",
+        "name": "Audio Phase Error",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0012B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af pan=stereo|c0=c0|c1=c1,asetnsamples=n=4800,aphasemeter=video=0 (the mean of lavfi.aphasemeter.phase, within 0.01)"
+    },
+    {
+      "check": "channel.dual-mono",
+      "severity": "Info",
+      "message": "Channels 1 and 2 are the same (dual mono)",
+      "ebuQc": {
+        "id": "0124B",
+        "name": "Mono Audio",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0124B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af astats per channel (RMS level within 0.1 dB) and aphasemeter (mean phase above 0.999)"
+    },
+    {
+      "check": "channel.clipping",
+      "severity": "Pass",
+      "message": "No clipping: no run of 3 or more samples at full scale on any channel",
+      "ebuQc": {
+        "id": "0005B",
+        "name": "Audio Digital Clipping",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0005B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af astats per channel: Peak count, its samples at full scale when it reaches it up and down (exact; runs of 3 or more of them are clipping)"
+    },
+    {
+      "check": "loudness.from",
+      "severity": "Info",
+      "message": "Loudness is measured after the line-up tone",
+      "start": {
+        "seconds": 5,
+        "timecode": "10:00:05:00"
+      },
+      "end": {
+        "seconds": 20,
+        "timecode": "10:00:20:00"
+      },
+      "ebuQc": {
+        "id": "0010B",
+        "name": "Loudness",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0010B"
+      },
+      "checkedAgainst": "ffmpeg -ss 5 -i FILE -map 0:a:0 -af ebur128=peak=true (the same figures)"
+    },
+    {
+      "check": "audio",
+      "severity": "Info",
+      "message": "Audio measured: track 1 of 1: pcm_s24le, 2 channels (stereo)",
+      "value": 1,
+      "unit": "tracks",
+      "ebuQc": {
+        "id": "0004F",
+        "name": "Audio Channel Count",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0004F"
+      },
+      "checkedAgainst": "ffprobe -show_streams (the first audio stream: ffmpeg\u0027s 0:a:0)"
+    },
+    {
+      "check": "loudness.integrated",
+      "severity": "Failure",
+      "message": "Integrated loudness -34.7 LUFS (-11.7 LU from -23 LUFS)",
+      "value": -34.738010199395084,
+      "unit": "LUFS",
+      "ebuQc": {
+        "id": "0010B",
+        "name": "Loudness",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0010B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)"
+    },
+    {
+      "check": "loudness.range",
+      "severity": "Info",
+      "message": "Loudness range 6.9 LU",
+      "value": 6.930000000000007,
+      "unit": "LU",
+      "ebuQc": {
+        "id": "0010B",
+        "name": "Loudness",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0010B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)"
+    },
+    {
+      "check": "loudness.true-peak",
+      "severity": "Pass",
+      "message": "True peak -24.1 dBTP (at most -1.0 dBTP)",
+      "value": -24.129211432221478,
+      "unit": "dBTP",
+      "ebuQc": {
+        "id": "0084B",
+        "name": "Audio Peaks (TP)",
+        "version": "1.0",
+        "url": "https://qc.ebu.io/items/0084B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)"
+    }
+  ]
+}
