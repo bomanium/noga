@@ -25,6 +25,9 @@ tail: "headBars" and "headTone" (seconds of bars and of tone from the start), "h
 black with silence before the programme and at the end); a file short of one fails. The HD templates ask for 30 s of
 bars and tone, 10 s of black before and 5 s after.
 
+Interlacing is read from the picture too (FFmpeg's idet): the report says whether the picture looks interlaced, and
+which field first, and warns when the stream's flag says otherwise.
+
 A picture frozen for 2 s or more (freezedetect's measure; black and colour bars left out) is a warning mid-programme
 and reported at the head or tail; a profile file's "freezeNoise" and "minFreeze" change what counts.
 

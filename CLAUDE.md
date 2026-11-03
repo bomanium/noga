@@ -97,7 +97,9 @@ What is next, in order: docs/backlog.md.
   frames), judged as `freeze` like black, black and bars left out (decisions/2026-11-03-freeze-frames.md).
   `Profile.ToneLevel` (the tone's level judged: -18 ebu-r128, -20 atsc-a85) and `HeadBars`, `HeadTone`, `HeadBlack`,
   `TailBlack` (`head.*`, `tail.*`: what the head and tail must have, a failure when short;
-  decisions/2026-11-03-line-up-and-head-tail.md).
+  decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (MediaQc.Ffmpeg's
+  `InterlaceMeter`, vf_idet.c ported, on both paths' frames), reported as `interlace` and judged against field_order
+  as `interlace.flag` (a warning when they disagree: decisions/2026-11-03-interlacing.md).
 - `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,

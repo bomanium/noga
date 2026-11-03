@@ -22,7 +22,8 @@ review's third pick: decisions/2026-11-03-delivery-format.md).
   starts at its reference frame once it has lasted d, and ends at the first frame that isn't frozen. One still frozen
   at the end, which freezedetect leaves open, ends after the last frame. The sum stops once it is past the noise's
   limit, which a moving picture is within a few rows, and runs on Vector<T>: on make-samples.sh's ProRes programme,
-  14 s of it still (bars and black), the whole check takes 9.0 s against 6.7 s without it.
+  14 s of it still (bars and black), the whole check takes 9.0 s against 6.7 s without it
+  (Debug builds; Release builds are faster, see decisions/2026-11-03-interlacing.md).
 - Checked against `ffmpeg -vf freezedetect=n=..:d=..` (`FfmpegCli.AssertFreezes`), each end within one frame, on
   make-samples.sh's programmes (both paths for the MP4) and a generated FFV1 file with a held frame mid-programme and
   at the tail.
