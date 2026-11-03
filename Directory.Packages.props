@@ -17,7 +17,7 @@
          the managed path's frames, a separate, replaceable assembly with its licence beside it. They move together. -->
     <PackageVersion Include="ShotDetector" Version="3.25.0" />
     <PackageVersion Include="ShotDetector.FastYuv" Version="3.25.0" />
-    <!-- The desktop app (MediaQc.App): Avalonia (MIT), its Skia and HarfBuzz renderers (MIT) come with it. They move together. -->
+    <!-- The desktop app (Noga.App): Avalonia (MIT), its Skia and HarfBuzz renderers (MIT) come with it. They move together. -->
     <PackageVersion Include="Avalonia" Version="12.1.4" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.4" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.4" />

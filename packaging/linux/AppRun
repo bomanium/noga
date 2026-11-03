@@ -1,12 +1,12 @@
 #!/bin/sh
-# The AppImage's entry point (docs/decisions/2026-11-02-installers.md): the desktop app, or the mediaqc command when
+# The AppImage's entry point (docs/decisions/2026-11-02-installers.md): the desktop app, or the noga command when
 # its first argument is one of the command's (check, serve, --help, --version) or the AppImage is run through a link
-# named mediaqc (ln -s mediaqc-VERSION-x86_64.AppImage ~/.local/bin/mediaqc).
+# named noga (ln -s noga-VERSION-x86_64.AppImage ~/.local/bin/noga).
 here=$(dirname "$(readlink -f "$0")")
 case "${1:-}" in
-  check | serve | -h | --help | --version) exec "$here/mediaqc" "$@" ;;
+  check | serve | -h | --help | --version) exec "$here/noga" "$@" ;;
 esac
 case "$(basename "${ARGV0:-$0}")" in
-  mediaqc) exec "$here/mediaqc" "$@" ;;
+  noga) exec "$here/noga" "$@" ;;
 esac
-exec "$here/mediaqc-app" "$@"
+exec "$here/noga-app" "$@"

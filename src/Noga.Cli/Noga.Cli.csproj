@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- The command is "noga" (decisions/2026-11-03-name-noga.md). -->
+    <AssemblyName>noga</AssemblyName>
+    <RootNamespace>Noga.Cli</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- noga serve's endpoints, without reflection (docs/decisions/2026-11-01-web-ui.md). -->
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- noga serve: ASP.NET Core (MIT), part of the .NET runtime a release carries. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <EmbeddedResource Include="Serve\index.html" LogicalName="Noga.Cli.Serve.index.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noga.Core\Noga.Core.csproj" />
+    <ProjectReference Include="..\Noga.Checking\Noga.Checking.csproj" />
+    <ProjectReference Include="..\Noga.Ffmpeg\Noga.Ffmpeg.csproj" />
+    <ProjectReference Include="..\Noga.Managed\Noga.Managed.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Noga.Tests" />
+  </ItemGroup>
+
+  <!-- The delivery templates (docs/decisions/2026-11-03-delivery-format.md), in profiles/ beside the program: what
+       Profiles.Get finds by name. -->
+  <ItemGroup>
+    <Content Include="../../packaging/profiles/*.json" Link="profiles/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    A publish for one platform (tools/publish.sh: self-contained, -r linux-x64 or win-x64) ships the licences beside
+    what they cover (CLAUDE.md's licence rule, docs/dependencies.md): FFmpeg's libraries are FrameReader.Native's, LGPL,
+    so its COPYING files, configure line, SBOM and README go to licences/ffmpeg/; the .NET runtime's licence and
+    notices to licences/dotnet/; the rest of the dependencies' notices and the README from packaging/.
+  -->
+  <Target Name="PublishLicences" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RuntimeIdentifier)' != ''">
+    <PropertyGroup>
+      <NativePackage>FrameReader.Native.$(RuntimeIdentifier)</NativePackage>
+      <NativeVersion>@(PackageVersion->WithMetadataValue('Identity', '$(NativePackage)')->'%(Version)')</NativeVersion>
+      <NativeFolder>$(NuGetPackageRoot)$(NativePackage.ToLowerInvariant())/$(NativeVersion)/</NativeFolder>
+      <FastYuvVersion>@(PackageVersion->WithMetadataValue('Identity', 'ShotDetector.FastYuv')->'%(Version)')</FastYuvVersion>
+      <FastYuvFolder>$(NuGetPackageRoot)shotdetector.fastyuv/$(FastYuvVersion)/</FastYuvFolder>
+    </PropertyGroup>
+    <ItemGroup>
+      <FfmpegLicence Include="$(NativeFolder)COPYING.*;$(NativeFolder)configure.txt;$(NativeFolder)sbom.spdx.json;$(NativeFolder)README.md" />
+      <NetCoreRuntimePack Include="@(ResolvedRuntimePack->WithMetadataValue('FrameworkName', 'Microsoft.NETCore.App'))" />
+      <DotnetLicence Include="%(NetCoreRuntimePack.PackageDirectory)/LICENSE.TXT;%(NetCoreRuntimePack.PackageDirectory)/THIRD-PARTY-NOTICES.TXT" />
+      <AspNetCoreRuntimePack Include="@(ResolvedRuntimePack->WithMetadataValue('FrameworkName', 'Microsoft.AspNetCore.App'))" />
+      <AspNetCoreLicence Include="%(AspNetCoreRuntimePack.PackageDirectory)/LICENSE.txt;%(AspNetCoreRuntimePack.PackageDirectory)/THIRD-PARTY-NOTICES.TXT" />
+      <ResolvedFileToPublish Include="@(FfmpegLicence)" RelativePath="licences/ffmpeg/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(FastYuvFolder)COPYING.LGPL" RelativePath="licences/shotdetector-fastyuv/COPYING.LGPL" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="@(DotnetLicence)" RelativePath="licences/dotnet/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="@(AspNetCoreLicence)" RelativePath="licences/aspnetcore/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/THIRD-PARTY-NOTICES.txt" RelativePath="licences/THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../packaging/README.txt" RelativePath="README.txt" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(MSBuildThisFileDirectory)../../LICENSE" RelativePath="LICENSE.txt" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(NativeFolder)COPYING.LGPL')" Text="No COPYING.LGPL in $(NativeFolder): a $(RuntimeIdentifier) publish needs $(NativePackage) referenced (Noga.Ffmpeg) to ship FFmpeg's libraries with their licence." />
+    <Error Condition="!Exists('$(FastYuvFolder)COPYING.LGPL')" Text="No COPYING.LGPL in $(FastYuvFolder): ShotDetector.FastYuv (LGPL) ships with its licence." />
+  </Target>
+
+</Project>

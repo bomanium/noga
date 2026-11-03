@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=noga
+GenericName=Video QC
+Comment=Check video deliveries: loudness, black, bars, tone, silence
+Exec=noga-app %F
+Icon=noga-app
+Terminal=false
+Categories=AudioVideo;Video;
+Keywords=QC;quality control;loudness;EBU R128;broadcast;
+MimeType=video/quicktime;video/mp4;video/x-m4v;application/mxf;video/x-matroska;video/x-msvideo;video/mp2t;video/mpeg;video/webm;audio/x-wav;audio/mpeg;audio/mp4;
+StartupWMClass=noga-app

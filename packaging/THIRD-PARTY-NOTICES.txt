@@ -1,4 +1,4 @@
-mediaqc includes the following libraries, each under the MIT licence below.
+noga includes the following libraries, each under the MIT licence below.
 
 FrameReader
   Copyright (c) Jakob Boman

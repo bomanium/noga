@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No films (NOGA_FILMS unset): no film test runs. See Noga.FilmTests.csproj. -->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category=NeedsNoFilms</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

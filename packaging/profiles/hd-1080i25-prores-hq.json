@@ -2,7 +2,7 @@
 // BT.709 tagged, starting at 10:00:00:00, loudness by EBU R128. Copy it, rename it and change what your delivery spec
 // says; remove a value to stop checking it. Which field comes first: add "fieldOrder" with what ffprobe
 // prints (field_order) for a good file of yours, as FFmpeg's letters differ by format (ProRes in MOV: tb for top
-// field first). mediaqc check FILE --profile your-copy.json
+// field first). noga check FILE --profile your-copy.json
 // The head: 30 s of bars and tone, then 10 s of black with silence before the programme; 5 s of it after.
 {
   "name": "hd-1080i25-prores-hq",
