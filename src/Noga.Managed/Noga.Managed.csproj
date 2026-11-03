@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The managed decoding path (docs/decisions/2026-10-31-decoding.md): H.264/AAC in MP4 through ManagedCodecs, no
+       native code; the measures are FrameReader's managed ones (LoudnessMeter, ReferenceToneFinder), which touch
+       nothing of FFmpeg, and its SilenceFinder and PictureMeter; the shot list ShotDetector's on ManagedCodecs' frames,
+       which FastYuv converts (LGPL-2.1-or-later: its own assembly, replaceable, its licence shipped beside it). -->
+  <PropertyGroup>
+    <RootNamespace>Noga.Managed</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FrameReader" />
+    <PackageReference Include="ManagedCodecs" />
+    <PackageReference Include="ShotDetector" />
+    <PackageReference Include="ShotDetector.FastYuv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noga.Core\Noga.Core.csproj" />
+    <!-- The tags only (start timecode, colour, rotation): FrameReader's ProbeJson, through FFmpeg's libraries
+         (decisions/2026-11-01-start-timecode.md); and the shared Pictures, Shots. -->
+    <ProjectReference Include="..\Noga.Ffmpeg\Noga.Ffmpeg.csproj" />
+  </ItemGroup>
+
+</Project>

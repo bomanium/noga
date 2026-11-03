@@ -1,6 +1,6 @@
 name: Films
 
-# Each figure on Blender's open films against the ffmpeg command line (tests/MediaQc.FilmTests;
+# Each figure on Blender's open films against the ffmpeg command line (tests/Noga.FilmTests;
 # docs/decisions/2026-11-01-open-films.md): real pictures and sound, which make-samples.sh's generated files don't
 # have. ~30 min, so weekly (Monday night) and on demand, not on every push.
 on:
@@ -39,5 +39,5 @@ jobs:
 
       - name: Test
         env:
-          MEDIAQC_FILMS: ${{ github.workspace }}/films
-        run: dotnet test tests/MediaQc.FilmTests -c Release --logger GitHubActions
+          NOGA_FILMS: ${{ github.workspace }}/films
+        run: dotnet test tests/Noga.FilmTests -c Release --logger GitHubActions

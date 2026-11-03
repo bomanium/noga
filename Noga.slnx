@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Noga.Core/Noga.Core.csproj" />
+    <Project Path="src/Noga.App/Noga.App.csproj" />
+    <Project Path="src/Noga.Checking/Noga.Checking.csproj" />
+    <Project Path="src/Noga.Cli/Noga.Cli.csproj" />
+    <Project Path="src/Noga.Ffmpeg/Noga.Ffmpeg.csproj" />
+    <Project Path="src/Noga.Managed/Noga.Managed.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Noga.AppTests/Noga.AppTests.csproj" />
+    <Project Path="tests/Noga.FilmTests/Noga.FilmTests.csproj" />
+    <Project Path="tests/Noga.Tests/Noga.Tests.csproj" />
+  </Folder>
+</Solution>

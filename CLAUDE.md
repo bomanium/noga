@@ -1,13 +1,14 @@
-# media-qc
+# Noga
 
 File-based quality control (QC) of video deliveries: a cheap, local, scriptable first pass for small post houses,
 freelancers and archives, before files go to a broadcaster or platform. One report (HTML, JSON and an exit code for
 pipelines) of a file's black spans, colour bars, line-up tone, silences, loudness (EBU R128), pixels outside broadcast
 range, crop/letterbox, frame types, bitrate and keyframes, and its shot list, each figure saying how it is checked
 against FFmpeg. Not a Netflix/DPP compliance replacement. MIT (LICENSE), earning from support, integration and custom
-profiles rather than copies (decisions/2026-11-03-mit-licence.md); `media-qc` and the `mediaqc` command are working
-names until it gets a real one, and the repository goes public once it has one. Repo: `github.com/bomanium/media-qc`
-(private until then). Where the idea came from, the market and the gaps: docs/notes/origin.md.
+profiles rather than copies (decisions/2026-11-03-mit-licence.md). Named Noga (Swedish: careful, thorough; the command
+`noga`, the app `noga-app`), formerly the working name media-qc (decisions/2026-11-03-name-noga.md); the repository
+goes public once the owner has renamed it on GitHub. Repo: `github.com/bomanium/noga` (private until then; formerly
+`bomanium/media-qc`, which GitHub redirects). Where the idea came from, the market and the gaps: docs/notes/origin.md.
 
 It builds on the owner's public libraries: ManagedCodecs (pure C# H.264/MJPEG/AAC decoding), ShotDetector and
 FrameReader (FrameReader reads anything through FFmpeg in-process), and the picture and sound measures in
@@ -25,9 +26,9 @@ Unparked on 2026-10-31 (docs/decisions/2026-10-31-unparked.md); working towards 
   by any frame source; this repository adds the verdicts, the profile and the reports (2026-10-31-where-the-measures-live.md).
 - Decoding: ManagedCodecs for H.264/AAC in MP4, FFmpeg through FrameReader for the rest; a test keeps both paths'
   measures the same on the same MP4 (2026-10-31-decoding.md).
-- A CLI: `mediaqc check <file>` writes an HTML and a JSON report and exits with a code for pipelines; a local web
-  UI on the same core, `mediaqc serve` (2026-10-31-product-shape.md, 2026-11-01-web-ui.md); a desktop app,
-  `mediaqc-app` (2026-11-01-desktop-app.md).
+- A CLI: `noga check <file>` writes an HTML and a JSON report and exits with a code for pipelines; a local web
+  UI on the same core, `noga serve` (2026-10-31-product-shape.md, 2026-11-01-web-ui.md); a desktop app,
+  `noga-app` (2026-11-01-desktop-app.md).
 
 What is next, in order: docs/backlog.md.
 
@@ -65,21 +66,21 @@ What is next, in order: docs/backlog.md.
   multiple-choice prompt, not with a question at the end of a reply.
 - **Where work runs**: long work runs as cloud sessions; the owner's computer must stay free. A local clone, when
   there is one, is at `C:\dev\media-qc`.
-- Before pushing: `dotnet test MediaQc.slnx` and `dotnet tool run bro format MediaQc.slnx --verify-no-changes`
+- Before pushing: `dotnet test Noga.slnx` and `dotnet tool run bro format Noga.slnx --verify-no-changes`
   (CI runs both, and builds with `-warnaserror`).
 - Code style: StyleBro (analyzers on build, rules in `.editorconfig`: shotdetector's conventions). The pre-commit hook
   formats the staged .cs files (`git config core.hooksPath .githooks` once per clone). By hand: `dotnet tool run bro
-  format MediaQc.slnx`. The analyzers' version (Directory.Packages.props) and the tool's (.config/dotnet-tools.json)
+  format Noga.slnx`. The analyzers' version (Directory.Packages.props) and the tool's (.config/dotnet-tools.json)
   move together, by hand (Dependabot doesn't propose StyleBro prereleases).
 - Line endings: LF everywhere (`.editorconfig`), unlike shotdetector's mixed files.
 - Commit messages: what and why. Small commits.
 
 ## Layout
 
-- `MediaQc.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
+- `Noga.slnx`; `Directory.Build.props` (net10.0, nullable, version, StyleBro on every project, not packable);
   `Directory.Packages.props` (central package versions); `Directory.Build.targets` (turns off Avalonia's build
   telemetry); `global.json` (SDK 10.0.1xx or later).
-- `src/MediaQc.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
+- `src/Noga.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
   v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (atsc-a85, op-59, arib-tr-b32, and profile files:
@@ -94,15 +95,15 @@ What is next, in order: docs/backlog.md.
   each is measured (`Measurements.OtherTracks`, `TrackMeasures`) and judged, its findings naming it (`Finding.Track`). `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
   `ChannelMeasures`: a track's channels one by one (`Measurements.Channels`, `TrackMeasures.Channels`), judged as
   `channel.*` (dead fails; silent, out of phase below `Profile.MinPhase`, clipping from `Profile.ClipRun` warn; dual
-  mono reported: decisions/2026-11-03-channel-faults.md), measured by MediaQc.Ffmpeg's `ChannelMeter` on both paths.
-  `Measurements.Freezes`: frozen pictures (MediaQc.Ffmpeg's `FreezeMeter`, freezedetect's arithmetic on both paths'
+  mono reported: decisions/2026-11-03-channel-faults.md), measured by Noga.Ffmpeg's `ChannelMeter` on both paths.
+  `Measurements.Freezes`: frozen pictures (Noga.Ffmpeg's `FreezeMeter`, freezedetect's arithmetic on both paths'
   frames), judged as `freeze` like black, black and bars left out (decisions/2026-11-03-freeze-frames.md).
   `Profile.ToneLevel` (the tone's level judged: -18 ebu-r128, -20 atsc-a85) and `HeadBars`, `HeadTone`, `HeadBlack`,
   `TailBlack` (`head.*`, `tail.*`: what the head and tail must have, a failure when short;
-  decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (MediaQc.Ffmpeg's
+  decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (Noga.Ffmpeg's
   `InterlaceMeter`, vf_idet.c ported, on both paths' frames), reported as `interlace` and judged against field_order
   as `interlace.flag` (a warning when they disagree: decisions/2026-11-03-interlacing.md).
-- `src/MediaQc.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
+- `src/Noga.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
   bars, BRNG, cropdetect, picture types) for both paths, and FFmpeg's frames into it. `Packets.Read`: the video
@@ -110,16 +111,16 @@ What is next, in order: docs/backlog.md.
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
   the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths.
-- `src/MediaQc.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
+- `src/Noga.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
   `Measure`) demuxes and decodes the H.264 and AAC with ManagedCodecs and measures with FrameReader's managed meters
   (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter) for files with one audio track (several go to the
   FFmpeg path), the packets from its demuxer, and the shots from
   ShotDetector on the same decoded frames (ShotDetector.FastYuv converts them; LGPL, its own DLL): the same figures as the FFmpeg path, which a
   test checks on make-samples.sh's MP4.
-- `src/MediaQc.Cli`: the `mediaqc` command (`CommandLine.Run`): `mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]`
+- `src/Noga.Cli`: the `noga` command (`CommandLine.Run`): `noga check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by the profile (ebu-r128 unless --profile names another or a file), writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings. `Checker.Run`:
-  one file's check (`src/MediaQc.Checking`), for both commands. `mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
+  one file's check (`src/Noga.Checking`), for both commands. `noga serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
   [--watch FOLDER] [--token TOKEN] [--cert FILE [--key FILE] | --http] [--profile PROFILE] [--no-open]` (`Serve/`): the web UI on 127.0.0.1 (default 8722), or shared on the
   network (`ServeOptions.Shared`: only the `--root` folders, `Roots`, and only with the token link's cookie;
   decisions/2026-11-01-shared-machine.md; HTTPS unless `--http`, `Certificates`: --cert's, else a self-signed one kept in
@@ -127,42 +128,42 @@ What is next, in order: docs/backlog.md.
   machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file), `/api/events`
   streams them (server-sent events), `Watcher` scans a watched folder every 2 s and queues its media files without a
   report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts (localhost) or requests without the token (shared), and changes without the
-  X-MediaQc header or from another Origin.
-- `src/MediaQc.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `Jobs`
+  X-Noga header or from another Origin.
+- `src/Noga.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `Jobs`
   (checks run one at a time) and `MediaFiles` (what counts as media), shared by the CLI, its web UI and the app.
-- `src/MediaQc.App`: `mediaqc-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
+- `src/Noga.App`: `noga-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
   (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports), `AppModel`
   (the queue, testable without a window). Published into the CLI's release folder; its PublishLicences ships
-  SkiaSharp's notices and ANGLE's licence, and on Linux the desktop entry (`packaging/linux/`: `mediaqc-app.desktop`,
+  SkiaSharp's notices and ANGLE's licence, and on Linux the desktop entry (`packaging/linux/`: `noga-app.desktop`,
   `install-desktop-entry.sh`, which writes it with the folder's absolute paths into ~/.local/share/applications) with
-  `mediaqc-app.png`. `Assets/`: `icon.svg` (a check cut out of colour bars: decisions/2026-11-02-app-icon.md, wired: 2026-11-02-app-icon-wiring.md) and the
+  `noga-app.png`. `Assets/`: `icon.svg` (a check cut out of colour bars: decisions/2026-11-02-app-icon.md, wired: 2026-11-02-app-icon-wiring.md) and the
   PNGs and `icon.ico` that `tools/make-icons.sh` generates from it (committed): the window's icon (`MainWindow.AppIcon`,
   embedded) and the Windows executable's (`ApplicationIcon`).
-- `tests/MediaQc.AppTests`: the app on Avalonia's headless platform (xunit v3, which Avalonia.Headless.XUnit needs).
-- `tests/MediaQc.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
+- `tests/Noga.AppTests`: the app on Avalonia's headless platform (xunit v3, which Avalonia.Headless.XUnit needs).
+- `tests/Noga.Tests`: xunit. The FFmpeg path's tests generate their file with FrameReader's TestMedia and compare
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
   aren't there or an older script made them (`samples/.make-samples.sha256`) (bash, ffmpeg with libx264; ~1 min the first time).
-- `tests/MediaQc.FilmTests`: every figure on Blender's open films against the ffmpeg command line (FfmpegCli, linked
-  from MediaQc.Tests). Runs only where MEDIAQC_FILMS names the films' folder (`tools/get-films.sh [folder]`, default
+- `tests/Noga.FilmTests`: every figure on Blender's open films against the ffmpeg command line (FfmpegCli, linked
+  from Noga.Tests). Runs only where NOGA_FILMS names the films' folder (`tools/get-films.sh [folder]`, default
   `films/`, ~650 MB, pinned by SHA-256); elsewhere `no.runsettings` filters every test out. ~30 min.
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
   black and silence, picture and noise, black and silence; timecode from 10:00:00:00) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
-- `tools/make-icons.sh`: the app's icons from `src/MediaQc.App/Assets/icon.svg` (rsvg-convert and ImageMagick); run
+- `tools/make-icons.sh`: the app's icons from `src/Noga.App/Assets/icon.svg` (rsvg-convert and ImageMagick); run
   after changing the SVG and commit what it writes.
 - `tools/publish.sh [--no-installers] [rid ...]`: the release builds (default linux-x64, linux-arm64 and win-x64), self-contained, into `artifacts/`
-  as folders and archives, checked for FFmpeg's libraries and the licences (`MediaQc.Cli.csproj`'s PublishLicences:
+  as folders and archives, checked for FFmpeg's libraries and the licences (`Noga.Cli.csproj`'s PublishLicences:
   `licences/ffmpeg/`, `licences/shotdetector-fastyuv/`, `licences/dotnet/`, `licences/aspnetcore/`, and `packaging/`'s
-  README and notices), with the desktop app (`mediaqc-app`) in the same folder (`licences/skiasharp/`, `licences/angle/`;
+  README and notices), with the desktop app (`noga-app`) in the same folder (`licences/skiasharp/`, `licences/angle/`;
   on Linux its desktop entry, which it installs into a scratch folder and checks).
   Not single-file nor trimmed: the LGPL binaries stay separate files. Then the installers from the same folders
-  (decisions/2026-11-02-installers.md): `mediaqc-VERSION-win-x64-setup.exe` (`packaging/windows/mediaqc.nsi`, makensis:
+  (decisions/2026-11-02-installers.md): `noga-VERSION-win-x64-setup.exe` (`packaging/windows/noga.nsi`, makensis:
   per user, shortcuts, PATH, an uninstaller that deletes the files it installed; checked with 7-Zip) and
-  `mediaqc-VERSION-x86_64.AppImage` (`packaging/linux/AppRun`: the app, or the command for check, serve, --help,
+  `noga-VERSION-x86_64.AppImage` (`packaging/linux/AppRun`: the app, or the command for check, serve, --help,
   --version; appimagetool and type2-runtime pinned by `tools/get-appimage-tools.sh`; the runtime links libfuse, LGPL:
   `packaging/linux/appimage-runtime-licences.txt` goes inside it and beside it on the release), and
-  `mediaqc-VERSION-aarch64.AppImage` for linux-arm64. ~3 min.
+  `noga-VERSION-aarch64.AppImage` for linux-arm64. ~3 min.
 - `tools/arm64-check.sh [sample ...]`: the linux-arm64 release on x64 under qemu-user (`qemu-aarch64-static`, or qemu-user's `qemu-aarch64` on Ubuntu 26.04, `-L` an
   Ubuntu arm64 base image pinned by SHA-256, so no binfmt handler; tiered compilation off, which qemu-user crashes):
   its AppImage unpacked and run, and each sample's findings the same as x64's (decisions/2026-11-03-linux-arm64.md).

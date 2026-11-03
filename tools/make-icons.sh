@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Generates the desktop app's icons from src/MediaQc.App/Assets/icon.svg into the same folder: icon-SIZE.png for 16,
+# Generates the desktop app's icons from src/Noga.App/Assets/icon.svg into the same folder: icon-SIZE.png for 16,
 # 24, 32, 48, 64, 128 and 256 pixels (the window and the Linux desktop entry use icon-256.png) and icon.ico (all of
 # them but 128, for the Windows executable). The generated files are committed, so building needs neither tool; run
 # this after changing icon.svg. Needs rsvg-convert (librsvg2-bin) and ImageMagick (convert or magick).
 #
 #   tools/make-icons.sh
 set -euo pipefail
-cd "$(dirname "$0")/../src/MediaQc.App/Assets"
+cd "$(dirname "$0")/../src/Noga.App/Assets"
 command -v rsvg-convert > /dev/null || { echo "make-icons: needs rsvg-convert (librsvg2-bin)" >&2; exit 1; }
 if command -v magick > /dev/null; then im=magick; elif command -v convert > /dev/null; then im=convert; else
   echo "make-icons: needs ImageMagick (convert or magick)" >&2; exit 1

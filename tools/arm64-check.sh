@@ -35,12 +35,12 @@ export DOTNET_TieredCompilation=0 DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 arm() { "$qemu" -L "$root" "$@"; }
 
 # The AppImage: its runtime (static) unpacks it, and the command inside says its version.
-image="$(pwd)/artifacts/mediaqc-$version-aarch64.AppImage"
+image="$(pwd)/artifacts/noga-$version-aarch64.AppImage"
 unpacked=$(mktemp -d)
 trap 'rm -rf "$unpacked"' EXIT
 (cd "$unpacked" && "$qemu" "$image" --appimage-extract > /dev/null)
-said=$(arm "$unpacked/squashfs-root/mediaqc" --version)
-[ "$said" = "$version" ] || { echo "arm64-check: the AppImage's mediaqc --version said: $said" >&2; exit 1; }
+said=$(arm "$unpacked/squashfs-root/noga" --version)
+[ "$said" = "$version" ] || { echo "arm64-check: the AppImage's noga --version said: $said" >&2; exit 1; }
 echo "arm64-check: $image runs ($said)"
 
 # The checks: the same exit code and the same findings (check, severity, value, message) as x64's.
@@ -48,8 +48,8 @@ out=$(mktemp -d)
 trap 'rm -rf "$unpacked" "$out"' EXIT
 for sample in "${samples[@]}"; do
   name=$(basename "$sample")
-  code_arm=0; arm "artifacts/mediaqc-$version-linux-arm64/mediaqc" check "$sample" --out "$out/arm64" > /dev/null || code_arm=$?
-  code_x64=0; "artifacts/mediaqc-$version-linux-x64/mediaqc" check "$sample" --out "$out/x64" > /dev/null || code_x64=$?
+  code_arm=0; arm "artifacts/noga-$version-linux-arm64/noga" check "$sample" --out "$out/arm64" > /dev/null || code_arm=$?
+  code_x64=0; "artifacts/noga-$version-linux-x64/noga" check "$sample" --out "$out/x64" > /dev/null || code_x64=$?
   [ "$code_arm" = "$code_x64" ] || { echo "arm64-check: $name exits $code_arm on arm64, $code_x64 on x64" >&2; exit 1; }
   findings() { python3 -c 'import json,sys; print(json.dumps([[f["check"], f["severity"], f.get("value"), f.get("message")] for f in json.load(open(sys.argv[1]))["findings"]], indent=1))' "$1"; }
   if ! diff <(findings "$out/x64/$name.qc.json") <(findings "$out/arm64/$name.qc.json") > "$out/diff.txt"; then

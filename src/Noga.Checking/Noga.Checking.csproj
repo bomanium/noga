@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- One file's check (Checker) and the queue that runs checks one at a time (Jobs), for the command line, its web UI
+       and the desktop app alike: no UI and no server here. -->
+  <PropertyGroup>
+    <RootNamespace>Noga.Checking</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noga.Core\Noga.Core.csproj" />
+    <ProjectReference Include="..\Noga.Ffmpeg\Noga.Ffmpeg.csproj" />
+    <ProjectReference Include="..\Noga.Managed\Noga.Managed.csproj" />
+  </ItemGroup>
+
+</Project>

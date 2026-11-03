@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Builds mediaqc for each platform into artifacts/ (ignored by git): a self-contained folder (the .NET runtime and
+# Builds noga for each platform into artifacts/ (ignored by git): a self-contained folder (the .NET runtime and
 # FFmpeg's libraries with it) and its archive, a .tar.gz for Linux and a .zip for Windows, then checks that each holds
 # its licences (CLAUDE.md's licence rule: FFmpeg's LGPL libraries ship separate, with their licence, configure line and
-# SBOM beside them, ShotDetector.FastYuv's assembly with its licence; MediaQc.Cli.csproj's PublishLicences puts them there).
+# SBOM beside them, ShotDetector.FastYuv's assembly with its licence; Noga.Cli.csproj's PublishLicences puts them there).
 # Then the installers (docs/decisions/2026-11-02-installers.md): for win-x64 a setup.exe (NSIS's makensis, from the
 # nsis package), for linux-x64 an AppImage (tools/get-appimage-tools.sh fetches appimagetool and its runtime, pinned),
 # each from the same folder and checked; --no-installers leaves them out.
@@ -21,17 +21,17 @@ rids=("$@")
 mkdir -p artifacts
 
 for rid in "${rids[@]}"; do
-  name="mediaqc-$version-$rid"
+  name="noga-$version-$rid"
   out="artifacts/$name"
   rm -rf "$out"
-  dotnet publish src/MediaQc.Cli -c Release -r "$rid" --self-contained -p:DebugType=none -o "$out" > /dev/null
+  dotnet publish src/Noga.Cli -c Release -r "$rid" --self-contained -p:DebugType=none -o "$out" > /dev/null
   # The desktop app beside it, in the same folder (one .NET runtime, its own executable).
-  dotnet publish src/MediaQc.App -c Release -r "$rid" --self-contained -p:DebugType=none -o "$out" > /dev/null
+  dotnet publish src/Noga.App -c Release -r "$rid" --self-contained -p:DebugType=none -o "$out" > /dev/null
 
   case "$rid" in
-    win-*) libs=(avcodec-62.dll avformat-62.dll avfilter-11.dll avutil-60.dll swresample-6.dll swscale-9.dll libSkiaSharp.dll licences/angle/LICENSE); exe=mediaqc.exe; app=mediaqc-app.exe ;;
+    win-*) libs=(avcodec-62.dll avformat-62.dll avfilter-11.dll avutil-60.dll swresample-6.dll swscale-9.dll libSkiaSharp.dll licences/angle/LICENSE); exe=noga.exe; app=noga-app.exe ;;
     *) libs=(libavcodec.so.62 libavformat.so.62 libavfilter.so.11 libavutil.so.60 libswresample.so.6 libswscale.so.9 libSkiaSharp.so
-             mediaqc-app.png mediaqc-app.desktop install-desktop-entry.sh); exe=mediaqc; app=mediaqc-app ;;
+             noga-app.png noga-app.desktop install-desktop-entry.sh); exe=noga; app=noga-app ;;
   esac
   for file in "$exe" "$app" "${libs[@]}" licences/skiasharp/THIRD-PARTY-NOTICES.txt README.txt LICENSE.txt licences/THIRD-PARTY-NOTICES.txt licences/ffmpeg/COPYING.LGPL \
               licences/ffmpeg/configure.txt licences/ffmpeg/sbom.spdx.json licences/dotnet/LICENSE.TXT \
@@ -42,18 +42,18 @@ for rid in "${rids[@]}"; do
   done
 
   # Linux: the desktop entry. install-desktop-entry.sh, run into a scratch data folder, writes a valid entry whose Exec and
-  # Icon are this folder's mediaqc-app and its icon (a 256 px PNG).
+  # Icon are this folder's noga-app and its icon (a 256 px PNG).
   case "$rid" in
     linux-*)
       [ -x "$out/install-desktop-entry.sh" ] || { echo "publish: $out/install-desktop-entry.sh isn't executable" >&2; exit 1; }
-      file "$out/mediaqc-app.png" | grep -q 'PNG image data, 256 x 256' || { echo "publish: $out/mediaqc-app.png isn't a 256 px PNG" >&2; exit 1; }
+      file "$out/noga-app.png" | grep -q 'PNG image data, 256 x 256' || { echo "publish: $out/noga-app.png isn't a 256 px PNG" >&2; exit 1; }
       data=$(mktemp -d)
       XDG_DATA_HOME="$data" "$out/install-desktop-entry.sh" > /dev/null
-      entry="$data/applications/mediaqc-app.desktop"
+      entry="$data/applications/noga-app.desktop"
       folder=$(cd "$out" && pwd)
-      grep -qxF "Exec=\"$folder/mediaqc-app\" %F" "$entry" && grep -qxF "Icon=$folder/mediaqc-app.png" "$entry" \
+      grep -qxF "Exec=\"$folder/noga-app\" %F" "$entry" && grep -qxF "Icon=$folder/noga-app.png" "$entry" \
         || { echo "publish: install-desktop-entry.sh wrote no Exec or Icon for $folder:" >&2; cat "$entry" >&2; exit 1; }
-      ! command -v desktop-file-validate > /dev/null || desktop-file-validate "$entry" "$out/mediaqc-app.desktop"
+      ! command -v desktop-file-validate > /dev/null || desktop-file-validate "$entry" "$out/noga-app.desktop"
       XDG_DATA_HOME="$data" "$out/install-desktop-entry.sh" --uninstall > /dev/null
       [ ! -e "$entry" ] || { echo "publish: install-desktop-entry.sh --uninstall left $entry" >&2; exit 1; }
       rm -rf "$data"
@@ -68,7 +68,7 @@ done
 
 [ "$installers" -eq 1 ] || exit 0
 for rid in "${rids[@]}"; do
-  name="mediaqc-$version-$rid"
+  name="noga-$version-$rid"
   out="artifacts/$name"
   case "$rid" in
     win-x64)
@@ -80,7 +80,7 @@ for rid in "${rids[@]}"; do
                       find . -mindepth 1 -type d | sort -r | sed -e 's|^\./||' -e 's|/|\\|g' -e 's|.*|  RMDir "$INSTDIR\\&"|'; }) > "$files"
       setup="artifacts/$name-setup.exe"
       makensis -V2 -DVERSION="$version" -DVERSION4="$(echo "${version%%-*}" | cut -d. -f1-3).0" -DSOURCE="$(pwd)/$out" \
-        -DFILES="$files" -DOUTFILE="$(pwd)/$setup" packaging/windows/mediaqc.nsi > /dev/null
+        -DFILES="$files" -DOUTFILE="$(pwd)/$setup" packaging/windows/noga.nsi > /dev/null
       rm "$files"
       # What it holds: every file of the folder (7-Zip reads NSIS installers), when 7z is there; the uninstaller, which
       # some 7-Zip versions list (23.01) and others don't (Ubuntu 26.04's), is left out.
@@ -100,10 +100,10 @@ for rid in "${rids[@]}"; do
       cp -a "$out" "$appdir"
       rm "$appdir/install-desktop-entry.sh"
       install -m 755 packaging/linux/AppRun "$appdir/AppRun"
-      ln -s mediaqc-app.png "$appdir/.DirIcon"
+      ln -s noga-app.png "$appdir/.DirIcon"
       install -D -m 644 packaging/linux/appimage-runtime-licences.txt "$appdir/licences/appimage-runtime/LICENCES.txt"
       arch=$([ "$rid" = linux-arm64 ] && echo aarch64 || echo x86_64)
-      image="artifacts/mediaqc-$version-$arch.AppImage"
+      image="artifacts/noga-$version-$arch.AppImage"
       rm -f "$image"
       pack() { ARCH=$arch APPIMAGE_EXTRACT_AND_RUN=1 "$tools/appimagetool-x86_64.AppImage" --no-appstream --runtime-file "$tools/runtime-$arch" "$appdir" "$image"; }
       pack > /dev/null 2>&1 || { echo "publish: appimagetool failed:" >&2; pack >&2; exit 1; }

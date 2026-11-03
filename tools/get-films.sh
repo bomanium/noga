@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Downloads the open films the weekly film tests check the measures on (tests/MediaQc.FilmTests), each pinned by
+# Downloads the open films the weekly film tests check the measures on (tests/Noga.FilmTests), each pinned by
 # SHA-256, into a folder that stays out of git (default films/). Blender's open films, CC BY 3.0 (Blender Foundation,
 # www.bigbuckbunny.org, mango.blender.org); nothing of them is committed or shipped (CLAUDE.md: never commit media).
 # A file already there with the right hash isn't downloaded again. ~650 MB.

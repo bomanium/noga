@@ -13,9 +13,9 @@ if [ -n "$partial" ]; then
 fi
 
 dotnet tool restore > /dev/null || exit 1
-if ! dotnet tool run bro format MediaQc.slnx --files $files > /dev/null; then
+if ! dotnet tool run bro format Noga.slnx --files $files > /dev/null; then
   echo "pre-commit: bro format failed; run it yourself to see why:"
-  echo "  dotnet tool run bro format MediaQc.slnx"
+  echo "  dotnet tool run bro format Noga.slnx"
   exit 1
 fi
 git add -- $files

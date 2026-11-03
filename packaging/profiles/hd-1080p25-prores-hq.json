@@ -1,6 +1,6 @@
 // A starting point, not a broadcaster's spec: HD 1080p25 in ProRes 422 HQ, PCM 24-bit 48 kHz, BT.709 tagged,
 // starting at 10:00:00:00, loudness by EBU R128. Copy it, rename it and change what your delivery spec says; remove a
-// value to stop checking it. mediaqc check FILE --profile your-copy.json
+// value to stop checking it. noga check FILE --profile your-copy.json
 // The head: 30 s of bars and tone, then 10 s of black with silence before the programme; 5 s of it after.
 {
   "name": "hd-1080p25-prores-hq",

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Real source paths (not CI's /_/), so a failed test's annotation points at its file (GitHubActions logger). -->
+    <ContinuousIntegrationBuild>false</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ServeTests start noga serve. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Noga.Core\Noga.Core.csproj" />
+    <ProjectReference Include="..\..\src\Noga.Cli\Noga.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Noga.Checking\Noga.Checking.csproj" />
+    <ProjectReference Include="..\..\src\Noga.Ffmpeg\Noga.Ffmpeg.csproj" />
+    <ProjectReference Include="..\..\src\Noga.Managed\Noga.Managed.csproj" />
+  </ItemGroup>
+
+</Project>

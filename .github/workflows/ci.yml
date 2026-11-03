@@ -50,20 +50,20 @@ jobs:
       - name: Restore
         run: |
           dotnet tool restore
-          dotnet restore MediaQc.slnx
+          dotnet restore Noga.slnx
 
       - name: Format (StyleBro)
-        run: dotnet tool run bro format MediaQc.slnx --verify-no-changes --no-restore
+        run: dotnet tool run bro format Noga.slnx --verify-no-changes --no-restore
 
       - name: Build
-        run: dotnet build MediaQc.slnx -c Release --no-restore -warnaserror
+        run: dotnet build Noga.slnx -c Release --no-restore -warnaserror
 
       # make-samples.sh's programme as ProRes, DNxHR and H.264 (~45 s, ~480 MB); the tests check each against ffmpeg.
       - name: Samples
         run: tools/make-samples.sh samples
 
       - name: Test
-        run: dotnet test MediaQc.slnx -c Release --no-build --logger GitHubActions
+        run: dotnet test Noga.slnx -c Release --no-build --logger GitHubActions
 
       # The release folders and archives for Linux (x64 and arm64) and Windows, with their licences (tools/publish.sh checks them),
       # and the installers (docs/decisions/2026-11-02-installers.md: makensis builds the setup.exe, 7-Zip lists it;
@@ -79,9 +79,9 @@ jobs:
       - name: Publish
         run: |
           tools/publish.sh
-          code=0; artifacts/mediaqc-*-linux-x64/mediaqc check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
+          code=0; artifacts/noga-*-linux-x64/noga check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
           test "$code" -eq 1
-          code=0; APPIMAGE_EXTRACT_AND_RUN=1 artifacts/mediaqc-*-x86_64.AppImage check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
+          code=0; APPIMAGE_EXTRACT_AND_RUN=1 artifacts/noga-*-x86_64.AppImage check samples/programme_prores.mov --out "$RUNNER_TEMP" || code=$?
           test "$code" -eq 1
 
       # The linux-arm64 release under qemu-user (decisions/2026-11-03-linux-arm64.md): its AppImage unpacks and runs,
@@ -127,5 +127,5 @@ jobs:
         run: |
           prerelease=()
           [[ "$GITHUB_REF_NAME" == *-* ]] && prerelease=(--prerelease)
-          gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --title "mediaqc ${GITHUB_REF_NAME#v}" \
+          gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --title "noga ${GITHUB_REF_NAME#v}" \
             --generate-notes --verify-tag "${prerelease[@]}"

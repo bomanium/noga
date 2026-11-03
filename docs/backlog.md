@@ -1,6 +1,6 @@
 # Backlog
 
-What media-qc does next, in priority order. Three sections: **Next** (open work, the first item first), **Waiting**
+What Noga does next, in priority order. Three sections: **Next** (open work, the first item first), **Waiting**
 (items that wait on the owner or an outside event) and **Maybe** (ideas not committed to). Update a status when work
 starts or lands; add an item when a gap turns up, with why it matters. An item moves to
 [backlog-done.md](backlog-done.md) when it is Done, Dropped or Won't do. Design questions go to [decisions/](decisions/).
@@ -15,11 +15,11 @@ is the owner's to choose (Maybe below).
 
 ## Waiting
 
-- A real name, then the repository public
-  - Why: decisions/2026-11-03-mit-licence.md: media-qc is MIT and goes public once it has a name that is free on
-    GitHub and NuGet and clashes with no trademark; then the code, command, packages and docs are renamed, and the
-    owner makes the repository public (its settings)
-  - Status: Waiting (on the owner: the name)
+- The repository renamed and public, and the name's last checks
+  - Why: decisions/2026-11-03-name-noga.md: the code is renamed Noga; the owner renames the GitHub repository to
+    bomanium/noga (Settings, General), checks noga.* domains and the trademark registers (EUIPO, USPTO: NOGA in
+    classes 9 and 42), then makes it public (decisions/2026-11-03-mit-licence.md)
+  - Status: Waiting (on the owner)
 
 ## Maybe
 
@@ -31,7 +31,7 @@ is the owner's to choose (Maybe below).
   - Status: Maybe
 
 - The desktop app's next steps: macOS (osx-arm64, signed and notarised), code signing on Windows
-  - Why: decisions/2026-11-01-desktop-app.md shipped mediaqc-app in the release folders, unsigned; the icon, a Linux
+  - Why: decisions/2026-11-01-desktop-app.md shipped noga-app in the release folders, unsigned; the icon, a Linux
     desktop entry (decisions/2026-11-02-app-icon.md, 2026-11-02-app-icon-wiring.md) and installers (a setup.exe and an
     AppImage: decisions/2026-11-02-installers.md) are done
   - Status: Maybe
@@ -43,7 +43,7 @@ is the owner's to choose (Maybe below).
   - Status: Maybe
 
 - Code signing for the Windows build
-  - Why: an unsigned mediaqc.exe or setup.exe from a download is blocked or warned about by SmartScreen; signing would
+  - Why: an unsigned noga.exe or setup.exe from a download is blocked or warned about by SmartScreen; signing would
     also allow an MSIX (decisions/2026-11-02-installers.md)
   - Status: Maybe
 

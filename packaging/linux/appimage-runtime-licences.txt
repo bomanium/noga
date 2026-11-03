@@ -1,9 +1,9 @@
 The AppImage's runtime
 ======================
 
-mediaqc's AppImages (mediaqc-VERSION-x86_64.AppImage and mediaqc-VERSION-aarch64.AppImage) start with AppImage's
+noga's AppImages (noga-VERSION-x86_64.AppImage and noga-VERSION-aarch64.AppImage) start with AppImage's
 type2-runtime, release 20251108 (its runtime-x86_64 and runtime-aarch64): a small, separate executable that mounts
-the files after it (mediaqc's release folder, the same as the .tar.gz) and runs mediaqc's own executables from there. mediaqc doesn't link to it. It contains code under these licences, each below:
+the files after it (noga's release folder, the same as the .tar.gz) and runs noga's own executables from there. noga doesn't link to it. It contains code under these licences, each below:
 
   * type2-runtime: MIT
   * libfuse: GNU Lesser General Public License 2.1
@@ -13,7 +13,7 @@ the files after it (mediaqc's release folder, the same as the .tar.gz) and runs 
   * zlib: zlib
 
 Its source, and how to build it: https://github.com/AppImage/type2-runtime (tag 20251108). Any type2-runtime, your
-own build included, can take its place: "./mediaqc-VERSION-ARCH.AppImage --appimage-extract" unpacks the files to
+own build included, can take its place: "./noga-VERSION-ARCH.AppImage --appimage-extract" unpacks the files to
 squashfs-root/, and "appimagetool --runtime-file YOUR-RUNTIME squashfs-root" packs them again with yours. The files
 also run without the runtime at all: the .tar.gz holds the same folder.
 
