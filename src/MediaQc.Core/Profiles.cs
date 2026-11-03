@@ -52,19 +52,50 @@ public static class Profiles
     public static IReadOnlyList<Profile> All { get; } = [Profile.EbuR128, AtscA85, Op59, AribTrB32];
 
     /// <summary>
-    /// The profile <paramref name="nameOrFile"/> names (one of <see cref="All"/>), else the one the JSON file at that
-    /// path describes (<see cref="Read"/>).
+    /// The folder of delivery templates shipped beside the program (profiles/: profile files with a format to copy and
+    /// adjust, docs/decisions/2026-11-03-delivery-format.md).
     /// </summary>
-    /// <exception cref="ArgumentException">Neither a profile's name nor a profile file.</exception>
+    public static string TemplateFolder => Path.Combine(AppContext.BaseDirectory, "profiles");
+
+    /// <summary>The templates in <see cref="TemplateFolder"/>, by name (the file's, without .json).</summary>
+    public static IReadOnlyList<string> Templates =>
+        Directory.Exists(TemplateFolder) ? [.. Directory.GetFiles(TemplateFolder, "*.json").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)] : [];
+
+    /// <summary>
+    /// The profile <paramref name="nameOrFile"/> names (one of <see cref="All"/>), else the one the JSON file at that
+    /// path describes (<see cref="Read"/>), else the template of that name (<see cref="Templates"/>).
+    /// </summary>
+    /// <exception cref="ArgumentException">Neither a profile's name, a profile file nor a template.</exception>
     public static Profile Get(string nameOrFile)
     {
         ArgumentNullException.ThrowIfNull(nameOrFile);
         var named = All.FirstOrDefault(p => string.Equals(p.Name, nameOrFile, StringComparison.OrdinalIgnoreCase));
         if (named is not null)
             return named;
-        if (!File.Exists(nameOrFile))
-            throw new ArgumentException($"No profile {nameOrFile}: the profiles are {string.Join(", ", All.Select(p => p.Name))}, or a profile file (.json).", nameof(nameOrFile));
-        return Read(File.ReadAllText(nameOrFile), nameOrFile);
+        if (File.Exists(nameOrFile))
+            return Read(File.ReadAllText(nameOrFile), nameOrFile);
+        string template = Path.Combine(TemplateFolder, nameOrFile + ".json");
+        if (nameOrFile.IndexOfAny(['/', '\\']) < 0 && !nameOrFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && File.Exists(template))
+            return Read(File.ReadAllText(template), template);
+        string templates = Templates.Count == 0 ? "" : $"; the templates are {string.Join(", ", Templates)}";
+        throw new ArgumentException($"No profile {nameOrFile}: the profiles are {string.Join(", ", All.Select(p => p.Name))}{templates}, or a profile file (.json).", nameof(nameOrFile));
+    }
+
+    // A format's values that could never match: a scan or frame rate that isn't one, sizes and counts below 1.
+    static void Check(FormatSpec format, string source)
+    {
+        if (format.Scan is { } scan && !FormatSpec.Scans.Contains(scan, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException($"{source}: format.scan is one of {string.Join(", ", FormatSpec.Scans)}.", nameof(source));
+        if (format.FrameRate is { } rate && VideoFormat.Rational(rate) is not > 0)
+            throw new ArgumentException($"{source}: format.frameRate is a rate like 25, 25/1, 30000/1001 or 29.97.", nameof(source));
+        if (format.Width is < 1 || format.Height is < 1 || format.BitDepth is < 1 || format.AudioTracks is < 0
+            || format.SampleRate is < 1 || format.AudioChannels is < 1 || format.AudioBitDepth is < 1)
+        {
+            throw new ArgumentException($"{source}: format's sizes, depths, rates and channels are positive, audioTracks at least 0.", nameof(source));
+        }
+
+        if (format.MinDuration is < 0 || format.MaxDuration is < 0 || format.MinDuration > format.MaxDuration)
+            throw new ArgumentException($"{source}: format's minDuration and maxDuration are at least 0, the first no more than the second.", nameof(source));
     }
 
     /// <summary>
@@ -72,7 +103,11 @@ public static class Profiles
     /// any of its thresholds and settings to change (camelCase: <c>targetLoudness</c>, <c>loudnessPass</c>,
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
-    /// <c>rangeMergeGap</c>).
+    /// <c>rangeMergeGap</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
+    /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
+    /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
+    /// <c>audioBitDepth</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>).
     /// </summary>
     /// <exception cref="ArgumentException">Not such JSON, or a value out of its range.</exception>
     public static Profile Read(string json, string source = "the profile")
@@ -108,6 +143,7 @@ public static class Profiles
             SilenceNoise = file.SilenceNoise ?? start.SilenceNoise,
             MaxOutOfRange = file.MaxOutOfRange ?? start.MaxOutOfRange,
             RangeMergeGap = file.RangeMergeGap ?? start.RangeMergeGap,
+            Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
             throw new ArgumentException($"{source}: loudnessPass is at least 0 and loudnessWarning at least loudnessPass.", nameof(json));
@@ -115,6 +151,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: minBlack and minSilence are positive, rangeMergeGap at least 0.", nameof(json));
         if (profile.BlackPixelThreshold is < 0 or > 1 || profile.BlackPictureThreshold is < 0 or > 1 || profile.MaxOutOfRange is < 0 or > 1)
             throw new ArgumentException($"{source}: blackPixelThreshold, blackPictureThreshold and maxOutOfRange are 0 to 1.", nameof(json));
+        if (profile.Format is { } format)
+            Check(format, source);
         return profile;
     }
 }
@@ -133,7 +171,8 @@ internal sealed record ProfileFile(
     double? MinSilence,
     double? SilenceNoise,
     double? MaxOutOfRange,
-    double? RangeMergeGap);
+    double? RangeMergeGap,
+    FormatSpec? Format);
 
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
@@ -141,4 +180,5 @@ internal sealed record ProfileFile(
     ReadCommentHandling = JsonCommentHandling.Skip,
     AllowTrailingCommas = true)]
 [JsonSerializable(typeof(ProfileFile))]
+[JsonSerializable(typeof(FormatSpec))]
 internal partial class ProfileFileContext : JsonSerializerContext;

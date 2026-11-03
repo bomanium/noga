@@ -30,6 +30,9 @@ public sealed record Measurements
     /// <summary>Every audio track's description, in order (ffprobe's); empty when none or the tags weren't read.</summary>
     public IReadOnlyList<AudioTrack> AudioTracks { get; init; } = [];
 
+    /// <summary>The file's format as ffprobe describes it (docs/decisions/2026-11-03-delivery-format.md); null when it couldn't be read.</summary>
+    public MediaFormat? Format { get; init; }
+
     /// <summary>
     /// The audio tracks after the first, each measured as the first is (its own line-up, silences and loudness); empty
     /// when the file has one, or the decoder path measures only the first.
