@@ -19,6 +19,16 @@ mediaqc --help says the same.
 Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
 of those, and the thresholds it changes, e.g. "maxTruePeak": -3); mediaqc --help lists them with their figures.
 
+Delivery formats: every report lists the file's format (codec and profile, frame size and rate, scan, pixel format,
+bit depth, colour, aspect ratio, each audio track, duration) as ffprobe reads it. A profile file's "format" section
+names what the delivery asks for, and each value given fails the file when it differs: "container", "videoCodec",
+"videoProfile", "width", "height", "frameRate" ("25", "30000/1001"), "scan" ("progressive" or "interlaced"),
+"fieldOrder" (ffprobe's field_order), "pixelFormat", "bitDepth", "colourPrimaries", "transfer", "matrix",
+"colourRange", "displayAspect", "audioTracks", "audioCodec", "sampleRate", "audioChannels", "audioBitDepth",
+"minDuration", "maxDuration" (seconds) and "startTimecode". The profiles folder here has templates to start from
+(hd-1080i25-prores-hq, hd-1080p25-prores-hq, web-1080p-h264-aac): --profile takes their names, or copy one, rename it
+and change what your delivery spec says.
+
 The desktop app: mediaqc-app (mediaqc-app.exe on Windows) opens a window to drop video files or folders on; each is
 checked where it is, with the profile chosen in the window, and its reports open from the list. "mediaqc-app FILE..."
 queues files at start. On Linux it needs a desktop (X11) and fontconfig, which desktop systems have; to have it in the

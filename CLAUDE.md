@@ -81,7 +81,10 @@ What is next, in order: docs/backlog.md.
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
   v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (atsc-a85, op-59, arib-tr-b32, and profile files:
-  `Profiles.Get(nameOrFile)`, decisions/2026-11-01-profiles.md), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
+  `Profiles.Get(nameOrFile)`, decisions/2026-11-01-profiles.md; templates by name: `Profiles.Templates`, the release's `profiles/`
+  from `packaging/profiles/`), `MediaFormat` (the file's format, ffprobe's values: container, video, every audio
+  track, duration; reported always) and `FormatSpec` (a profile's `Format`: what the delivery asks for, each value a
+  pass or a failure; decisions/2026-11-03-delivery-format.md), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against, its EBU QC item: `EbuQcItem.For`, decisions/2026-11-01-ebu-qc-items.md; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.

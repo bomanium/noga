@@ -157,3 +157,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - A Linux arm64 release: the folder, its tar.gz and an aarch64 AppImage, checked under qemu against x64's findings
   - Status: Done (2026-11-03, decisions/2026-11-03-linux-arm64.md)
+
+- The delivery format: reported for every file, judged against a profile file's "format", with three templates
+  - Status: Done (2026-11-03, decisions/2026-11-03-delivery-format.md)
