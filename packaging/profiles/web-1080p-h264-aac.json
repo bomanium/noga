@@ -1,0 +1,26 @@
+// A starting point for web and platform uploads, not a platform's spec: 1080p H.264 High (8-bit 4:2:0) in MP4 with
+// one stereo AAC track at 48 kHz, BT.709 tagged, any frame rate, loudness by EBU R128 (platforms normalise playback
+// themselves; set targetLoudness to what yours asks for). Copy it and change what your delivery spec says.
+{
+  "name": "web-1080p-h264-aac",
+  "basedOn": "ebu-r128",
+  "format": {
+    "container": "mp4",
+    "videoCodec": "h264",
+    "videoProfile": "High",
+    "width": 1920,
+    "height": 1080,
+    "scan": "progressive",
+    "pixelFormat": "yuv420p",
+    "bitDepth": 8,
+    "colourPrimaries": "bt709",
+    "transfer": "bt709",
+    "matrix": "bt709",
+    "colourRange": "tv",
+    "displayAspect": "16:9",
+    "audioTracks": 1,
+    "audioCodec": "aac",
+    "sampleRate": 48000,
+    "audioChannels": 2
+  }
+}

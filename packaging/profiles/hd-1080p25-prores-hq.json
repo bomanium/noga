@@ -1,0 +1,27 @@
+// A starting point, not a broadcaster's spec: HD 1080p25 in ProRes 422 HQ, PCM 24-bit 48 kHz, BT.709 tagged,
+// starting at 10:00:00:00, loudness by EBU R128. Copy it, rename it and change what your delivery spec says; remove a
+// value to stop checking it. mediaqc check FILE --profile your-copy.json
+{
+  "name": "hd-1080p25-prores-hq",
+  "basedOn": "ebu-r128",
+  "format": {
+    "container": "mov",
+    "videoCodec": "prores",
+    "videoProfile": "HQ",
+    "width": 1920,
+    "height": 1080,
+    "frameRate": "25",
+    "pixelFormat": "yuv422p10le",
+    "bitDepth": 10,
+    "colourPrimaries": "bt709",
+    "transfer": "bt709",
+    "matrix": "bt709",
+    "colourRange": "tv",
+    "displayAspect": "16:9",
+    "audioCodec": "pcm_s24le",
+    "sampleRate": 48000,
+    "audioBitDepth": 24,
+    "startTimecode": "10:00:00:00",
+    "scan": "progressive"
+  }
+}
