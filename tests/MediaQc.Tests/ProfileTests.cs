@@ -81,9 +81,9 @@ public class ProfileTests
         var report = Profile.EbuR128.Evaluate(Programme());
 
         Assert.Equal(Severity.Info, Only(report, "bars").Severity);
-        Assert.Equal(Severity.Info, Only(report, "tone").Severity);
+        Assert.Equal(Severity.Pass, Only(report, "tone").Severity);
         Assert.Equal(Severity.Info, Only(report, "loudness.range").Severity);
-        Assert.Equal("Line-up tone, 1000 Hz at -18.0 dBFS, for 5.00 s", Only(report, "tone").Message);
+        Assert.Equal("Line-up tone, 1000 Hz at -18.0 dBFS (expected -18 dBFS within 0.5 dB), for 5.00 s", Only(report, "tone").Message);
     }
 
     [Fact]
