@@ -73,6 +73,8 @@ public sealed class FormatTests : IDisposable
             "48000",
             "-timecode",
             "10:00:00:00",
+            "-movflags",
+            "+write_colr",
             file);
 
         var measured = StartTimecode.Add(new Measurements { Duration = 1, RateNumerator = 25, RateDenominator = 1 }, file);
@@ -82,7 +84,10 @@ public sealed class FormatTests : IDisposable
         Assert.NotNull(measured.Format.Video);
         var (format, video) = (measured.Format, measured.Format.Video);
         Assert.Equal(("prores", "HQ", 1920, 1080, "25/1"), (video.Codec, video.Profile, video.Width, video.Height, video.FrameRate));
-        Assert.Equal(("yuv422p10le", 10, "bt709", "tv", "16:9"), (video.PixelFormat, video.BitDepth, video.ColourPrimaries, video.ColourRange, video.DisplayAspect));
+
+        // The colour tags are the encoder's to write (CI's FFmpeg 8.0 left this file's primaries out, 6.1 writes them):
+        // that they are read as ffprobe reads them is AssertFormat's.
+        Assert.Equal(("yuv422p10le", 10, "tv", "16:9"), (video.PixelFormat, video.BitDepth, video.ColourRange, video.DisplayAspect));
         Assert.Equal("tb", video.FieldOrder);
         Assert.Equal([(1, 2, 24), (2, 6, 24)], format.Audio.Select(a => (a.Number, a.Channels, a.BitDepth ?? 0)));
         Assert.Equal(48000, format.Audio[0].SampleRate);
