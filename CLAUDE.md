@@ -148,7 +148,7 @@ What is next, in order: docs/backlog.md.
   --version; appimagetool and type2-runtime pinned by `tools/get-appimage-tools.sh`; the runtime links libfuse, LGPL:
   `packaging/linux/appimage-runtime-licences.txt` goes inside it and beside it on the release), and
   `mediaqc-VERSION-aarch64.AppImage` for linux-arm64. ~3 min.
-- `tools/arm64-check.sh [sample ...]`: the linux-arm64 release on x64 under qemu-user (`qemu-aarch64-static -L` an
+- `tools/arm64-check.sh [sample ...]`: the linux-arm64 release on x64 under qemu-user (`qemu-aarch64-static`, or qemu-user's `qemu-aarch64` on Ubuntu 26.04, `-L` an
   Ubuntu arm64 base image pinned by SHA-256, so no binfmt handler; tiered compilation off, which qemu-user crashes):
   its AppImage unpacked and run, and each sample's findings the same as x64's (decisions/2026-11-03-linux-arm64.md).
   ~2-3 min; CI runs it after publish.

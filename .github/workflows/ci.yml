@@ -71,8 +71,9 @@ jobs:
       # exits 1, as the sample fails loudness on purpose.
       - name: Installer tools
         run: |
-          command -v makensis && command -v 7z && command -v qemu-aarch64-static \
-            || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends nsis p7zip-full qemu-user-static; }
+          # qemu-user: Ubuntu 26.04's qemu-user-static is only a virtual package; qemu-user holds the emulators there.
+          command -v makensis && command -v 7z && { command -v qemu-aarch64-static || command -v qemu-aarch64; } \
+            || { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends nsis p7zip-full qemu-user; }
           makensis -VERSION
 
       - name: Publish

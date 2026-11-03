@@ -45,7 +45,7 @@ and .config/dotnet-tools.json.
 | rsvg-convert (librsvg, LGPL-2.1-or-later) and ImageMagick (ImageMagick licence, Apache-2.0 style) | as named | `tools/make-icons.sh` renders the app's icon.svg into its PNGs and .ico, which are committed; the tools aren't needed to build and nothing from them is shipped |
 | makensis (NSIS 3, CI installs Ubuntu's nsis package) | zlib (the compiler; CPL-1.0 for its LZMA module) | Builds the Windows setup.exe on Linux (tools/publish.sh) |
 | appimagetool 1.9.1 (with its mksquashfs, desktop-file-validate and zsyncmake) | MIT (the tool; squashfs-tools GPL-2.0, run as a program, nothing of it shipped) | Builds the AppImage (tools/publish.sh), pinned by SHA-256 (tools/get-appimage-tools.sh) |
-| qemu-user-static (QEMU, GPL-2.0) and Ubuntu 24.04's arm64 base image (Ubuntu's packages, GPL and others) | as named | `tools/arm64-check.sh` runs the linux-arm64 release on x64 CI under emulation, the image (pinned by SHA-256) giving it arm64's glibc and libstdc++; run as programs, nothing from them shipped |
+| qemu-user-static or qemu-user (QEMU, GPL-2.0; Ubuntu 26.04 has only the second) and Ubuntu 24.04's arm64 base image (Ubuntu's packages, GPL and others) | as named | `tools/arm64-check.sh` runs the linux-arm64 release on x64 CI under emulation, the image (pinned by SHA-256) giving it arm64's glibc and libstdc++; run as programs, nothing from them shipped |
 | 7-Zip (p7zip-full) | LGPL-2.1 with unRAR restriction | publish.sh lists the setup.exe's files with it to check them; nothing shipped |
 | GitHub Actions: actions/checkout, actions/setup-dotnet | MIT | CI, pinned by commit SHA |
 
