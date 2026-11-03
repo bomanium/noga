@@ -14,7 +14,7 @@ public static class Pictures
     /// <paramref name="freezes"/> too when given.
     /// </summary>
     /// <exception cref="InvalidDataException">The video isn't planar YUV of 8 to 16 bits.</exception>
-    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null)
+    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null)
     {
         Libraries.Load();
         using var decoder = new FrameDecoder(path, new FrameDecoderOptions { CancellationToken = cancellationToken });
@@ -26,14 +26,15 @@ public static class Pictures
             meter ??= new PictureMeter(PictureFormat.Of(frame, decoder.TimeBase, 0)
                 ?? throw new InvalidDataException($"{path}: {frame.PixelFormat} isn't planar YUV of 8 to 16 bits."));
             meter.Add(frame);
-            if (freezes is not null)
+            if (freezes is not null || interlace is not null)
             {
                 var format = PictureFormat.Of(frame, decoder.TimeBase, 0)!;
                 var y = frame.GetPlane(0, out int yStride);
                 var u = frame.GetPlane(1, out int uStride);
                 var v = frame.GetPlane(2, out int vStride);
                 double unit = (double)decoder.TimeBase.Num / decoder.TimeBase.Den;
-                freezes.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, frame.Pts * unit);
+                freezes?.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, frame.Pts * unit);
+                interlace?.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth);
             }
         }
 

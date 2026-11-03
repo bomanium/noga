@@ -51,6 +51,9 @@ public sealed record Measurements
     /// <summary>The frozen pictures (freezedetect's), in order (docs/decisions/2026-11-03-freeze-frames.md).</summary>
     public IReadOnlyList<TimeRange> Freezes { get; init; } = [];
 
+    /// <summary>Whether the picture looks interlaced, idet's totals (docs/decisions/2026-11-03-interlacing.md); null when not measured.</summary>
+    public InterlaceMeasures? Interlace { get; init; }
+
     /// <summary>The first audio track's channels one by one; null when not measured.</summary>
     public ChannelMeasures? Channels { get; init; }
 
@@ -112,6 +115,19 @@ public sealed record TrackMeasures(int Number, double LoudnessFrom, LoudnessMeas
 /// (dBFS; -∞ for digital silence), runs of samples at full scale and samples there, and the first two's mean phase correlation (1 in
 /// phase, 0 unrelated, -1 inverted; null for a mono track).
 /// </summary>
+/// <summary>
+/// FFmpeg's idet totals (docs/decisions/2026-11-03-interlacing.md): how many frames each frame alone, and through
+/// idet's four-frame history, looks top field first, bottom field first, progressive or undetermined.
+/// </summary>
+public sealed record InterlaceMeasures(long SingleTff, long SingleBff, long SingleProgressive, long SingleUndetermined, long MultiTff, long MultiBff, long MultiProgressive, long MultiUndetermined)
+{
+    /// <summary>Whether more frames look interlaced than progressive (idet's multiple-frame totals).</summary>
+    public bool LooksInterlaced => MultiTff + MultiBff > MultiProgressive;
+
+    /// <summary>Whether more of the interlaced-looking frames show the top field first.</summary>
+    public bool TopFieldFirst => MultiTff >= MultiBff;
+}
+
 public sealed record ChannelMeasures(int Channels, double Duration, IReadOnlyList<IReadOnlyList<TimeRange>> Silences, IReadOnlyList<double> RmsLevels, IReadOnlyList<int> ClippedRuns, IReadOnlyList<long> FullScaleSamples, double? Phase);
 
 /// <summary>A span of line-up tone: its frequency in Hz and its level in dBFS (the loudest channel's RMS as a sine's peak).</summary>

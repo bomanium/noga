@@ -23,6 +23,7 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "bars" => new("0052B", "Video Test Pattern Expected", "3.0"),
         "black" => new("0272B", "Black Frames Report", "1.0"),
         "freeze" => new("0044B", "Video Freeze", "2.0"),
+        "interlace" or "interlace.flag" => new("0048B", "Video Scanning", "1.0"),
         "head.bars" => new("0052B", "Video Test Pattern Expected", "3.0"),
         "head.tone" => new("0014B", "Audio Test Tones", "2.0"),
         "head.black" or "tail.black" => new("0272B", "Black Frames Report", "1.0"),

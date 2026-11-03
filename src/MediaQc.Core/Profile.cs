@@ -108,6 +108,9 @@ public sealed record Profile
     /// <summary>The black, with silence, the file must end with (seconds at least); null: not required.</summary>
     public double? TailBlack { get; init; }
 
+    /// <summary>What the picture's interlacing is checked against.</summary>
+    public static string InterlaceFilter => "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact)";
+
     /// <summary>What freezes are checked against.</summary>
     public string FreezeFilter => Invariant($"freezedetect=n={FreezeNoise}:d={MinFreeze} (each end within one frame), black and bars left out");
 
@@ -223,6 +226,7 @@ public sealed record Profile
 
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
         HeadAndTail(findings, measured, frame, At);
+        Interlace(findings, measured);
 
         // A black picture or bars are still by nature (black and bars report them): a freeze counts outside them.
         var still = measured.Black.Concat(measured.Bars).OrderBy(s => s.Start).ToList();
@@ -633,6 +637,48 @@ public sealed record Profile
             End = span.Duration > 0 ? at(span.End) : null,
             CheckedAgainst = filter,
         };
+    }
+
+    // Whether the picture looks interlaced (idet's multiple-frame totals), reported, and against the stream's own flag
+    // (field_order) a pass, or a warning when they disagree (docs/decisions/2026-11-03-interlacing.md).
+    static void Interlace(List<Finding> into, Measurements measured)
+    {
+        if (measured.Interlace is not { } i)
+            return;
+        long judged = i.MultiTff + i.MultiBff + i.MultiProgressive;
+        long interlaced = i.MultiTff + i.MultiBff;
+        string looks = judged == 0 ? "says nothing either way"
+            : i.LooksInterlaced ? Invariant($"looks interlaced, {(i.TopFieldFirst ? "top" : "bottom")} field first")
+            : "looks progressive";
+        into.Add(new Finding
+        {
+            Check = "interlace",
+            Severity = Severity.Info,
+            Message = Invariant($"The picture {looks}: {i.MultiTff} frames top field first, {i.MultiBff} bottom field first, {i.MultiProgressive} progressive, {i.MultiUndetermined} undetermined"),
+            Value = interlaced,
+            Unit = "frames",
+            CheckedAgainst = InterlaceFilter,
+        });
+
+        string? order = measured.Format?.Video?.FieldOrder;
+        bool? flagged = order switch
+        {
+            "progressive" => false,
+            "tt" or "bb" or "tb" or "bt" => true,
+            _ => null,
+        };
+        if (judged == 0 || flagged is not { } says)
+            return;
+        bool agrees = says == i.LooksInterlaced;
+        into.Add(new Finding
+        {
+            Check = "interlace.flag",
+            Severity = agrees ? Severity.Pass : Severity.Warning,
+            Message = agrees
+                ? Invariant($"The stream says {(says ? "interlaced" : "progressive")} ({order}), as the picture looks")
+                : Invariant($"The stream says {(says ? "interlaced" : "progressive")} ({order}), but the picture looks {(i.LooksInterlaced ? "interlaced" : "progressive")} ({interlaced} of {judged} frames interlaced)"),
+            CheckedAgainst = $"{InterlaceFilter}, against ffprobe's field_order",
+        });
     }
 
     // The checks each audio track has.
