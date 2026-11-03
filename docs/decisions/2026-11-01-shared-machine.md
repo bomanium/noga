@@ -42,3 +42,6 @@ The page's header and same-origin checks still hold for changes. Folders and che
 (`Roots`): a path inside one, with no symbolic link or junction on the way (links inside roots aren't listed), so
 `..` and links can't lead out. `--root` limits a localhost server too. Plain HTTP: the token and the files' names
 cross the network unencrypted, so it is for trusted networks; HTTPS stays a later option.
+
+Since 2026-11-03 ([2026-11-03-shared-https.md](2026-11-03-shared-https.md)) a shared server is HTTPS by default
+(--cert's certificate, else a self-signed one); --http keeps plain HTTP.
