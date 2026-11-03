@@ -87,6 +87,49 @@ internal static partial class FfmpegCli
     public static void AssertStartTimecode(string file, Measurements measured) =>
         Assert.Equal(TimecodeTag.Pick(Probe(file), measured.RateNumerator, measured.RateDenominator), measured.StartTimecode);
 
+    /// <summary>
+    /// The format is ffprobe -show_format -show_streams' values, exactly (docs/decisions/2026-11-03-delivery-format.md).
+    /// An ffprobe older than FFmpeg 8 (Ubuntu 24.04's 6.1) leaves some values unstated that FFmpeg 8.1 reads (a ProRes
+    /// frame's colour range and matrix): with one, a value it leaves unstated may be stated in-process; any value both
+    /// state is the same.
+    /// </summary>
+    public static void AssertFormat(string file, Measurements measured)
+    {
+        var expected = MediaFormat.From(Probe(file));
+        Assert.NotNull(measured.Format);
+        var format = measured.Format;
+        Assert.Equal(expected.Container, format.Container);
+        Assert.Equal(expected.Duration, format.Duration);
+        Assert.Equal(expected.Audio, format.Audio);
+        if (expected.Video is null || format.Video is null || FfprobeMajor >= 8)
+        {
+            Assert.Equal(expected.Video, format.Video);
+            return;
+        }
+
+        var (cli, ours) = (expected.Video, format.Video);
+        Assert.Equal((cli.Codec, cli.Profile, cli.Width, cli.Height, cli.FrameRate, cli.FieldOrder, cli.PixelFormat, cli.BitDepth, cli.DisplayAspect),
+            (ours.Codec, ours.Profile, ours.Width, ours.Height, ours.FrameRate, ours.FieldOrder, ours.PixelFormat, ours.BitDepth, ours.DisplayAspect));
+        foreach (var (said, read) in (IEnumerable<(string?, string?)>)[(cli.ColourPrimaries, ours.ColourPrimaries), (cli.Transfer, ours.Transfer), (cli.Matrix, ours.Matrix), (cli.ColourRange, ours.ColourRange)])
+            Assert.True(said is null || said == read, $"ffprobe says {said}, mediaqc read {read}");
+    }
+
+    /// <summary>The major version of the ffprobe on PATH ("ffprobe version 6.1.1-3ubuntu5": 6; a git build: 99).</summary>
+    static int FfprobeMajor => _ffprobeMajor ??= ReadFfprobeMajor();
+
+    static int? _ffprobeMajor;
+
+    static int ReadFfprobeMajor()
+    {
+        var start = new ProcessStartInfo("ffprobe", "-version") { RedirectStandardOutput = true, UseShellExecute = false };
+        using var process = Process.Start(start)!;
+        string first = process.StandardOutput.ReadLine() ?? "";
+        process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        var match = Regex.Match(first, @"version n?(\d+)\.");
+        return match.Success ? int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture) : 99;
+    }
+
     /// <summary>The loudness is ebur128's from the same point (ffmpeg -ss), within 0.1 LU and 0.1 dB.</summary>
     public static void AssertLoudness(string file, Measurements measured) =>
         AssertLoudness(file, Assert.NotNull(measured.Loudness), measured.LoudnessFrom, 1);
