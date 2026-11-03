@@ -17,6 +17,7 @@ public static class Profiles
         LoudnessPass = 2,
         LoudnessWarning = 2,
         MaxTruePeak = -2,
+        ToneLevel = -20,
     };
 
     /// <summary>
@@ -31,6 +32,7 @@ public static class Profiles
         LoudnessPass = 1,
         LoudnessWarning = 1,
         MaxTruePeak = -2,
+        ToneLevel = null,
     };
 
     /// <summary>
@@ -46,6 +48,7 @@ public static class Profiles
         LoudnessPass = 1,
         LoudnessWarning = 1,
         MaxTruePeak = -1,
+        ToneLevel = null,
     };
 
     /// <summary>Every profile mediaqc ships, the default first.</summary>
@@ -103,7 +106,8 @@ public static class Profiles
     /// any of its thresholds and settings to change (camelCase: <c>targetLoudness</c>, <c>loudnessPass</c>,
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
-    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>toneLevel</c>,
+    /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
@@ -147,6 +151,12 @@ public static class Profiles
             ClipRun = file.ClipRun ?? start.ClipRun,
             FreezeNoise = file.FreezeNoise ?? start.FreezeNoise,
             MinFreeze = file.MinFreeze ?? start.MinFreeze,
+            ToneLevel = file.ToneLevel ?? start.ToneLevel,
+            ToneTolerance = file.ToneTolerance ?? start.ToneTolerance,
+            HeadBars = file.HeadBars ?? start.HeadBars,
+            HeadTone = file.HeadTone ?? start.HeadTone,
+            HeadBlack = file.HeadBlack ?? start.HeadBlack,
+            TailBlack = file.TailBlack ?? start.TailBlack,
             Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
@@ -159,6 +169,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: minPhase is -1 to 1, clipRun at least 1.", nameof(json));
         if (profile.FreezeNoise is < 0 or > 1 || profile.MinFreeze <= 0)
             throw new ArgumentException($"{source}: freezeNoise is 0 to 1, minFreeze positive.", nameof(json));
+        if (profile.ToneLevel is > 0 || profile.ToneTolerance < 0 || profile.HeadBars is < 0 || profile.HeadTone is < 0 || profile.HeadBlack is < 0 || profile.TailBlack is < 0)
+            throw new ArgumentException($"{source}: toneLevel is at most 0 dBFS; toneTolerance, headBars, headTone, headBlack and tailBlack at least 0.", nameof(json));
         if (profile.Format is { } format)
             Check(format, source);
         return profile;
@@ -184,6 +196,12 @@ internal sealed record ProfileFile(
     int? ClipRun,
     double? FreezeNoise,
     double? MinFreeze,
+    double? ToneLevel,
+    double? ToneTolerance,
+    double? HeadBars,
+    double? HeadTone,
+    double? HeadBlack,
+    double? TailBlack,
     FormatSpec? Format);
 
 [JsonSourceGenerationOptions(
