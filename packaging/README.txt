@@ -19,6 +19,12 @@ mediaqc --help says the same.
 Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
 of those, and the thresholds it changes, e.g. "maxTruePeak": -3); mediaqc --help lists them with their figures.
 
+The line-up tone's level is judged by the profile: -18 dBFS for ebu-r128, -20 dBFS for atsc-a85, within 0.5 dB (a
+warning outside it; "toneLevel" and "toneTolerance" in a profile file). A profile file can also ask for the head and
+tail: "headBars" and "headTone" (seconds of bars and of tone from the start), "headBlack" and "tailBlack" (seconds of
+black with silence before the programme and at the end); a file short of one fails. The HD templates ask for 30 s of
+bars and tone, 10 s of black before and 5 s after.
+
 A picture frozen for 2 s or more (freezedetect's measure; black and colour bars left out) is a warning mid-programme
 and reported at the head or tail; a profile file's "freezeNoise" and "minFreeze" change what counts.
 

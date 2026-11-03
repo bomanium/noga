@@ -19,11 +19,6 @@ Nothing.
 
 ## Maybe
 
-- Bars and tone, head and tail judged: the tone's level (-18 dBFS EBU, -20 dBFS US), what a spec wants at the head
-  and tail (bars and tone, slate, black, silence)
-  - Why: they are reported today, never judged; profile fields like the format's
-  - Status: Maybe
-
 - More from the 2026-11-03 review: interlacing detected from the picture (idet, against field_order), short-term and
   momentary loudness limits and a loudness-range window, constant-colour frames (EBU 0016B), RGB gamut (EBU R 103),
   audio and video durations that differ, AS-11 UK metadata in MXF (ffprobe's tags); flashing (PSE) only as an
