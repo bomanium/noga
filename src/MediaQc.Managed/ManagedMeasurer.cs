@@ -74,8 +74,9 @@ public static class ManagedMeasurer
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
         var (packets, timestamps) = ReadPackets(path, cancellationToken);
-        var (pictures, shots) = MeasurePictures(path, timestamps, cancellationToken);
-        measured = Shots.Add(Pictures.Add(measured, pictures, profile) with { Packets = packets }, shots);
+        var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
+        var (pictures, shots) = MeasurePictures(path, timestamps, freezes, cancellationToken);
+        measured = Shots.Add(Pictures.Add(measured, pictures, profile) with { Packets = packets, Freezes = freezes.Finish() }, shots);
         if (audio is null)
             return measured;
 
@@ -117,7 +118,7 @@ public static class ManagedMeasurer
 
     // Every frame of the video through ManagedCodecs' H.264 decoder, in display order, into FrameReader's PictureMeter
     // and ShotDetector (which pulls the frames one at a time, so each is measured and then detected on).
-    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, CancellationToken cancellationToken)
+    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, FreezeMeter freezes, CancellationToken cancellationToken)
     {
         var tags = Tags.Read(path, cancellationToken);
         using var demuxer = Open(path);
@@ -185,6 +186,18 @@ public static class ManagedMeasurer
                 frame.Strides[2],
                 frame.Pts,
                 (FrameReader.PictureType)(int)frame.PictureType);
+            freezes.Add(
+                Plane(frame, 0).Span,
+                frame.Strides[0],
+                Plane(frame, 1).Span,
+                frame.Strides[1],
+                Plane(frame, 2).Span,
+                frame.Strides[2],
+                frame.Width,
+                frame.Height,
+                Chroma(format),
+                format.BitDepth(),
+                frame.Pts * ((double)timeBase.Num / timeBase.Den));
             return new YuvFrame(Plane(frame, 0), frame.Strides[0], Plane(frame, 1), frame.Strides[1], Plane(frame, 2), frame.Strides[2])
             {
                 Pts = frame.Pts,

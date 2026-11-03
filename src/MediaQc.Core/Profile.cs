@@ -25,6 +25,8 @@ public sealed record Profile
         RangeMergeGap = 1,
         MinPhase = -0.3,
         ClipRun = 3,
+        FreezeNoise = 0.001,
+        MinFreeze = 2,
     };
 
     /// <summary>The profile's name in reports and on the command line.</summary>
@@ -77,6 +79,15 @@ public sealed record Profile
 
     /// <summary>A run of this many samples or more at full scale on a channel is clipping, a warning.</summary>
     public int ClipRun { get; init; } = 3;
+
+    /// <summary>freezedetect's n: how little a frame may differ from the one before it was frozen (mean absolute difference, 0 to 1).</summary>
+    public double FreezeNoise { get; init; } = 0.001;
+
+    /// <summary>The shortest freeze reported (seconds; freezedetect's d).</summary>
+    public double MinFreeze { get; init; } = 2;
+
+    /// <summary>What freezes are checked against.</summary>
+    public string FreezeFilter => Invariant($"freezedetect=n={FreezeNoise}:d={MinFreeze} (each end within one frame), black and bars left out");
 
     /// <summary>What a channel's silences are checked against (channel N, from 1).</summary>
     public string ChannelSilenceFilter(int channel) => Invariant($"-map 0:a:0 -af pan=mono|c0=c{channel - 1},silencedetect=n={SilenceNoise}dB:d={MinSilence} (each end within 10 ms)");
@@ -189,6 +200,10 @@ public sealed record Profile
         Tone(findings, measured.Tone);
 
         Spans(findings, "black", "Black", measured.Black, MinBlack, BlackFilter);
+
+        // A black picture or bars are still by nature (black and bars report them): a freeze counts outside them.
+        var still = measured.Black.Concat(measured.Bars).OrderBy(s => s.Start).ToList();
+        Spans(findings, "freeze", "Picture frozen", [.. measured.Freezes.SelectMany(f => Without(f, still))], MinFreeze, FreezeFilter);
         Range(findings, measured, At);
         Crop(findings, measured.Crop);
         PictureTypes(findings, measured.PictureTypes);

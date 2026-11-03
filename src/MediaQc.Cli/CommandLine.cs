@@ -26,9 +26,9 @@ static class CommandLine
         (Japan: -24 LKFS within 1 LU, -1 dBTP), a delivery template from the profiles folder beside mediaqc
         (hd-1080i25-prores-hq, hd-1080p25-prores-hq, web-1080p-h264-aac), or a profile file (.json: a name, basedOn,
         the thresholds it changes and, in "format", the delivery's codec, frame size and rate, scan, colour, audio and
-        start timecode, each failing the file when it differs). Each also checks black, silence, bars and line-up
-        tone, each audio channel (dead, silent, out of phase, clipping), pixels outside broadcast range, and reports
-        the format, crop, frame types, keyframes, bitrate and the shot list.
+        start timecode, each failing the file when it differs). Each also checks black, frozen pictures, silence,
+        bars and line-up tone, each audio channel (dead, silent, out of phase, clipping), pixels outside broadcast
+        range, and reports the format, crop, frame types, keyframes, bitrate and the shot list.
 
         serve runs the web UI on this machine only (http://localhost:8722 unless --port says another), opens it in
         the browser (not with --no-open) and checks the files picked there, writing their reports beside them. With
