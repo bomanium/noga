@@ -1,7 +1,7 @@
 # Dependencies
 
-Every dependency, what it is for and its licence. The rule (CLAUDE.md): licences that allow closed-source commercial
-use; LGPL only as separate, replaceable, dynamically loaded binaries with its licence shipped beside them; no GPL or
+Every dependency, what it is for and its licence. The rule (CLAUDE.md): media-qc is MIT, and its dependencies keep a release usable by anyone, closed-source
+commercial use included: LGPL only as separate, replaceable, dynamically loaded binaries with its licence shipped beside them; no GPL or
 AGPL. A PR that adds, removes or relicenses a dependency updates this file. Versions are in Directory.Packages.props
 and .config/dotnet-tools.json.
 

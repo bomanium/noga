@@ -15,7 +15,11 @@ is the owner's to choose (Maybe below).
 
 ## Waiting
 
-Nothing.
+- A real name, then the repository public
+  - Why: decisions/2026-11-03-mit-licence.md: media-qc is MIT and goes public once it has a name that is free on
+    GitHub and NuGet and clashes with no trademark; then the code, command, packages and docs are renamed, and the
+    owner makes the repository public (its settings)
+  - Status: Waiting (on the owner: the name)
 
 ## Maybe
 
