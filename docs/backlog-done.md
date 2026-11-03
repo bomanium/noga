@@ -151,3 +151,6 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - Installers for the desktop app: an NSIS setup.exe for Windows and an AppImage for Linux, the archives kept
   - Status: Done (2026-11-02, decisions/2026-11-02-installers.md)
+
+- HTTPS for a shared server: --cert's certificate, else a self-signed one kept in the profile; --http opts out
+  - Status: Done (2026-11-03, decisions/2026-11-03-shared-https.md)

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -53,7 +54,11 @@ static class Server
         var watcher = options.Watch is null ? null : new Watcher(options.Watch, file => jobs.Add(file));
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
-        builder.WebHost.ConfigureKestrel(k => k.Listen(options.Address, options.Port));
+        builder.WebHost.ConfigureKestrel(k => k.Listen(options.Address, options.Port, listen =>
+        {
+            if (options.Certificate is { } certificate)
+                listen.UseHttps(certificate);
+        }));
         builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.TypeInfoResolverChain.Insert(0, ServeJsonContext.Default));
         builder.Services.AddSingleton(jobs);
         var app = builder.Build();
@@ -98,9 +103,10 @@ static class Server
         WebApplication app;
         try
         {
+            options = WithCertificate(options);
             app = Build(options, (file, token) => Checker.Run(file, null, options.Profile, token));
         }
-        catch (Exception e) when (e is DirectoryNotFoundException or ArgumentException)
+        catch (Exception e) when (e is DirectoryNotFoundException or ArgumentException or IOException or UnauthorizedAccessException or CryptographicException)
         {
             error.WriteLine($"mediaqc: {e.Message}");
             return CommandLine.Usage;
@@ -114,9 +120,14 @@ static class Server
             if (options.Shared)
             {
                 string link = Invariant($"?token={Uri.EscapeDataString(options.Token!)}");
-                url = Invariant($"http://localhost:{port}/{link}");
-                output.WriteLine($"{Product.Name} {Product.Version}: the web UI is shared on the network at http://{Environment.MachineName}:{port}/{link}");
+                string scheme = options.Certificate is null ? "http" : "https";
+                url = Invariant($"{scheme}://localhost:{port}/{link}");
+                output.WriteLine($"{Product.Name} {Product.Version}: the web UI is shared on the network at {scheme}://{Environment.MachineName}:{port}/{link}");
                 output.WriteLine($"Only who has that link gets in. Shared folders: {string.Join(", ", new Roots(options.Watch is null ? options.Roots : [.. options.Roots, options.Watch]).Folders)}. Ctrl+C stops it.");
+                if (options.Certificate is null)
+                    output.WriteLine("It is plain HTTP (--http): the link and the files' names cross the network unencrypted.");
+                else if (options.CertificateFile is null)
+                    output.WriteLine($"Its certificate is self-signed ({Certificates.SelfSignedFile}), so browsers warn once: accept it if they show this SHA-256 fingerprint: {Certificates.Fingerprint(options.Certificate)}");
             }
             else
             {
@@ -132,6 +143,22 @@ static class Server
         }
 
         return CommandLine.Ok;
+    }
+
+    /// <summary>
+    /// A shared server's options with its certificate (docs/decisions/2026-11-03-shared-https.md): --cert's, else the
+    /// self-signed one kept in the user's profile; none on this machine only or with --http.
+    /// </summary>
+    static ServeOptions WithCertificate(ServeOptions options)
+    {
+        if (!options.Shared || options.Http || options.Certificate is not null)
+            return options;
+        return options with
+        {
+            Certificate = options.CertificateFile is { } file
+                ? Certificates.Load(file, options.KeyFile)
+                : Certificates.SelfSigned(Certificates.SelfSignedFile, Environment.MachineName, DateTimeOffset.Now),
+        };
     }
 
     /// <summary>A token for a shared server's link: 128 random bits, URL-safe.</summary>
@@ -150,7 +177,7 @@ static class Server
             string? linked = request.Query["token"];
             if (linked is not null && Same(linked, options.Token!))
             {
-                response.Cookies.Append(Cookie, options.Token!, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict, Path = "/", MaxAge = TimeSpan.FromDays(30) });
+                response.Cookies.Append(Cookie, options.Token!, new CookieOptions { HttpOnly = true, Secure = request.IsHttps, SameSite = SameSiteMode.Strict, Path = "/", MaxAge = TimeSpan.FromDays(30) });
                 response.Redirect(request.Path);
                 return;
             }
@@ -245,7 +272,7 @@ static class Server
         .Replace("{{watched}}", watched is null ? "" : WebUtility.HtmlEncode(watched), StringComparison.Ordinal);
 }
 
-/// <summary>How <c>mediaqc serve</c> runs: where it listens, the folder it watches, the folders it shares and its token.</summary>
+/// <summary>How <c>mediaqc serve</c> runs: where it listens, the folder it watches, the folders it shares, its token and certificate.</summary>
 sealed record ServeOptions
 {
     /// <summary>The address listened on: 127.0.0.1 (this machine only) unless shared.</summary>
@@ -268,6 +295,18 @@ sealed record ServeOptions
 
     /// <summary>The profile's name or file as given on the command line, before it is read into <see cref="Profile"/>.</summary>
     public string? ProfileName { get; init; }
+
+    /// <summary>A shared server without HTTPS (--http).</summary>
+    public bool Http { get; init; }
+
+    /// <summary>The certificate file --cert names (a .pfx, or PEM); null: a self-signed one.</summary>
+    public string? CertificateFile { get; init; }
+
+    /// <summary>The PEM key file --key names, for a PEM <see cref="CertificateFile"/>.</summary>
+    public string? KeyFile { get; init; }
+
+    /// <summary>The certificate it serves HTTPS with; null: plain HTTP (this machine only, or --http).</summary>
+    public X509Certificate2? Certificate { get; init; }
 
     /// <summary>Whether it listens beyond this machine.</summary>
     public bool Shared => !IPAddress.IsLoopback(Address);

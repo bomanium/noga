@@ -25,12 +25,6 @@ Nothing.
     AppImage: decisions/2026-11-02-installers.md) are done
   - Status: Maybe
 
-- The web UI's next steps: HTTPS for a shared server (a given or self-signed certificate)
-  - Why: decisions/2026-11-01-web-ui.md chose picking on the server and this machine only for a start; the watch folder
-    (decisions/2026-11-01-watch-folder.md), the shared-machine mode (decisions/2026-11-01-shared-machine.md, plain
-    HTTP for trusted networks) and a desktop app (decisions/2026-11-01-desktop-app.md) are done
-  - Status: Maybe
-
 - macOS (osx-arm64) and Linux arm64 releases
   - Why: FrameReader.Native has osx-arm64 and linux-arm64 packages; CI can't run them (ubuntu only, macOS minutes cost
     10x), and macOS wants a signed, notarised binary

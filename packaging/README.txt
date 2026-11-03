@@ -1,15 +1,19 @@
 mediaqc: file-based quality control of video deliveries (a working name)
 
   mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]
-  mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER] [--token TOKEN] [--profile PROFILE] [--no-open]
+  mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER] [--token TOKEN]
+                [--cert FILE [--key FILE] | --http] [--profile PROFILE] [--no-open]
 
 writes FILE.qc.html and FILE.qc.json next to FILE (or in FOLDER), prints the findings and exits 0 passed, 1 failed,
 2 usage or read error, 3 warnings (1 with --warnings-fail). serve runs the web UI on this machine only
 (http://localhost:8722): pick files in its folders, and each is checked where it is, its reports written beside it. With --watch, the media
 files in FOLDER (and its subfolders) that have no report yet are checked too, new ones once their copy has finished.
---listen 0.0.0.0:8722 --root FOLDER shares it with your team on a trusted network: only the --root folders can be seen
-and checked, and only by who opens the link it prints (it carries a random token). It is plain HTTP: use it on a
-network you trust.
+--listen 0.0.0.0:8722 --root FOLDER shares it with your team: only the --root folders can be seen and checked, and
+only by who opens the link it prints (it carries a random token). Shared, it is HTTPS: with your certificate
+(--cert server.pfx, its password in MEDIAQC_CERT_PASSWORD if it has one, or --cert server.crt --key server.key), else
+a self-signed one it makes once and keeps in your profile. Browsers warn about a self-signed certificate once: accept
+it when the fingerprint they show is the one mediaqc printed. --http shares it as plain HTTP instead, for a network you
+trust.
 mediaqc --help says the same.
 
 Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one

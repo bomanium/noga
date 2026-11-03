@@ -61,8 +61,26 @@ public sealed class CommandLineTests : IClassFixture<Programme>
     [InlineData("serve", "--listen", "0.0.0.0:0")]
     [InlineData("serve", "--port", "8000", "--listen", "0.0.0.0:8722")]
     [InlineData("serve", "--token", "short")]
+    [InlineData("serve", "--http")]
+    [InlineData("serve", "--cert", "server.pfx")]
+    [InlineData("serve", "--listen", "0.0.0.0:8722", "--root", ".", "--http", "--cert", "server.pfx")]
+    [InlineData("serve", "--listen", "0.0.0.0:8722", "--root", ".", "--key", "server.key")]
+    [InlineData("serve", "--listen", "0.0.0.0:8722", "--root", ".", "--http", "--http")]
     public void ServeArgumentsThatDontParseAreAUsageError(params string[] args) =>
         Assert.Equal(CommandLine.Usage, Run(args).Code);
+
+    // A certificate that can't be read stops serve before it listens, saying why.
+    [Fact]
+    public void ServeWithACertificateThatIsntThereIsAUsageError()
+    {
+        string missing = Path.Combine(_programme.Folder, "missing.pfx");
+
+        var (code, output, error) = Run("serve", "--listen", "0.0.0.0:8722", "--root", _programme.Folder, "--cert", missing, "--no-open");
+
+        Assert.Equal(CommandLine.Usage, code);
+        Assert.Empty(output);
+        Assert.Contains("missing.pfx", error, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void CheckJudgesByTheProfileGiven()

@@ -17,7 +17,7 @@ static class CommandLine
     const string Help = """
         Usage: mediaqc check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]
                mediaqc serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER]
-                             [--token TOKEN] [--profile PROFILE] [--no-open]
+                             [--token TOKEN] [--cert FILE [--key FILE] | --http] [--profile PROFILE] [--no-open]
                mediaqc --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
@@ -32,7 +32,9 @@ static class CommandLine
         --watch, it also checks FOLDER's media files (subfolders too) that have no report yet, new ones once copied.
         --listen 0.0.0.0:8722 shares it on the network: only the --root folders (and --watch's) can be seen, and only
         by who opens the link it prints, which carries a random token (or --token's, 16 characters or more). --root
-        limits localhost too.
+        limits localhost too. Shared, it is HTTPS: with --cert's certificate (a .pfx, its password in
+        MEDIAQC_CERT_PASSWORD if it has one, or a PEM certificate with --key's key), else a self-signed one made once
+        and kept in your profile, whose fingerprint it prints (browsers warn once). --http shares it as plain HTTP.
 
         Exit codes: 0 passed, 1 failed, 2 usage or read error, 3 warnings (1 with --warnings-fail).
         """;
@@ -168,11 +170,26 @@ static class CommandLine
                     options = options with { ProfileName = value };
                     i++;
                     break;
+                case "--http" when !options.Http:
+                    options = options with { Http = true };
+                    break;
+                case "--cert" when value is not null && options.CertificateFile is null:
+                    options = options with { CertificateFile = value };
+                    i++;
+                    break;
+                case "--key" when value is not null && options.KeyFile is null:
+                    options = options with { KeyFile = value };
+                    i++;
+                    break;
                 default:
                     return null;
             }
         }
 
+        // HTTPS is a shared server's: --http, --cert and --key need --listen, --key needs --cert, and --http has neither.
+        bool tls = options.CertificateFile is not null || options.KeyFile is not null;
+        if (((options.Http || tls) && !options.Shared) || (options.Http && tls) || (options.KeyFile is not null && options.CertificateFile is null))
+            return null;
         options = options with { Roots = roots };
         if (options.Shared && options.Token is null)
             options = options with { Token = Serve.Server.NewToken() };
