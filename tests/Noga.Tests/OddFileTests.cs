@@ -149,8 +149,8 @@ public sealed class OddFileTests : IClassFixture<OddFiles>
         jobs.Add("first");
         jobs.Add("second");
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        while (jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring))
-            await jobs.Changed.WaitAsync(timeout.Token);
+        for (var changed = jobs.Changed; jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring); changed = jobs.Changed)
+            await changed.WaitAsync(timeout.Token);
 
         var first = jobs.All.Single(j => j.File == "first");
         Assert.Equal(JobState.Failed, first.State);

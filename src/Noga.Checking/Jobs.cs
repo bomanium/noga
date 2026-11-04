@@ -119,12 +119,17 @@ public sealed class Jobs : IDisposable
             return id >= 1 && id <= _jobs.Count ? _jobs[id - 1] : null;
     }
 
-    /// <summary>Queues a check of <paramref name="file"/> (a full path).</summary>
+    /// <summary>
+    /// Queues a check of <paramref name="file"/> (a full path); when one of it is already queued or measuring, returns
+    /// that one rather than checking it twice.
+    /// </summary>
     public Job Add(string file)
     {
         Job job;
         lock (_lock)
         {
+            if (_jobs.FindLast(j => j.File == file && j.State is JobState.Queued or JobState.Measuring) is { } waiting)
+                return waiting;
             job = new Job(_jobs.Count + 1, file, JobState.Queued, DateTimeOffset.Now);
             _jobs.Add(job);
             Signal();

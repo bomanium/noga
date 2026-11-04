@@ -18,12 +18,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     10 minutes (ProRes HQ about 17 s a minute on 4 cores, flat memory), and the worst found is fixed (memory that grew
     with a QuickTime PCM file's length, 1.9 GB for 10 minutes). Still to do: the open films, and the figure in the README
 
-- The web UI's usability gaps
-  - Why: the same review: folders and ".." aren't keyboard-reachable (spans), a bad path leaves the old listing under
-    it, Check gives no feedback and queues duplicates, non-media files get a Check button, no "check all in this
-    folder" (its dark mode and its grey text's contrast came with decisions/2026-11-04-status-style.md)
-  - Status: Open
-
 - Raw values in findings
   - Why: the same review: a silent file's true peak reads "-Infinity dBTP" and passes; the format line shows ffprobe's
     unknown colour values as "?/?/bt709"
