@@ -25,13 +25,17 @@ public static class Checker
         Measurements measured;
         try
         {
-            measured = ManagedMeasurer.CanMeasure(file)
-                ? ManagedMeasurer.Measure(file, profile, cancellationToken)
-                : FfmpegMeasurer.Measure(file, profile, cancellationToken);
+            measured = Measure(file, profile, cancellationToken);
         }
         catch (Exception e) when (e is MediaException or InvalidDataException or NotSupportedException)
         {
             throw new CheckException($"can't read {file}: {e.Message}", e);
+        }
+        catch (Exception e) when (e is not OperationCanceledException and not CheckException)
+        {
+            // A fault in Noga or a library under it, not in the file as far as anyone knows: still one file's error,
+            // so the command exits 2 with what happened, and the web UI's and the app's queue go on to the next file.
+            throw new CheckException($"can't check {file}: {e.GetType().Name}: {e.Message} (a fault in Noga: please report it)", e);
         }
 
         var report = profile.Evaluate(measured);
@@ -42,6 +46,25 @@ public static class Checker
         File.WriteAllText(html, ReportHtml.Write(report, name));
         File.WriteAllText(json, ReportJson.Write(report, name));
         return new CheckResult(report, html, json);
+    }
+
+    // The managed path for what it reads; a file it starts on but can't read to the end (a damaged or cut-off MP4: a
+    // NAL unit that overruns its packet, a sample past the end of the file) goes to the FFmpeg path, which reads what
+    // there is and reports the rest.
+    static Measurements Measure(string file, Profile profile, CancellationToken cancellationToken)
+    {
+        if (ManagedMeasurer.CanMeasure(file))
+        {
+            try
+            {
+                return ManagedMeasurer.Measure(file, profile, cancellationToken);
+            }
+            catch (InvalidDataException)
+            {
+            }
+        }
+
+        return FfmpegMeasurer.Measure(file, profile, cancellationToken);
     }
 }
 

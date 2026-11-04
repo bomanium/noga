@@ -32,20 +32,35 @@ public static class ManagedMeasurer
     /// <summary>The line-up tone's frequency searched for (Hz), as on the FFmpeg path.</summary>
     const double ToneFrequency = 1000;
 
+    // The pixel formats ShotDetector takes decoded frames in (its VideoReader); H.264 in others (High 4:2:2 at 10 bits,
+    // High 4:4:4) goes to the FFmpeg path, whose shots convert any format.
+    static readonly HashSet<string> ShotDetectorFormats = ["yuv420p", "yuvj420p", "yuv422p", "yuvj422p", "yuv420p10le"];
+
     /// <summary>
     /// Whether this path reads <paramref name="path"/>: an MP4 with H.264 video and one AAC audio track (or none). A file
     /// with several audio tracks goes to the FFmpeg path, which judges every one (ManagedCodecs' demuxer gives one:
-    /// docs/decisions/2026-11-01-every-audio-track.md).
+    /// docs/decisions/2026-11-01-every-audio-track.md), and so does H.264 in a pixel format ShotDetector doesn't take.
     /// </summary>
     public static bool CanMeasure(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
         try
         {
-            bool managed;
-            using (var demuxer = Demuxer.Open(path) as Mp4Demuxer)
-                managed = demuxer?.Video?.Codec == CodecIds.H264 && (demuxer.Audio is null || demuxer.Audio.Codec == CodecIds.Aac);
-            return managed && Tags.AudioTrackCount(path) <= 1;
+            // The video track's headers alone, and the audio's codecs from FFmpeg's: a QuickTime file's PCM track has one
+            // sample an audio sample, and a demuxer of every track builds its whole table (29 bytes a sample) only to
+            // answer no: 1.6 GB for 10 minutes of ProRes with stereo PCM (docs/notes/performance.md).
+            using var file = File.OpenRead(path);
+            using (var video = new Mp4Demuxer(file, MediaTypes.Video, leaveOpen: true))
+            {
+                if (video.Video?.Codec != CodecIds.H264)
+                    return false;
+            }
+
+            if (Tags.Headers(path) is { } headers)
+                return (headers.PixelFormat is null || ShotDetectorFormats.Contains(headers.PixelFormat)) && headers.AudioCodecs is [] or ["aac"];
+            file.Position = 0;
+            using var audio = new Mp4Demuxer(file, MediaTypes.Audio, leaveOpen: true);
+            return audio.Audio is null || audio.Audio.Codec == CodecIds.Aac;
         }
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or IOException or ArgumentException)
         {

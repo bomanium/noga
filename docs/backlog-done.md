@@ -172,3 +172,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
 
 - Interlacing from the picture (idet), against the stream's field order
   - Status: Done (2026-11-03, decisions/2026-11-03-interlacing.md)
+
+- A launch README: what Noga checks and how each figure is checked against FFmpeg, install, `noga check` and its exit
+  codes, screenshots of the report, the web UI and the app, an example report
+  - Why: the root README is the whole pitch once the repository is public, and it had 14 lines; the user's text only
+    shipped inside the release (decisions/2026-11-03-launch-readiness.md)
+  - Status: Done (2026-11-03: README.md rewritten, with docs/example/'s reports and docs/images/'s screenshots; the
+    report's "checked against" column now wraps, as its filter strings made the page wider than the window)
