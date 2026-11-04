@@ -173,29 +173,52 @@ function mark() {
 // Each status's label and tone, as the report and the app show them (StatusStyle).
 const statuses = {{statuses}};
 
+// Each check's row as last drawn: its element, the line with its time, and what it was drawn from.
+const rows = new Map();
+
 function show(jobs) {
   if (!jobs.length) return;
-  $("jobs").replaceChildren(...jobs.map(job => {
-    const state = job.state.toLowerCase();
-    const [label, tone] = statuses[job.status];
-    const file = job.file.split(/[\\/]/).pop();
-    const links = el("span", { className: "links" });
-    if (state === "done") {
-      links.append(el("a", { className: "open", href: `/api/jobs/${job.id}/report.html`, target: "_blank", rel: "noopener", textContent: "Report" }));
-      links.append(el("a", { className: "json", href: `/api/jobs/${job.id}/report.json`, target: "_blank", rel: "noopener", textContent: "JSON" }));
-    }
-    // How long it has been measuring or took, then the folder (the name is above it): the time first, so a long
-    // folder cut off at the end doesn't hide it.
-    const time = job.started ? (state === "measuring" ? "measuring " + elapsed(job.started) : "took " + elapsed(job.started, job.finished)) + " · " : "";
-    const li = el("li", {},
-      el("span", { className: "state " + tone, textContent: label }),
-      el("span", { className: "file", textContent: file, title: job.file }),
-      links,
-      el("span", { className: "where", textContent: time + job.folder, title: job.file }));
-    if (job.reason) li.append(el("span", { className: "reason", textContent: job.reason }));
-    if (job.shortError) li.append(el("span", { className: "error", textContent: job.shortError }));
-    return li;
-  }));
+  // A row is built again only when its check changes; otherwise it stays and only its time is written, so the
+  // focus and a click on Report aren't lost to a row rebuilt each second.
+  const wanted = jobs.map(job => {
+    const key = JSON.stringify([job.status, job.reason, job.shortError, job.started, job.finished]);
+    let row = rows.get(job.id);
+    if (!row || row.key !== key) rows.set(job.id, row = { ...build(job), key });
+    row.where.textContent = where(job);
+    return row.li;
+  });
+  // The list changed only where it must: a new check goes in at the top, a changed one in its place.
+  const list = $("jobs");
+  wanted.forEach((li, i) => { if (list.children[i] !== li) list.insertBefore(li, list.children[i] ?? null); });
+  while (list.children.length > wanted.length) list.lastElementChild.remove();
+}
+
+function build(job) {
+  const state = job.state.toLowerCase();
+  const [label, tone] = statuses[job.status];
+  const file = job.file.split(/[\\/]/).pop();
+  const links = el("span", { className: "links" });
+  if (state === "done") {
+    links.append(el("a", { className: "open", href: `/api/jobs/${job.id}/report.html`, target: "_blank", rel: "noopener", textContent: "Report" }));
+    links.append(el("a", { className: "json", href: `/api/jobs/${job.id}/report.json`, target: "_blank", rel: "noopener", textContent: "JSON" }));
+  }
+  const line = el("span", { className: "where", title: job.file });
+  const li = el("li", {},
+    el("span", { className: "state " + tone, textContent: label }),
+    el("span", { className: "file", textContent: file, title: job.file }),
+    links,
+    line);
+  if (job.reason) li.append(el("span", { className: "reason", textContent: job.reason }));
+  if (job.shortError) li.append(el("span", { className: "error", textContent: job.shortError }));
+  return { li, where: line };
+}
+
+// How long it has been measuring or took, then the folder (the name is above it): the time first, so a long folder
+// cut off at the end doesn't hide it.
+function where(job) {
+  const measuring = job.state === "Measuring";
+  const time = job.started ? (measuring ? "measuring " + elapsed(job.started) : "took " + elapsed(job.started, job.finished)) + " · " : "";
+  return time + job.folder;
 }
 
 // As Job.Format: "12 s", "3 min 05 s".
