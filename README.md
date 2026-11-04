@@ -70,7 +70,7 @@ This writes `episode01.mov.qc.html` and `episode01.mov.qc.json` next to the file
 the findings:
 
 ```
-programme_prores.mov: Failure (profile ebu-r128, exit code 1)
+programme_prores.mov: Failed (profile ebu-r128, exit code 1)
   Pass     tone: Line-up tone, 1000 Hz at -18.0 dBFS (expected -18 dBFS within 0.5 dB), for 5.00 s [10:00:00:00-10:00:05:00]
   Warning  black: Black for 3.00 s mid-programme [10:00:05:00-10:00:08:00]
   ...

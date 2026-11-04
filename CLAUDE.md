@@ -89,7 +89,7 @@ What is next, in order: docs/backlog.md.
   track, duration; reported always) and `FormatSpec` (a profile's `Format`: what the delivery asks for, each value a
   pass or a failure; decisions/2026-11-03-delivery-format.md), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against, its EBU QC item: `EbuQcItem.For`, decisions/2026-11-01-ebu-qc-items.md; `ExitCode`), `Timecode` (SMPTE from the file's start timecode, drop-frame at 29.97/59.94), `ReportJson`
-  (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page: the verdict with counts, the failures and warnings first, the format in the header, the shots folded; phone, dark and print: decisions/2026-11-04-report-layout.md), `Product` (name and
+  (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page: the verdict with counts, the failures and warnings first, the format in the header, the shots folded; phone, dark and print: decisions/2026-11-04-report-layout.md), `StatusStyle` (a file's `Status` and each severity: one label and one tinted colour, light and dark, for the report, `noga serve`'s page, the app and the command line; each at least WCAG AA: decisions/2026-11-04-status-style.md), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
   `TimecodeTag.Pick`: the start timecode in ffprobe's JSON. `AudioTrack.All`: every audio track (ffmpeg's 0:a:N);
   each is measured (`Measurements.OtherTracks`, `TrackMeasures`) and judged, its findings naming it (`Finding.Track`). `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
