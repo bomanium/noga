@@ -83,15 +83,17 @@ public sealed record Tags(
     }
 
     /// <summary>
-    /// The codec of each of <paramref name="path"/>'s audio tracks, as ffprobe names it (its headers, through FFmpeg's
-    /// libraries); null when the libraries don't load or the file can't be opened, so the caller's own reading decides.
+    /// The first video stream's pixel format (null when it has none, or FFmpeg doesn't know it) and the codec of each of
+    /// <paramref name="path"/>'s audio tracks, as ffprobe names them (its headers, through FFmpeg's libraries); null when
+    /// the libraries don't load or the file can't be opened, so the caller's own reading decides.
     /// </summary>
-    public static IReadOnlyList<string>? AudioCodecs(string path, CancellationToken cancellationToken = default)
+    public static StreamHeaders? Headers(string path, CancellationToken cancellationToken = default)
     {
         try
         {
             Libraries.Load();
-            return [.. MediaProbe.Probe(path, new ProbeOptions { CancellationToken = cancellationToken }).Streams.Where(s => s.Type == StreamType.Audio).Select(s => s.Codec)];
+            var info = MediaProbe.Probe(path, new ProbeOptions { CancellationToken = cancellationToken });
+            return new StreamHeaders(info.Video?.PixelFormat, [.. info.Streams.Where(s => s.Type == StreamType.Audio).Select(s => s.Codec)]);
         }
         catch (FrameReaderException)
         {
@@ -101,3 +103,8 @@ public sealed record Tags(
 
     static string? Text(JsonElement element, string name) => element.TryGetProperty(name, out var value) ? value.ToString() : null;
 }
+
+/// <summary>What <see cref="Tags.Headers"/> reads: the first video stream's pixel format and the audio tracks' codecs.</summary>
+/// <param name="PixelFormat">The first video stream's pix_fmt; null when there is none or it is unknown.</param>
+/// <param name="AudioCodecs">Each audio track's codec_name, in order.</param>
+public sealed record StreamHeaders(string? PixelFormat, IReadOnlyList<string> AudioCodecs);

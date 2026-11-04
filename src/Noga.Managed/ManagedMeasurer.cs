@@ -32,10 +32,14 @@ public static class ManagedMeasurer
     /// <summary>The line-up tone's frequency searched for (Hz), as on the FFmpeg path.</summary>
     const double ToneFrequency = 1000;
 
+    // The pixel formats ShotDetector takes decoded frames in (its VideoReader); H.264 in others (High 4:2:2 at 10 bits,
+    // High 4:4:4) goes to the FFmpeg path, whose shots convert any format.
+    static readonly HashSet<string> ShotDetectorFormats = ["yuv420p", "yuvj420p", "yuv422p", "yuvj422p", "yuv420p10le"];
+
     /// <summary>
     /// Whether this path reads <paramref name="path"/>: an MP4 with H.264 video and one AAC audio track (or none). A file
     /// with several audio tracks goes to the FFmpeg path, which judges every one (ManagedCodecs' demuxer gives one:
-    /// docs/decisions/2026-11-01-every-audio-track.md).
+    /// docs/decisions/2026-11-01-every-audio-track.md), and so does H.264 in a pixel format ShotDetector doesn't take.
     /// </summary>
     public static bool CanMeasure(string path)
     {
@@ -52,8 +56,8 @@ public static class ManagedMeasurer
                     return false;
             }
 
-            if (Tags.AudioCodecs(path) is { } codecs)
-                return codecs is [] or ["aac"];
+            if (Tags.Headers(path) is { } headers)
+                return (headers.PixelFormat is null || ShotDetectorFormats.Contains(headers.PixelFormat)) && headers.AudioCodecs is [] or ["aac"];
             file.Position = 0;
             using var audio = new Mp4Demuxer(file, MediaTypes.Audio, leaveOpen: true);
             return audio.Audio is null || audio.Audio.Codec == CodecIds.Aac;
