@@ -81,7 +81,10 @@ programme_prores.mov: Failed (profile ebu-r128, exit code 1)
 The exit code is for pipelines: **0** passed, **1** failed, **2** a usage or read error, **3** warnings (or 1 with
 `--warnings-fail`).
 
-On a 4-core machine, the 20 s 1080p 10-bit ProRes programme above takes about 7 s to check.
+How long a check takes, on a 4-core cloud machine (docs/notes/performance.md): 1080p25 10-bit ProRes HQ about 17-25 s
+a minute of footage, so a 1-hour master in 17-25 minutes; 1080p30 H.264 (Big Buck Bunny) about 14 s a minute; 720p
+H.264 (Tears of Steel) about 5 s. A check takes 150-300 MB of memory, whatever the file's length. The web UI and the
+app run two checks at a time on 4 cores or more, which finishes a batch about 1.7x sooner than one at a time.
 
 ### Profiles
 
@@ -114,8 +117,9 @@ The release's `profiles/` folder has the templates to copy from. `noga --help` l
 noga serve
 ```
 
-This opens a page on `http://localhost:8722` where you pick files on the machine and check them, one at a time; the
-reports are written beside each file. `--watch FOLDER` also checks every media file copied into FOLDER.
+This opens a page on `http://localhost:8722` where you pick files on the machine and check them, two at a time on
+4 cores or more; the reports are written beside each file. `--watch FOLDER` also checks every media file copied into
+FOLDER.
 `--listen 0.0.0.0:8722 --root FOLDER` shares it with your team over HTTPS: only the `--root` folders are visible, and
 only to whoever opens the link it prints, which carries a token.
 

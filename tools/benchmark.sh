@@ -2,27 +2,29 @@
 # How fast a check is, and how a queue of files goes one at a time or several at once
 # (docs/decisions/2026-11-03-benchmark.md; the figures: docs/notes/performance.md). Builds the command in Release,
 # then, each in its own process:
-#   - one check of each make-samples.sh file (made first when missing), and of longer programmes looped from the
-#     20 s ProRes and H.264 ones (ffmpeg -stream_loop, copied, without the timecode track): wall and CPU seconds,
-#     peak memory, seconds a programme minute;
+#   - one check of each make-samples.sh file (made first when missing), of longer programmes looped from the
+#     20 s ProRes and H.264 ones (ffmpeg -stream_loop, copied, without the timecode track), and, with --films, of
+#     the open films in FILMS (tools/get-films.sh's): wall and CPU seconds, peak memory, seconds a programme minute;
 #   - a queue of the 20 s ProRes programme, QUEUE copies (links), run 1, 2, 4 ... at a time (xargs -P): what
 #     Jobs would gain from running checks side by side.
 # Writes a Markdown table to stdout and to FOLDER/benchmark.md. Needs dotnet, ffmpeg/ffprobe (with libx264 for the
 # H.264 files) and python3 (for peak memory). The long ProRes is ~280 MB a minute.
 #
-#   tools/benchmark.sh [--minutes N] [--queue N] [--jobs "1 2 4"] [FOLDER]   defaults: 10, 8, "1 2 4",
-#                                                                             artifacts/benchmark
+#   tools/benchmark.sh [--minutes N] [--queue N] [--jobs "1 2 4"] [--films FILMS] [FOLDER]
+#                                                     defaults: 10, 8, "1 2 4", no films, artifacts/benchmark
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 minutes=10
 queue=8
 jobs="1 2 4"
+films=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --minutes) minutes="$2"; shift 2 ;;
     --queue) queue="$2"; shift 2 ;;
     --jobs) jobs="$2"; shift 2 ;;
+    --films) films="$2"; shift 2 ;;
     -*) echo "benchmark: unknown option $1" >&2; exit 2 ;;
     *) break ;;
   esac
@@ -79,6 +81,7 @@ report="$work/benchmark.md"
 
 files=("$samples"/programme_prores.mov "$samples"/programme_dnxhr.mxf "$samples"/programme_h264.mp4
   "$samples"/out_of_range.mov "$samples"/letterbox.mov "$work"/media/programme_"${minutes}"min_*)
+[ -n "$films" ] && files+=("$films"/*.mp4 "$films"/*.mov)
 for file in "${files[@]}"; do
   [ -f "$file" ] || continue
   echo "benchmark: checking $file" >&2

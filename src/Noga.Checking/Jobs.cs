@@ -124,8 +124,9 @@ public sealed record Job(int Id, string File, JobState State, DateTimeOffset Add
 }
 
 /// <summary>
-/// The checks asked for, run one at a time in the order asked (a check already keeps the cores busy), each with its
-/// reports beside its file as the command line writes them. Anyone waiting on <see cref="Changed"/> hears of each change.
+/// The checks asked for, started in the order asked, <see cref="AtATime"/> at once (a check keeps about 2 cores busy,
+/// so two at a time finish a queue about 1.6x sooner on 4: docs/notes/performance.md), each with its reports beside its
+/// file as the command line writes them. Anyone waiting on <see cref="Changed"/> hears of each change.
 /// </summary>
 public sealed class Jobs : IDisposable
 {
@@ -134,21 +135,35 @@ public sealed class Jobs : IDisposable
     readonly Channel<int> _queue = Channel.CreateUnbounded<int>();
     readonly CancellationTokenSource _stopping = new();
     readonly Func<string, IProgress<double>, CancellationToken, CheckResult> _check;
-    readonly Task _worker;
+    readonly Task[] _workers;
     TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>Runs checks with <paramref name="check"/> (<see cref="Checker.Run"/>'s, writing beside the file).</summary>
-    public Jobs(Func<string, CancellationToken, CheckResult> check)
-        : this((file, _, token) => check(file, token))
+    public Jobs(Func<string, CancellationToken, CheckResult> check, int? atATime = null)
+        : this((file, _, token) => check(file, token), atATime)
     {
     }
 
-    /// <summary>Runs checks with <paramref name="check"/>, which tells its progress (0 to 1) to the job's row.</summary>
-    public Jobs(Func<string, IProgress<double>, CancellationToken, CheckResult> check)
+    /// <summary>
+    /// Runs checks with <paramref name="check"/>, which tells its progress (0 to 1) to the job's row,
+    /// <paramref name="atATime"/> at once (<see cref="DefaultAtATime"/> when null).
+    /// </summary>
+    public Jobs(Func<string, IProgress<double>, CancellationToken, CheckResult> check, int? atATime = null)
     {
         _check = check;
-        _worker = Task.Run(Work);
+        AtATime = atATime ?? DefaultAtATime;
+        ArgumentOutOfRangeException.ThrowIfLessThan(AtATime, 1, nameof(atATime));
+        _workers = [.. Enumerable.Range(0, AtATime).Select(_ => Task.Run(Work))];
     }
+
+    /// <summary>
+    /// How many checks run at once by default: 2 on 4 cores or more, else 1. Four at a time gained little over two
+    /// (1.8x against 1.6x) and takes twice the memory (docs/notes/performance.md).
+    /// </summary>
+    public static int DefaultAtATime => Environment.ProcessorCount >= 4 ? 2 : 1;
+
+    /// <summary>How many checks run at once.</summary>
+    public int AtATime { get; }
 
     /// <summary>Completes at the next change to any job (then ask again).</summary>
     public Task Changed
@@ -203,7 +218,7 @@ public sealed class Jobs : IDisposable
         _stopping.Cancel();
         try
         {
-            _worker.Wait(TimeSpan.FromSeconds(10));
+            Task.WaitAll(_workers, TimeSpan.FromSeconds(10));
         }
         catch (AggregateException)
         {
