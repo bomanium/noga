@@ -232,3 +232,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: the same review: ffprobe's words in front of clients ("mov,mp4,m4a,3gp,3g2,mj2", "yuv422p10le", "Format:");
     in print the timecodes overrun the To column, the shot list never prints, a point shows an empty To
   - Status: Done (2026-11-04: `FormatWords`, decisions/2026-11-04-format-words.md)
+
+- Small layout fixes from the second review
+  - Why: the same review: the web UI's empty "Checks" text squeezed into the badge column, its path field refusing a
+    file; the app's narrow-window buttons against the badge, its empty window mostly blank, no "Add folder…"; both
+    showing the start of a deep folder rather than its end; "Couldn't read" in the same grey as "Queued"
+  - Status: Done (2026-11-04: decisions/2026-11-04-layout-fixes.md)

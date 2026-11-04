@@ -48,6 +48,26 @@ public sealed record Job(int Id, string File, JobState State, DateTimeOffset Add
     /// <summary>The folder the file is in.</summary>
     public string Folder => Path.GetDirectoryName(File) ?? "";
 
+    /// <summary>
+    /// The folder as a row shows it: whole when short, else its last folders after "…" ("…/season 2/ep01/masters"),
+    /// so deep folders don't all show the same start cut off (the whole path is on hover).
+    /// </summary>
+    public string ShortFolder => Shorten(Folder, 48);
+
+    /// <summary><paramref name="folder"/> in at most about <paramref name="length"/> characters, keeping its end.</summary>
+    public static string Shorten(string folder, int length)
+    {
+        ArgumentNullException.ThrowIfNull(folder);
+        if (folder.Length <= length)
+            return folder;
+        char separator = folder.Contains('\\', StringComparison.Ordinal) && !folder.Contains('/', StringComparison.Ordinal) ? '\\' : '/';
+        var parts = folder.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+        string kept = parts[^1];
+        for (int i = parts.Length - 2; i >= 0 && kept.Length + parts[i].Length + 1 <= length - 2; i--)
+            kept = parts[i] + separator + kept;
+        return $"…{separator}{kept}";
+    }
+
     /// <summary>How long it has been measuring, or took; null before it starts.</summary>
     public TimeSpan? Elapsed(DateTimeOffset now) => Started is { } started ? (Finished ?? now) - started : null;
 

@@ -34,7 +34,8 @@ public class StatusStyleTests
         Assert.Equal(Status.Passed, StatusStyle.Of(Severity.Info));
         Assert.Equal("Passed with warnings", StatusStyle.Label(StatusStyle.Of(Severity.Warning)));
         Assert.Equal("Failed", StatusStyle.Label(StatusStyle.Of(Severity.Failure)));
-        Assert.Equal("neutral", StatusStyle.Tone(Status.Unreadable));
+        Assert.Equal("unreadable", StatusStyle.Tone(Status.Unreadable));
+        Assert.NotEqual(StatusStyle.Tone(Status.Queued), StatusStyle.Tone(Status.Unreadable));
         Assert.Equal("failure", StatusStyle.Tone(Status.Failed));
 
         var job = new Job(1, "a.mov", JobState.Done, DateTimeOffset.UnixEpoch) { Verdict = Severity.Warning };

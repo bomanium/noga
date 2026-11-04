@@ -74,4 +74,16 @@ public class JobRowTests
             await changed.WaitAsync(timeout.Token);
         Assert.NotEqual(first.Id, jobs.Add("a.mov").Id);
     }
+
+    // A deep folder keeps its end, which tells folders apart, rather than a start they all share.
+    [Fact]
+    public void ADeepFolderKeepsItsEnd()
+    {
+        Assert.Equal("/deliveries/ep01", Job.Shorten("/deliveries/ep01", 48));
+        Assert.Equal("…/season 2/ep01/masters", Job.Shorten("/mnt/server/projects/client/the series/season 2/ep01/masters", 26));
+        Assert.Equal(@"…\ep01\masters", Job.Shorten(@"D:\work\clients\series\ep01\masters", 16));
+        var job = new Job(1, "/mnt/server/projects/client/the long series name/season 2/ep01/masters/ep01.mov", JobState.Queued, DateTimeOffset.UnixEpoch);
+        Assert.True(job.ShortFolder.Length <= 48);
+        Assert.EndsWith("/ep01/masters", job.ShortFolder, StringComparison.Ordinal);
+    }
 }

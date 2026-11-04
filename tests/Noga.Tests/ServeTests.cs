@@ -67,7 +67,7 @@ public sealed class ServeTests : IAsyncLifetime
         Assert.Contains(Product.Version, page, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", page, StringComparison.Ordinal);
         Assert.Contains("\"PassedWithWarnings\":[\"Passed with warnings\",\"warning\"]", page, StringComparison.Ordinal);
-        Assert.Contains("\"Unreadable\":[\"Couldn\\u0027t read\",\"neutral\"]", page, StringComparison.Ordinal);
+        Assert.Contains("\"Unreadable\":[\"Couldn\\u0027t read\",\"unreadable\"]", page, StringComparison.Ordinal);
         Assert.Contains(StatusStyle.Css, page, StringComparison.Ordinal);
     }
 
@@ -87,6 +87,18 @@ public sealed class ServeTests : IAsyncLifetime
             .ToList();
         Assert.Equal([("masters", true, false), ("notes.txt", false, false), ("programme.mov", false, true)], entries);
         Assert.Equal(Directory.GetParent(_folder)!.FullName, json.RootElement.GetProperty("parent").GetString());
+    }
+
+    // A file's path, pasted from a file manager, opens the folder it is in (docs/decisions/2026-11-04-layout-fixes.md).
+    [Fact]
+    public async Task AFilePathOpensItsFolder()
+    {
+        string file = Touch("programme.mov");
+
+        using var json = JsonDocument.Parse(await _client.GetStringAsync(At($"/api/folders?path={Uri.EscapeDataString(file)}")));
+
+        Assert.Equal(_folder, json.RootElement.GetProperty("path").GetString());
+        Assert.Contains(json.RootElement.GetProperty("entries").EnumerateArray(), e => e.GetProperty("name").GetString() == "programme.mov");
     }
 
     [Fact]

@@ -10,12 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Small layout fixes from the second review
-  - Why: the same review: the web UI's empty "Checks" text squeezed into the badge column, its path field refusing a
-    file; the app's narrow-window buttons against the badge, its empty window mostly blank, no "Add folder…"; both
-    showing the start of a deep folder rather than its end; "Couldn't read" in the same grey as "Queued"
-  - Status: Open
-
 - Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
   worst fixed, the figure in the README
   - Why: deliveries run 30 to 90 minutes of ProRes HQ, and nothing says how long a check takes or what memory it
