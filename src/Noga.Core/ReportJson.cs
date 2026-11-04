@@ -18,12 +18,19 @@ public static class ReportJson
             report.ExitCode(),
             report.StartTimecode,
             report.DropFrame,
+            report.Source?.Path,
+            report.Source?.Size,
+            report.Source?.Modified,
+            report.Source?.Checked,
             report.Findings);
         return JsonSerializer.Serialize(document, ReportJsonContext.Default.ReportDocument);
     }
 }
 
-/// <summary>The JSON report's top level.</summary>
+/// <summary>
+/// The JSON report's top level; <c>path</c>, <c>size</c>, <c>modified</c> and <see langword="checked"/> say which file was checked
+/// and when (<see cref="CheckedFile"/>), left out for a report made from measures alone.
+/// </summary>
 public sealed record ReportDocument(
     string Tool,
     string Version,
@@ -33,6 +40,10 @@ public sealed record ReportDocument(
     int ExitCode,
     string StartTimecode,
     bool DropFrame,
+    string? Path,
+    long? Size,
+    DateTimeOffset? Modified,
+    DateTimeOffset? Checked,
     IReadOnlyList<Finding> Findings);
 
 [JsonSourceGenerationOptions(

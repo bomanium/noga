@@ -22,6 +22,9 @@ public static class Checker
             throw new CheckException($"no such file: {file}");
 
         profile ??= Profile.EbuR128;
+
+        // The file as the check finds it, before reading it: a report passed on says which version it covers.
+        var source = CheckedFile.Of(file);
         Measurements measured;
         try
         {
@@ -38,7 +41,7 @@ public static class Checker
             throw new CheckException($"can't check {file}: {e.GetType().Name}: {e.Message} (a fault in Noga: please report it)", e);
         }
 
-        var report = profile.Evaluate(measured);
+        var report = profile.Evaluate(measured) with { Source = source };
         string name = Path.GetFileName(file);
         folder ??= Path.GetDirectoryName(Path.GetFullPath(file))!;
         Directory.CreateDirectory(folder);

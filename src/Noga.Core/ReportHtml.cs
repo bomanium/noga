@@ -87,7 +87,8 @@ public static class ReportHtml
             <body>
             <header>
             <h1>{Encode(file)}</h1>
-            <p class="meta">Profile {Encode(report.Profile)} · starts at {Encode(report.StartTimecode)}{(report.DropFrame ? " (drop-frame)" : "")} · {Encode(Product.Name)} {Encode(Product.Version)}</p>
+            <p class="meta">{Checked(report.Source)}Profile {Encode(report.Profile)} · starts at {Encode(report.StartTimecode)}{(report.DropFrame ? " (drop-frame)" : "")} · {Encode(Product.Name)} {Encode(Product.Version)}</p>
+            {Identity(report.Source)}
 
             """);
         if (format is not null)
@@ -167,6 +168,14 @@ public static class ReportHtml
 
             """);
     }
+
+    // When the file was checked, leading the line under its name.
+    static string Checked(CheckedFile? source) => source is null ? "" : $"Checked {Encode(CheckedFile.Time(source.Checked))} · ";
+
+    // Which file exactly: its full path, size and modified time, so a report passed on says which version it covers.
+    static string Identity(CheckedFile? source) => source is null
+        ? ""
+        : $"<p class=\"meta\">{Encode(source.Path)} · {Encode(source.SizeText)} · modified {Encode(CheckedFile.Time(source.Modified))}</p>";
 
     static string Tc(string label, Position? at) =>
         at is { } position ? $"<td class=\"tc\" data-label=\"{label}\">{Encode(position.Timecode)}</td>" : "<td class=\"tc\"></td>";
