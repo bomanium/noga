@@ -28,7 +28,11 @@ ul { list-style: none; margin: 0; padding: 0; }
 #entries { max-height: 65vh; overflow: auto; border-top: 1px solid var(--faint); }
 #entries li { display: flex; align-items: center; gap: .5rem; padding: .25rem .3rem; border-bottom: 1px solid var(--faint); }
 #entries li:hover { background: var(--hover); }
-#entries .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+#entries .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#entries button.link { font: inherit; text-align: left; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+#entries button.link:hover { text-decoration: underline; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+#all { margin-bottom: .6rem; }
 #entries .folder .name::before { content: "\1F4C1  "; }
 #entries .other .name { color: var(--muted); }
 #entries .size { color: var(--muted); font-size: .8rem; white-space: nowrap; }
@@ -61,7 +65,8 @@ ul { list-style: none; margin: 0; padding: 0; }
       <input type="text" id="path" aria-label="Folder or file path" spellcheck="false">
       <button type="submit" class="quiet">Open</button>
     </form>
-    <div id="problem"></div>
+    <div id="problem" role="alert"></div>
+    <button type="button" id="all" class="quiet" hidden></button>
     <ul id="entries"></ul>
   </section>
   <section>
@@ -92,8 +97,11 @@ function size(bytes) {
 async function open(path) {
   const response = await fetch(path ? "/api/folders?path=" + encodeURIComponent(path) : "/api/folders");
   if (!response.ok) {
+    // The folder before stays out of sight, or it would read as this one's (empty) listing.
     const problem = await response.json().catch(() => ({}));
     $("problem").textContent = problem.detail ?? "Can't open " + path;
+    $("entries").replaceChildren();
+    $("all").hidden = true;
     return;
   }
   const listing = await response.json();
@@ -106,16 +114,29 @@ async function open(path) {
   for (const entry of listing.entries) items.push(row(entry));
   if (!listing.entries.length) items.push(el("li", { className: "empty", textContent: "Empty folder" }));
   $("entries").replaceChildren(...items);
+  media = listing.entries.filter(e => e.isMedia).map(e => e.path);
+  $("all").hidden = media.length < 2;
+  $("all").textContent = `Check all ${media.length} media files here`;
+  mark();
 }
 
+// The media files listed, which "Check all" queues.
+let media = [];
+
 function row(entry) {
-  const name = el("span", { className: "name", textContent: entry.name, title: entry.path });
-  const li = el("li", { className: entry.isFolder ? "folder" : entry.isMedia ? "media" : "other" }, name);
   if (entry.isFolder) {
+    // A button, so the keyboard reaches it (Tab, then Enter).
+    const name = el("button", { type: "button", className: "name link", textContent: entry.name, title: entry.path });
     name.addEventListener("click", () => open(entry.path));
-  } else {
-    li.append(el("span", { className: "size", textContent: size(entry.size) }));
+    return el("li", { className: "folder" }, name);
+  }
+  const li = el("li", { className: entry.isMedia ? "media" : "other" },
+    el("span", { className: "name", textContent: entry.name, title: entry.path }),
+    el("span", { className: "size", textContent: size(entry.size) }));
+  // Only media files are checked; the others are listed so the folder reads as it is.
+  if (entry.isMedia) {
     const button = el("button", { type: "button", textContent: "Check" });
+    button.dataset.path = entry.path;
     button.addEventListener("click", () => check(entry.path));
     li.append(button);
   }
@@ -123,10 +144,29 @@ function row(entry) {
 }
 
 async function check(path) {
+  waiting.add(path);
+  mark();
   const response = await fetch("/api/jobs", { method: "POST", headers, body: JSON.stringify({ path }) });
   if (!response.ok) {
+    waiting.delete(path);
+    mark();
     const problem = await response.json().catch(() => ({}));
     $("problem").textContent = problem.detail ?? "Can't check " + path;
+  }
+}
+
+// Files asked for whose job hasn't come back in the events yet.
+const waiting = new Set();
+
+// Each listed file's Check button says when the file is queued or measuring, and can't queue it twice.
+function mark() {
+  const active = new Map(latest.filter(j => j.state === "Queued" || j.state === "Measuring").map(j => [j.file, j.status]));
+  for (const path of latest.map(j => j.file)) waiting.delete(path);
+  for (const button of document.querySelectorAll("#entries button[data-path]")) {
+    const path = button.dataset.path;
+    const status = active.get(path) ?? (waiting.has(path) ? "Queued" : null);
+    button.disabled = status !== null;
+    button.textContent = status ? statuses[status][0] : "Check";
   }
 }
 
@@ -165,9 +205,10 @@ function elapsed(since, until) {
 
 let latest = [];
 const events = new EventSource("/api/events");
-events.onmessage = message => { latest = JSON.parse(message.data); show(latest); };
+events.onmessage = message => { latest = JSON.parse(message.data); show(latest); mark(); };
 setInterval(() => { if (latest.some(j => j.state === "Measuring")) show(latest); }, 1000);
 
+$("all").addEventListener("click", () => { for (const path of media) check(path); });
 $("go").addEventListener("submit", event => { event.preventDefault(); open($("path").value); });
 open($("watching").dataset.folder || null);
 </script>

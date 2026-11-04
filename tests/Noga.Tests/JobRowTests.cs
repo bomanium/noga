@@ -48,4 +48,28 @@ public class JobRowTests
         Assert.Equal("12 s", Job.Format(TimeSpan.FromSeconds(12.4)));
         Assert.Equal("3 min 05 s", Job.Format(TimeSpan.FromSeconds(185)));
     }
+
+    // Check pressed twice, or Check all over a file already queued, checks it once; once done it can be checked again.
+    [Fact]
+    public async Task AFileQueuedOrMeasuringIsntQueuedTwice()
+    {
+        using var release = new ManualResetEventSlim();
+        using var jobs = new Jobs((file, token) =>
+        {
+            release.Wait(token);
+            throw new CheckException($"can't read {file}");
+        });
+
+        var first = jobs.Add("a.mov");
+        var again = jobs.Add("a.mov");
+        jobs.Add("b.mov");
+        Assert.Equal(first.Id, again.Id);
+        Assert.Equal(2, jobs.All.Count);
+
+        release.Set();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        while (jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring))
+            await jobs.Changed.WaitAsync(timeout.Token);
+        Assert.NotEqual(first.Id, jobs.Add("a.mov").Id);
+    }
 }
