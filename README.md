@@ -34,6 +34,7 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | Format | container, codec and profile, size, rate, scan, colour, bit depth, every audio track, duration; a profile can require each | `ffprobe`, exact |
 | Frames, keyframes, bitrate | picture types, keyframe positions, bytes a second | `ffprobe -show_frames`, `-show_packets`, exact |
 | Head and tail | a profile can require bars, tone and black at the head and black at the tail | as above |
+| Decoding | a picture that ends before the frames the file lists, frames that don't decode, a track whose sound ends early: each fails (MOV, MP4, MXF) | `ffprobe -count_packets -count_frames` (`nb_frames`, `nb_read_packets`, `nb_read_frames`), exact; the sound against `astats`' samples |
 | Shot list | the cuts | PySceneDetect's `detect-adaptive`, through [ShotDetector](https://github.com/bisforboman/shotdetector) |
 
 Each finding also names its [EBU QC](https://qc.ebu.io) item. Timecodes run from the file's start timecode,

@@ -17,8 +17,8 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     (decisions/2026-11-03-launch-readiness.md)
   - Status: In progress: 48 odd files checked (decisions/2026-11-04-odd-files.md); the crashes (H.264 4:2:2 10-bit and
     4:4:4 on the managed path; a fault ending the web UI's and the app's queue) and damaged MP4s the managed path
-    stopped on are fixed, and `OddFileTests` checks 26 of them. Still to do: the `decode` check (a failure for a
-    picture or sound that ends early, or frames that can't be decoded) and audio-only files checked
+    stopped on are fixed, and `OddFileTests` checks 26 of them; the `decode` check fails a picture or sound that ends
+    early, or frames that don't decode. Still to do: audio-only files checked
 
 - Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
   worst fixed, the figure in the README

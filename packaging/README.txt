@@ -63,6 +63,10 @@ noga (ln -s ~/Applications/noga-VERSION-x86_64.AppImage ~/.local/bin/noga). It n
 systems have; elsewhere set APPIMAGE_EXTRACT_AND_RUN=1. Its runtime's licences (libfuse's LGPL among them) are in
 noga-VERSION-ARCH.AppImage.licences.txt and inside it, in licences/appimage-runtime/.
 
+A file cut short or damaged fails: in a MOV, MP4 or MXF, a picture that ends before the frames the file lists, frames
+that don't decode, or a track whose sound ends more than a frame before its stream's duration (decode.frames,
+decode.errors, decode.sound).
+
 Every figure says what it is checked against in FFmpeg (which filter, which options, what tolerance).
 
 noga is under the MIT licence (LICENSE.txt). The libraries it ships keep their own licences, below.
