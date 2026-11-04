@@ -124,6 +124,12 @@ public sealed record VideoFormat(
     /// <summary>The frame rate as a number (25, 29.97...); null when ffprobe gives none.</summary>
     public double? Rate => Rational(FrameRate);
 
+    /// <summary>The frames the container lists for the stream (nb_frames); null when it lists none (MXF, MKV, MPEG).</summary>
+    public int? ListedFrames { get; init; }
+
+    /// <summary>The stream's duration as the container gives it (seconds; the stream's duration); null when none.</summary>
+    public double? StreamDuration { get; init; }
+
     /// <summary>"prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, bt709/bt709/bt709 tv, 16:9".</summary>
     public override string ToString()
     {
@@ -170,7 +176,11 @@ public sealed record VideoFormat(
             MediaFormat.Text(stream, "color_transfer"),
             MediaFormat.Text(stream, "color_space"),
             MediaFormat.Text(stream, "color_range"),
-            aspect);
+            aspect)
+        {
+            ListedFrames = MediaFormat.Integer(stream, "nb_frames"),
+            StreamDuration = MediaFormat.Number(stream, "duration"),
+        };
     }
 
     static string Reduced(int width, int height)
@@ -193,6 +203,9 @@ public sealed record VideoFormat(
 /// <param name="BitDepth">bits_per_raw_sample, else bits_per_sample; null for a codec that has none (AAC).</param>
 public sealed record AudioFormat(int Number, string Codec, int? SampleRate, int Channels, string? Layout, int? BitDepth)
 {
+    /// <summary>The stream's duration as the container gives it (seconds; the stream's duration); null when none.</summary>
+    public double? StreamDuration { get; init; }
+
     /// <summary>"pcm_s24le 48000 Hz 2 ch (stereo) 24-bit".</summary>
     public override string ToString()
     {
@@ -213,6 +226,9 @@ public sealed record AudioFormat(int Number, string Codec, int? SampleRate, int 
             MediaFormat.Integer(stream, "sample_rate"),
             MediaFormat.Integer(stream, "channels") ?? 0,
             MediaFormat.Text(stream, "channel_layout"),
-            depth);
+            depth)
+        {
+            StreamDuration = MediaFormat.Number(stream, "duration"),
+        };
     }
 }

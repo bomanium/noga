@@ -67,6 +67,50 @@ public sealed class OddFileTests : IClassFixture<OddFiles>
     public void H264InAPixelFormatShotDetectorDoesntTakeGoesToTheFfmpegPath(string name) =>
         Assert.False(Managed.ManagedMeasurer.CanMeasure(_files.Path(name)));
 
+    // A file cut short lists frames that aren't there, and its sound stops with them; one overwritten in the middle
+    // has frames that don't decode (docs/decisions/2026-11-04-odd-files.md: each a failure).
+    [Theory]
+    [InlineData("cut_moov_first.mov", "decode.frames")]
+    [InlineData("cut_moov_first.mp4", "decode.frames")]
+    [InlineData("garbled.mov", "decode.errors")]
+    [InlineData("garbled.mp4", "decode.errors")]
+    public void WhatADamagedFileLacksFailsIt(string name, string check)
+    {
+        var report = Checker.Run(_files.Path(name), _files.Path("decode-" + name)).Report;
+
+        Assert.Contains(report.Findings, f => f.Check == check && f.Severity == Severity.Failure);
+        if (name.StartsWith("cut_", StringComparison.Ordinal))
+            Assert.Contains(report.Findings, f => f.Check == "decode.sound" && f.Severity == Severity.Failure);
+        Assert.Equal(QcReport.Failed, report.ExitCode());
+    }
+
+    [Theory]
+    [InlineData("whole_moov_first.mov")]
+    [InlineData("whole_moov_first.mp4")]
+    [InlineData("vfr.mp4")]
+    [InlineData("edit_list.mp4")]
+    [InlineData("one_frame.mp4")]
+    [InlineData("two_audio.mp4")]
+    [InlineData("surround.mov")]
+    public void AWholeFileDecodesToTheEnd(string name)
+    {
+        var report = Checker.Run(_files.Path(name), _files.Path("decode-" + name)).Report;
+
+        Assert.Contains(report.Findings, f => f.Check == "decode.frames" && f.Severity == Severity.Pass);
+        Assert.Contains(report.Findings, f => f.Check == "decode.sound" && f.Severity == Severity.Pass);
+        Assert.DoesNotContain(report.Findings, f => f.Check.StartsWith("decode.", StringComparison.Ordinal) && f.Severity == Severity.Failure);
+    }
+
+    [Theory]
+    [InlineData("cut_moov_first.mov")]
+    [InlineData("cut_moov_first.mp4")]
+    [InlineData("garbled.mov")]
+    [InlineData("garbled.mp4")]
+    [InlineData("whole_moov_first.mov")]
+    [InlineData("two_audio.mp4")]
+    public void WhatWasDecodedIsFfprobesAndFfmpegs(string name) =>
+        FfmpegCli.AssertDecode(_files.Path(name), Ffmpeg.FfmpegMeasurer.Measure(_files.Path(name), Profile.EbuR128));
+
     // A check that fails in a way nobody foresaw is that file's failure: the web UI's and the app's queue goes on.
     [Fact]
     public async Task AFaultInOneCheckDoesntStopTheQueue()
