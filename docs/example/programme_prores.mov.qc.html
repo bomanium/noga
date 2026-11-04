@@ -5,58 +5,113 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QC: programme_prores.mov</title>
 <style>
-body { font: 15px/1.45 system-ui, sans-serif; margin: 2rem auto; max-width: 72rem; padding: 0 1rem; color: #1b1b1b; }
-h1 { font-size: 1.4rem; margin-bottom: .2rem; }
-.meta { color: #555; margin: 0 0 1.2rem; }
-.verdict { display: inline-block; padding: .3rem .8rem; border-radius: .3rem; font-weight: 600; margin-bottom: 1.2rem; }
-table { border-collapse: collapse; width: 100%; }
-th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid #ddd; }
-th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #555; }
-td.tc { font-family: ui-monospace, monospace; white-space: nowrap; }
-td.against { color: #555; font-size: .85rem; overflow-wrap: anywhere; }
-td.ebu { font-size: .85rem; white-space: nowrap; }
-.pass { background: #e3f4e6; color: #17602a; }
-.info { background: #e8eef7; color: #24466e; }
-.warning { background: #fdf1d6; color: #7a5200; }
-.failure { background: #fbe3e1; color: #8d1c12; }
-span.sev { padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
+:root { color-scheme: light dark;
+  --fg: #1b1b1b; --muted: #5a5a5a; --line: #ddd; --bg: #fff; --head: #f6f6f4; --link: #1f5d99;
+  --pass-bg: #e3f4e6; --pass: #17602a; --info-bg: #e8eef7; --info: #24466e;
+  --warning-bg: #fdf1d6; --warning: #7a5200; --failure-bg: #fbe3e1; --failure: #8d1c12; }
+@media screen and (prefers-color-scheme: dark) { :root {
+  --fg: #e6e6e3; --muted: #a6a6a1; --line: #3a3a38; --bg: #161615; --head: #1f1f1e; --link: #8cbcf0;
+  --pass-bg: #173a22; --pass: #9fdcae; --info-bg: #1c2b40; --info: #a9c4e8;
+  --warning-bg: #3d2f0c; --warning: #f2cf7c; --failure-bg: #4a1a16; --failure: #f6aaa2; } }
+* { box-sizing: border-box; }
+body { font: 15px/1.45 system-ui, sans-serif; margin: 2rem auto; max-width: 72rem; padding: 0 1rem; color: var(--fg); background: var(--bg); }
+h1 { font-size: 1.4rem; margin: 0 0 .2rem; overflow-wrap: anywhere; }
+h2 { font-size: 1rem; margin: 2rem 0 .4rem; }
+a { color: var(--link); }
+.meta, .format { color: var(--muted); margin: 0 0 .3rem; overflow-wrap: anywhere; }
+.verdict { margin: 1.2rem 0 0; padding: .9rem 1.1rem; border-radius: .4rem; }
+.verdict strong { display: block; font-size: 1.5rem; line-height: 1.2; }
+.verdict span { font-variant-numeric: tabular-nums; }
+table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+col.sev { width: 6.5em; } col.check { width: 11em; } col.tc { width: 7.5em; }
+th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+td.tc { font-family: ui-monospace, monospace; font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.against { display: block; color: var(--muted); font-size: .8rem; margin-top: .15rem; }
+.against a { white-space: nowrap; }
+.pass { background: var(--pass-bg); color: var(--pass); }
+.info { background: var(--info-bg); color: var(--info); }
+.warning { background: var(--warning-bg); color: var(--warning); }
+.failure { background: var(--failure-bg); color: var(--failure); }
+span.sev { display: inline-block; padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
+details { margin-top: 2rem; }
+summary { cursor: pointer; font-weight: 600; }
+summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
+@media (max-width: 40rem) {
+  body { margin: 1rem auto; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  thead, colgroup { display: none; }
+  tr { padding: .5rem 0; border-bottom: 1px solid var(--line); }
+  td { border: 0; padding: .1rem 0; }
+  td.check { display: inline-block; width: auto; margin-left: .4rem; font-weight: 600; }
+  td.sev { display: inline-block; width: auto; }
+  td.tc { display: inline-block; width: auto; margin-right: .6rem; }
+  td.tc:empty { display: none; }
+  td.tc[data-label]::before { content: attr(data-label) " "; font-family: system-ui, sans-serif; color: var(--muted); }
+}
+@media print {
+  body { margin: 0; max-width: none; font-size: 10pt; }
+  a { color: inherit; text-decoration: none; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+  .verdict, span.sev { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
 <body>
+<header>
 <h1>programme_prores.mov</h1>
 <p class="meta">Profile ebu-r128 · starts at 10:00:00:00 · Noga 0.1.0-alpha.2</p>
-<div class="verdict failure">Failed</div>
+<p class="format" title="ffprobe -show_format -show_streams (exact)">Format: prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, ?/?/bt709 tv, 16:9; audio: pcm_s24le 48000 Hz 2 ch (stereo) 24-bit; mov,mp4,m4a,3gp,3g2,mj2, 20.00 s</p>
+<div class="verdict failure"><strong>Failed</strong><span>1 failure · 2 warnings · 6 passed · 14 for information</span></div>
+</header>
+<h2>Failures and warnings</h2>
 <table>
-<thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th><th>Checked against</th><th>EBU QC</th></tr></thead>
+<colgroup><col class="sev"><col class="check"><col><col class="tc"><col class="tc"></colgroup>
+<thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th></tr></thead>
 <tbody>
-<tr><td><span class="sev info">Info</span></td><td>format</td><td>Format: prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, ?/?/bt709 tv, 16:9; audio: pcm_s24le 48000 Hz 2 ch (stereo) 24-bit; mov,mp4,m4a,3gp,3g2,mj2, 20.00 s</td><td class="tc"></td><td class="tc"></td><td class="against">ffprobe -show_format -show_streams (exact)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>bars</td><td>Colour bars for 5.00 s</td><td class="tc">10:00:00:00</td><td class="tc">10:00:05:00</td><td class="against">signalstats on each bar of smptebars/smptehdbars (each end within one frame)</td><td class="ebu"><a href="https://qc.ebu.io/items/0052B" title="EBU QC 0052B v3.0">0052B Video Test Pattern Expected</a></td></tr>
-<tr><td><span class="sev pass">Pass</span></td><td>tone</td><td>Line-up tone, 1000 Hz at -18.0 dBFS (expected -18 dBFS within 0.5 dB), for 5.00 s</td><td class="tc">10:00:00:00</td><td class="tc">10:00:05:00</td><td class="against">-map 0:a:0, astats per channel (RMS level within 0.1 dB) and a 1 kHz bandpass (each end within 20 ms)</td><td class="ebu"><a href="https://qc.ebu.io/items/0014B" title="EBU QC 0014B v2.0">0014B Audio Test Tones</a></td></tr>
-<tr><td><span class="sev warning">Warning</span></td><td>black</td><td>Black for 3.00 s mid-programme</td><td class="tc">10:00:05:00</td><td class="tc">10:00:08:00</td><td class="against">blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame)</td><td class="ebu"><a href="https://qc.ebu.io/items/0272B" title="EBU QC 0272B v1.0">0272B Black Frames Report</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>black</td><td>Black for 3.00 s at the tail</td><td class="tc">10:00:17:00</td><td class="tc">10:00:20:00</td><td class="against">blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame)</td><td class="ebu"><a href="https://qc.ebu.io/items/0272B" title="EBU QC 0272B v1.0">0272B Black Frames Report</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>interlace</td><td>The picture looks progressive: 0 frames top field first, 0 bottom field first, 376 progressive, 124 undetermined</td><td class="tc"></td><td class="tc"></td><td class="against">idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact)</td><td class="ebu"><a href="https://qc.ebu.io/items/0048B" title="EBU QC 0048B v1.0">0048B Video Scanning</a></td></tr>
-<tr><td><span class="sev pass">Pass</span></td><td>interlace.flag</td><td>The stream says progressive (progressive), as the picture looks</td><td class="tc"></td><td class="tc"></td><td class="against">idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact), against ffprobe&#39;s field_order</td><td class="ebu"><a href="https://qc.ebu.io/items/0048B" title="EBU QC 0048B v1.0">0048B Video Scanning</a></td></tr>
-<tr><td><span class="sev pass">Pass</span></td><td>range</td><td>Pixels outside broadcast range: at most 0.67% of the picture (at most 1%)</td><td class="tc">10:00:12:10</td><td class="tc"></td><td class="against">signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under 1 s apart joined</td><td class="ebu"><a href="https://qc.ebu.io/items/0051B" title="EBU QC 0051B v2.0">0051B Video Signal Levels</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>crop</td><td>The picture fills the 1920x1080 frame</td><td class="tc"></td><td class="tc"></td><td class="against">cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact)</td><td class="ebu"><a href="https://qc.ebu.io/items/0015B" title="EBU QC 0015B v3.0">0015B Black Bars</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>frames</td><td>All 500 frames intra-coded (I)</td><td class="tc"></td><td class="tc"></td><td class="against">ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame&#39;s, exact)</td><td class="ebu"><a href="https://qc.ebu.io/items/0046F" title="EBU QC 0046F v1.0">0046F GOP Length - Structure</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>keyframes</td><td>Every frame is a keyframe (500)</td><td class="tc"></td><td class="tc"></td><td class="against">ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,flags (the K packets, exact)</td><td class="ebu"><a href="https://qc.ebu.io/items/0046F" title="EBU QC 0046F v1.0">0046F GOP Length - Structure</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>bitrate</td><td>Video bitrate 35.4 Mb/s on average, at most 70.6 Mb/s in a second</td><td class="tc">10:00:15:00</td><td class="tc">10:00:16:00</td><td class="against">ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,size (summed per second, exact)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>shots</td><td>4 shots, the shortest 3.00 s</td><td class="tc"></td><td class="tc"></td><td class="against">PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>shot</td><td>Shot 1, 5.00 s</td><td class="tc">10:00:00:00</td><td class="tc">10:00:05:00</td><td class="against">PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>shot</td><td>Shot 2, 3.00 s</td><td class="tc">10:00:05:00</td><td class="tc">10:00:08:00</td><td class="against">PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>shot</td><td>Shot 3, 9.00 s</td><td class="tc">10:00:08:00</td><td class="tc">10:00:17:00</td><td class="against">PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>shot</td><td>Shot 4, 3.00 s</td><td class="tc">10:00:17:00</td><td class="tc">10:00:20:00</td><td class="against">PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</td><td class="ebu"></td></tr>
-<tr><td><span class="sev warning">Warning</span></td><td>silence</td><td>Silence for 3.00 s mid-programme</td><td class="tc">10:00:05:00</td><td class="tc">10:00:08:00</td><td class="against">-map 0:a:0 -af silencedetect=n=-60dB:d=2 (each end within 10 ms)</td><td class="ebu"><a href="https://qc.ebu.io/items/0078B" title="EBU QC 0078B v3.0">0078B Audio Silence</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>silence</td><td>Silence for 3.00 s at the tail</td><td class="tc">10:00:17:00</td><td class="tc">10:00:20:00</td><td class="against">-map 0:a:0 -af silencedetect=n=-60dB:d=2 (each end within 10 ms)</td><td class="ebu"><a href="https://qc.ebu.io/items/0078B" title="EBU QC 0078B v3.0">0078B Audio Silence</a></td></tr>
-<tr><td><span class="sev pass">Pass</span></td><td>channel.phase</td><td>Phase correlation of channels 1 and 2: 1.00 (at least -0.3)</td><td class="tc"></td><td class="tc"></td><td class="against">-map 0:a:0 -af pan=stereo|c0=c0|c1=c1,asetnsamples=n=4800,aphasemeter=video=0 (the mean of lavfi.aphasemeter.phase, within 0.01)</td><td class="ebu"><a href="https://qc.ebu.io/items/0012B" title="EBU QC 0012B v2.0">0012B Audio Phase Error</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>channel.dual-mono</td><td>Channels 1 and 2 are the same (dual mono)</td><td class="tc"></td><td class="tc"></td><td class="against">-map 0:a:0 -af astats per channel (RMS level within 0.1 dB) and aphasemeter (mean phase above 0.999)</td><td class="ebu"><a href="https://qc.ebu.io/items/0124B" title="EBU QC 0124B v2.0">0124B Mono Audio</a></td></tr>
-<tr><td><span class="sev pass">Pass</span></td><td>channel.clipping</td><td>No clipping: no run of 3 or more samples at full scale on any channel</td><td class="tc"></td><td class="tc"></td><td class="against">-map 0:a:0 -af astats per channel: Peak count, its samples at full scale when it reaches it up and down (exact; runs of 3 or more of them are clipping)</td><td class="ebu"><a href="https://qc.ebu.io/items/0005B" title="EBU QC 0005B v2.0">0005B Audio Digital Clipping</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>loudness.from</td><td>Loudness is measured after the line-up tone</td><td class="tc">10:00:05:00</td><td class="tc">10:00:20:00</td><td class="against">ffmpeg -ss 5 -i FILE -map 0:a:0 -af ebur128=peak=true (the same figures)</td><td class="ebu"><a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>audio</td><td>Audio measured: track 1 of 1: pcm_s24le, 2 channels (stereo)</td><td class="tc"></td><td class="tc"></td><td class="against">ffprobe -show_streams (the first audio stream: ffmpeg&#39;s 0:a:0)</td><td class="ebu"><a href="https://qc.ebu.io/items/0004F" title="EBU QC 0004F v2.0">0004F Audio Channel Count</a></td></tr>
-<tr><td><span class="sev failure">Failure</span></td><td>loudness.integrated</td><td>Integrated loudness -34.7 LUFS (-11.7 LU from -23 LUFS)</td><td class="tc"></td><td class="tc"></td><td class="against">-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)</td><td class="ebu"><a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></td></tr>
-<tr><td><span class="sev info">Info</span></td><td>loudness.range</td><td>Loudness range 6.9 LU</td><td class="tc"></td><td class="tc"></td><td class="against">-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)</td><td class="ebu"><a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></td></tr>
-<tr><td><span class="sev pass">Pass</span></td><td>loudness.true-peak</td><td>True peak -24.1 dBTP (at most -1.0 dBTP)</td><td class="tc"></td><td class="tc"></td><td class="against">-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)</td><td class="ebu"><a href="https://qc.ebu.io/items/0084B" title="EBU QC 0084B v1.0">0084B Audio Peaks (TP)</a></td></tr>
+<tr><td class="sev"><span class="sev failure">Failure</span></td><td class="check">loudness.integrated</td><td>Integrated loudness -34.8 LUFS (-11.8 LU from -23 LUFS)<span class="against">Checked against -map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev warning">Warning</span></td><td class="check">black</td><td>Black for 3.00 s mid-programme<span class="against">Checked against blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame) · EBU QC <a href="https://qc.ebu.io/items/0272B" title="EBU QC 0272B v1.0">0272B Black Frames Report</a></span></td><td class="tc" data-label="From">10:00:05:00</td><td class="tc" data-label="To">10:00:08:00</td></tr>
+<tr><td class="sev"><span class="sev warning">Warning</span></td><td class="check">silence</td><td>Silence for 3.00 s mid-programme<span class="against">Checked against -map 0:a:0 -af silencedetect=n=-60dB:d=2 (each end within 10 ms) · EBU QC <a href="https://qc.ebu.io/items/0078B" title="EBU QC 0078B v3.0">0078B Audio Silence</a></span></td><td class="tc" data-label="From">10:00:05:00</td><td class="tc" data-label="To">10:00:08:00</td></tr>
 </tbody>
 </table>
+<h2>The other checks</h2>
+<table>
+<colgroup><col class="sev"><col class="check"><col><col class="tc"><col class="tc"></colgroup>
+<thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th></tr></thead>
+<tbody>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">bars</td><td>Colour bars for 5.00 s<span class="against">Checked against signalstats on each bar of smptebars/smptehdbars (each end within one frame) · EBU QC <a href="https://qc.ebu.io/items/0052B" title="EBU QC 0052B v3.0">0052B Video Test Pattern Expected</a></span></td><td class="tc" data-label="From">10:00:00:00</td><td class="tc" data-label="To">10:00:05:00</td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">tone</td><td>Line-up tone, 1000 Hz at -18.0 dBFS (expected -18 dBFS within 0.5 dB), for 5.00 s<span class="against">Checked against -map 0:a:0, astats per channel (RMS level within 0.1 dB) and a 1 kHz bandpass (each end within 20 ms) · EBU QC <a href="https://qc.ebu.io/items/0014B" title="EBU QC 0014B v2.0">0014B Audio Test Tones</a></span></td><td class="tc" data-label="From">10:00:00:00</td><td class="tc" data-label="To">10:00:05:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">black</td><td>Black for 3.00 s at the tail<span class="against">Checked against blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame) · EBU QC <a href="https://qc.ebu.io/items/0272B" title="EBU QC 0272B v1.0">0272B Black Frames Report</a></span></td><td class="tc" data-label="From">10:00:17:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">interlace</td><td>The picture looks progressive: 0 frames top field first, 0 bottom field first, 376 progressive, 124 undetermined<span class="against">Checked against idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact) · EBU QC <a href="https://qc.ebu.io/items/0048B" title="EBU QC 0048B v1.0">0048B Video Scanning</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">interlace.flag</td><td>The stream says progressive (progressive), as the picture looks<span class="against">Checked against idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact), against ffprobe&#39;s field_order · EBU QC <a href="https://qc.ebu.io/items/0048B" title="EBU QC 0048B v1.0">0048B Video Scanning</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">range</td><td>Pixels outside broadcast range: at most 0.67% of the picture (at most 1%)<span class="against">Checked against signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under 1 s apart joined · EBU QC <a href="https://qc.ebu.io/items/0051B" title="EBU QC 0051B v2.0">0051B Video Signal Levels</a></span></td><td class="tc" data-label="From">10:00:12:10</td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">crop</td><td>The picture fills the 1920x1080 frame<span class="against">Checked against cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact) · EBU QC <a href="https://qc.ebu.io/items/0015B" title="EBU QC 0015B v3.0">0015B Black Bars</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">frames</td><td>All 500 frames intra-coded (I)<span class="against">Checked against ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame&#39;s, exact) · EBU QC <a href="https://qc.ebu.io/items/0046F" title="EBU QC 0046F v1.0">0046F GOP Length - Structure</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">keyframes</td><td>Every frame is a keyframe (500)<span class="against">Checked against ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,flags (the K packets, exact) · EBU QC <a href="https://qc.ebu.io/items/0046F" title="EBU QC 0046F v1.0">0046F GOP Length - Structure</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">bitrate</td><td>Video bitrate 35.4 Mb/s on average, at most 70.6 Mb/s in a second<span class="against">Checked against ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,size (summed per second, exact)</span></td><td class="tc" data-label="From">10:00:15:00</td><td class="tc" data-label="To">10:00:16:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">silence</td><td>Silence for 3.00 s at the tail<span class="against">Checked against -map 0:a:0 -af silencedetect=n=-60dB:d=2 (each end within 10 ms) · EBU QC <a href="https://qc.ebu.io/items/0078B" title="EBU QC 0078B v3.0">0078B Audio Silence</a></span></td><td class="tc" data-label="From">10:00:17:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">channel.phase</td><td>Phase correlation of channels 1 and 2: 1.00 (at least -0.3)<span class="against">Checked against -map 0:a:0 -af pan=stereo|c0=c0|c1=c1,asetnsamples=n=4800,aphasemeter=video=0 (the mean of lavfi.aphasemeter.phase, within 0.01) · EBU QC <a href="https://qc.ebu.io/items/0012B" title="EBU QC 0012B v2.0">0012B Audio Phase Error</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">channel.dual-mono</td><td>Channels 1 and 2 are the same (dual mono)<span class="against">Checked against -map 0:a:0 -af astats per channel (RMS level within 0.1 dB) and aphasemeter (mean phase above 0.999) · EBU QC <a href="https://qc.ebu.io/items/0124B" title="EBU QC 0124B v2.0">0124B Mono Audio</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">channel.clipping</td><td>No clipping: no run of 3 or more samples at full scale on any channel<span class="against">Checked against -map 0:a:0 -af astats per channel: Peak count, its samples at full scale when it reaches it up and down (exact; runs of 3 or more of them are clipping) · EBU QC <a href="https://qc.ebu.io/items/0005B" title="EBU QC 0005B v2.0">0005B Audio Digital Clipping</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">loudness.from</td><td>Loudness is measured after the line-up tone<span class="against">Checked against ffmpeg -ss 5 -i FILE -map 0:a:0 -af ebur128=peak=true (the same figures) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc" data-label="From">10:00:05:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">audio</td><td>Audio measured: track 1 of 1: pcm_s24le, 2 channels (stereo)<span class="against">Checked against ffprobe -show_streams (the first audio stream: ffmpeg&#39;s 0:a:0) · EBU QC <a href="https://qc.ebu.io/items/0004F" title="EBU QC 0004F v2.0">0004F Audio Channel Count</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">loudness.range</td><td>Loudness range 7.0 LU<span class="against">Checked against -map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">loudness.true-peak</td><td>True peak -24.9 dBTP (at most -1.0 dBTP)<span class="against">Checked against -map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB) · EBU QC <a href="https://qc.ebu.io/items/0084B" title="EBU QC 0084B v1.0">0084B Audio Peaks (TP)</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+</tbody>
+</table>
+<details>
+<summary>4 shots, the shortest 3.00 s<span class="against">PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></summary>
+<table>
+<colgroup><col class="sev"><col class="check"><col><col class="tc"><col class="tc"></colgroup>
+<thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th></tr></thead>
+<tbody>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 1, 5.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:00:00</td><td class="tc" data-label="To">10:00:05:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 2, 3.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:05:00</td><td class="tc" data-label="To">10:00:08:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 3, 9.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:08:00</td><td class="tc" data-label="To">10:00:17:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 4, 3.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:17:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
+</tbody>
+</table>
+</details>
 </body>
 </html>

@@ -390,8 +390,8 @@
     {
       "check": "loudness.integrated",
       "severity": "Failure",
-      "message": "Integrated loudness -34.7 LUFS (-11.7 LU from -23 LUFS)",
-      "value": -34.738010199395084,
+      "message": "Integrated loudness -34.8 LUFS (-11.8 LU from -23 LUFS)",
+      "value": -34.76476778967177,
       "unit": "LUFS",
       "ebuQc": {
         "id": "0010B",
@@ -404,8 +404,8 @@
     {
       "check": "loudness.range",
       "severity": "Info",
-      "message": "Loudness range 6.9 LU",
-      "value": 6.930000000000007,
+      "message": "Loudness range 7.0 LU",
+      "value": 7.009999999999998,
       "unit": "LU",
       "ebuQc": {
         "id": "0010B",
@@ -418,8 +418,8 @@
     {
       "check": "loudness.true-peak",
       "severity": "Pass",
-      "message": "True peak -24.1 dBTP (at most -1.0 dBTP)",
-      "value": -24.129211432221478,
+      "message": "True peak -24.9 dBTP (at most -1.0 dBTP)",
+      "value": -24.861931736128064,
       "unit": "dBTP",
       "ebuQc": {
         "id": "0084B",
