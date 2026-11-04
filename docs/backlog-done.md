@@ -196,3 +196,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     are below WCAG AA. One set of colours and labels (light and dark) in Noga.Core, used by all three, and a neutral
     style for "Couldn't read"
   - Status: Done (2026-11-04: `StatusStyle`, decisions/2026-11-04-status-style.md)
+
+- Job rows that explain themselves, in the web UI and the app
+  - Why: the same review: a row says "Failed" without why, repeats the full path, and a read error repeats it twice;
+    the web UI's badges don't line up and only it shows the elapsed time. A one-line reason (the first failure or
+    warning), the folder instead of the path, a short error, elapsed time in both, "Report" as the main action
+  - Status: Done (2026-11-04: `QcReport.Reason`, `Job.ShortError`, decisions/2026-11-04-job-rows.md)
