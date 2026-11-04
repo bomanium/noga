@@ -132,7 +132,7 @@ What is next, in order: docs/backlog.md.
   network (`ServeOptions.Shared`: only the `--root` folders, `Roots`, and only with the token link's cookie;
   decisions/2026-11-01-shared-machine.md; HTTPS unless `--http`, `Certificates`: --cert's, else a self-signed one kept in
   the user's profile, its fingerprint printed: decisions/2026-11-03-shared-https.md), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
-  machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file), `/api/events`
+  machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file; a file already queued or measuring isn't queued again: decisions/2026-11-04-web-ui-gaps.md), `/api/events`
   streams them (server-sent events), `Watcher` scans a watched folder every 2 s and queues its media files without a
   report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts (localhost) or requests without the token (shared), and changes without the
   X-Noga header or from another Origin.

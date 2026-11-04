@@ -202,3 +202,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     the web UI's badges don't line up and only it shows the elapsed time. A one-line reason (the first failure or
     warning), the folder instead of the path, a short error, elapsed time in both, "Report" as the main action
   - Status: Done (2026-11-04: `QcReport.Reason`, `Job.ShortError`, decisions/2026-11-04-job-rows.md)
+
+- The web UI's usability gaps
+  - Why: the same review: folders and ".." aren't keyboard-reachable (spans), a bad path leaves the old listing under
+    it, Check gives no feedback and queues duplicates, non-media files get a Check button, no "check all in this
+    folder" (its dark mode and its grey text's contrast came with decisions/2026-11-04-status-style.md)
+  - Status: Done (2026-11-04: decisions/2026-11-04-web-ui-gaps.md)
