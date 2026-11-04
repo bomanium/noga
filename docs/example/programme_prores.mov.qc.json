@@ -173,6 +173,34 @@
       "checkedAgainst": "ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame\u0027s, exact)"
     },
     {
+      "check": "decode.frames",
+      "severity": "Pass",
+      "message": "Every frame the file lists decoded: 500 of 500",
+      "value": 500,
+      "unit": "frames",
+      "ebuQc": {
+        "id": "0081X",
+        "name": "Video Frame Count",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0081X"
+      },
+      "checkedAgainst": "ffprobe -select_streams v:0 -count_packets -count_frames -show_entries stream=nb_frames,nb_read_packets,nb_read_frames (exact; an MXF\u0027s listed frames its duration times r_frame_rate)"
+    },
+    {
+      "check": "decode.sound",
+      "severity": "Pass",
+      "message": "The sound decoded to the end: 20.00 s of the 20.00 s the track lists",
+      "value": 20,
+      "unit": "s",
+      "ebuQc": {
+        "id": "0009X",
+        "name": "Audio Duration",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0009X"
+      },
+      "checkedAgainst": "ffprobe -show_entries stream=duration, against -map 0:a:N -af astats\u0027s Number of samples (within one AAC frame, 1024 samples)"
+    },
+    {
       "check": "keyframes",
       "severity": "Info",
       "message": "Every frame is a keyframe (500)",

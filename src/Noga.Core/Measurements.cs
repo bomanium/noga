@@ -90,6 +90,9 @@ public sealed record Measurements
     /// <summary>The video packets' keyframes and sizes (ffprobe -show_packets'); null when not read.</summary>
     public VideoPackets? Packets { get; init; }
 
+    /// <summary>Whether the file has a picture; false for sound only (a WAV, an M4A), whose picture checks aren't made.</summary>
+    public bool HasPicture { get; init; } = true;
+
     /// <summary>
     /// The checks this decoder path doesn't measure yet ("black", "bars"): their lists above are empty because
     /// nothing looked, not because nothing was found, and the report says so.
@@ -188,16 +191,20 @@ public sealed record VideoPackets
     /// <summary>The bytes of the packets in each second, from second 0.</summary>
     public required IReadOnlyList<long> BytesPerSecond { get; init; }
 
+    /// <summary>How many packets were read (ffprobe -count_packets' nb_read_packets).</summary>
+    public long Count { get; init; }
+
     /// <summary>The packets of one stream: each one's time (seconds), size (bytes) and whether it is a keyframe.</summary>
     public static VideoPackets From(IEnumerable<(double Seconds, long Size, bool Key)> packets)
     {
         ArgumentNullException.ThrowIfNull(packets);
         var keyframes = new List<double>();
         var perSecond = new List<long>();
-        long bytes = 0;
+        long bytes = 0, count = 0;
         foreach (var (seconds, size, key) in packets)
         {
             bytes += size;
+            count++;
             int second = (int)Math.Max(0, Math.Floor(seconds));
             while (perSecond.Count <= second)
                 perSecond.Add(0);
@@ -207,6 +214,6 @@ public sealed record VideoPackets
         }
 
         keyframes.Sort();
-        return new VideoPackets { Keyframes = keyframes, Bytes = bytes, BytesPerSecond = perSecond };
+        return new VideoPackets { Keyframes = keyframes, Bytes = bytes, BytesPerSecond = perSecond, Count = count };
     }
 }

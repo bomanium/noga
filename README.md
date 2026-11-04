@@ -34,12 +34,14 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | Format | container, codec and profile, size, rate, scan, colour, bit depth, every audio track, duration; a profile can require each | `ffprobe`, exact |
 | Frames, keyframes, bitrate | picture types, keyframe positions, bytes a second | `ffprobe -show_frames`, `-show_packets`, exact |
 | Head and tail | a profile can require bars, tone and black at the head and black at the tail | as above |
+| Decoding | a picture that ends before the frames the file lists, frames that don't decode, a track whose sound ends early: each fails (MOV, MP4, MXF) | `ffprobe -count_packets -count_frames` (`nb_frames`, `nb_read_packets`, `nb_read_frames`), exact; the sound against `astats`' samples |
 | Shot list | the cuts | PySceneDetect's `detect-adaptive`, through [ShotDetector](https://github.com/bisforboman/shotdetector) |
 
 Each finding also names its [EBU QC](https://qc.ebu.io) item. Timecodes run from the file's start timecode,
 drop-frame at 29.97 and 59.94.
 
-It reads ProRes and DNxHR in MOV and MXF, H.264 in MP4, and whatever else FFmpeg reads. H.264 and AAC in MP4 are
+It reads ProRes and DNxHR in MOV and MXF, H.264 in MP4, and whatever else FFmpeg reads. A file with sound only (a
+WAV or AIFF stem, an M4A) gets its sound's checks; the report says which picture checks weren't made. H.264 and AAC in MP4 are
 decoded in managed code ([ManagedCodecs](https://github.com/bisforboman/ManagedCodecs)); everything else goes
 through FFmpeg's libraries, which come with Noga. A test checks that both paths give the same figures on the same
 file.

@@ -10,16 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Robustness on odd files: generated broken and unusual files (truncated, no moov, variable frame rate, audio-only,
-  video-only, 10-bit 4:2:2 and 4K, HDR-tagged, several video streams), each a clean report or a clear read error
-  (exit 2), never an unhandled exception
-  - Why: small shops get messy files, and a crash on the first one costs trust; no test reads a broken file yet
-    (decisions/2026-11-03-launch-readiness.md)
-  - Status: In progress: 48 odd files checked (decisions/2026-11-04-odd-files.md); the crashes (H.264 4:2:2 10-bit and
-    4:4:4 on the managed path; a fault ending the web UI's and the app's queue) and damaged MP4s the managed path
-    stopped on are fixed, and `OddFileTests` checks 26 of them. Still to do: the `decode` check (a failure for a
-    picture or sound that ends early, or frames that can't be decoded) and audio-only files checked
-
 - Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
   worst fixed, the figure in the README
   - Why: deliveries run 30 to 90 minutes of ProRes HQ, and nothing says how long a check takes or what memory it
@@ -37,6 +27,11 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
   - Status: Waiting (on the owner)
 
 ## Maybe
+
+- A WAV cut short caught: its RIFF header's data size against the samples there are
+  - Why: FFmpeg gives a WAV's duration from what is in the file, so decode.sound passes a stem cut short
+    (decisions/2026-11-04-odd-files.md)
+  - Status: Maybe
 
 - Faster checks: run 2 checks at a time in `Jobs`; measure the picture pass while the next frame is decoded; take the
   shots from the picture pass's frames on the FFmpeg path too, rather than from a second decode

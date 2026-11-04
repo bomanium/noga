@@ -37,6 +37,13 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "channel.clipping" => new("0005B", "Audio Digital Clipping", "2.0"),
         "channel.dual-mono" => new("0124B", "Mono Audio", "2.0"),
 
+        // What was decoded against what the file lists (docs/decisions/2026-11-04-odd-files.md), read from the API on
+        // 2026-11-04: the frame count's and the audio duration's crosschecks (essence against wrapper), and the coded
+        // bitstream's syntax for frames that don't decode.
+        "decode.frames" => new("0081X", "Video Frame Count", "2.0"),
+        "decode.errors" => new("0036F", "Video Coding Syntax", "2.0"),
+        "decode.sound" => new("0009X", "Audio Duration", "2.0"),
+
         // The delivery format (docs/decisions/2026-11-03-delivery-format.md), read from the API on 2026-11-03: the
         // essence's (F) items, a wrapper's (W) where the catalogue has no other.
         "format.video-codec" => new("0105F", "Video Codec", "1.0"),
