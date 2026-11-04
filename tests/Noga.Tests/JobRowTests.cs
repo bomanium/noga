@@ -67,9 +67,11 @@ public class JobRowTests
         Assert.Equal(2, jobs.All.Count);
 
         release.Set();
+
+        // The next change's signal is taken before looking, so a change between the two isn't missed.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        while (jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring))
-            await jobs.Changed.WaitAsync(timeout.Token);
+        for (var changed = jobs.Changed; jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring); changed = jobs.Changed)
+            await changed.WaitAsync(timeout.Token);
         Assert.NotEqual(first.Id, jobs.Add("a.mov").Id);
     }
 }
