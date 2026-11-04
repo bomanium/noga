@@ -80,6 +80,9 @@ public sealed record QcReport
     /// <summary>Whether timecodes are drop-frame.</summary>
     public required bool DropFrame { get; init; }
 
+    /// <summary>The file's format as ffprobe read it, for the HTML report's header in words (<see cref="FormatWords"/>); null when not read.</summary>
+    public MediaFormat? Format { get; init; }
+
     /// <summary>
     /// Which file was checked and when (its full path, size and modified time, and the time the check started), so a
     /// report passed on says which version of the file it covers; null when the report was made from measures alone.

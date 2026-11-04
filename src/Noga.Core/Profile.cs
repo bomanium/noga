@@ -314,7 +314,7 @@ public sealed record Profile
             }
         }
 
-        return new QcReport { Profile = Name, StartTimecode = timecode.At(0), DropFrame = timecode.DropFrame, Findings = findings };
+        return new QcReport { Profile = Name, StartTimecode = timecode.At(0), DropFrame = timecode.DropFrame, Findings = findings, Format = measured.Format };
 
         void Tone(List<Finding> into, IReadOnlyList<ToneSpan> tones)
         {

@@ -24,6 +24,9 @@ public static class ReportHtml
         h2 { font-size: 1rem; margin: 2rem 0 .4rem; }
         a { color: var(--link); }
         .meta, .format { color: var(--muted); margin: 0 0 .3rem; overflow-wrap: anywhere; }
+        dl.format { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; margin: .5rem 0 0; }
+        dl.format dt { font-weight: 600; }
+        dl.format dd { margin: 0; }
         .verdict { margin: 1.2rem 0 0; padding: .9rem 1.1rem; border-radius: .4rem; }
         .verdict strong { display: block; font-size: 1.5rem; line-height: 1.2; }
         .verdict span { font-variant-numeric: tabular-nums; }
@@ -31,11 +34,12 @@ public static class ReportHtml
         col.sev { width: 6.5em; } col.check { width: 11em; } col.tc { width: 7.5em; }
         th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
         th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-        td.tc { font-family: ui-monospace, monospace; font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        td.tc { font-family: ui-monospace, monospace; font-size: .9em; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .against { display: block; color: var(--muted); font-size: .8rem; margin-top: .15rem; }
         .against a { white-space: nowrap; }
         span.sev { display: inline-block; padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
-        details { margin-top: 2rem; }
+        details, .shots-print { margin-top: 2rem; }
+        .shots-print { display: none; }
         summary { cursor: pointer; font-weight: 600; }
         summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
         @media (max-width: 40rem) {
@@ -56,6 +60,8 @@ public static class ReportHtml
           tr { break-inside: avoid; }
           thead { display: table-header-group; }
           .verdict, span.sev { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          details { display: none; }
+          .shots-print { display: block; }
         }
         """;
 
@@ -91,7 +97,15 @@ public static class ReportHtml
             {Identity(report.Source)}
 
             """);
-        if (format is not null)
+        if (report.Format is { } described)
+        {
+            // In words a client reads (FormatWords); ffprobe's exact values are in the JSON report.
+            html.Append(CultureInfo.InvariantCulture, $"<dl class=\"format\" title=\"{Encode(MediaFormat.CheckedAgainst)}\">");
+            foreach (var (label, text) in FormatWords.Rows(described, file))
+                html.Append(CultureInfo.InvariantCulture, $"<dt>{Encode(label)}</dt><dd>{Encode(text)}</dd>");
+            html.Append("</dl>\n");
+        }
+        else if (format is not null)
         {
             html.Append(CultureInfo.InvariantCulture, $"""
                 <p class="format" title="{Encode(format.CheckedAgainst)}">{Encode(format.Message)}</p>
@@ -123,6 +137,15 @@ public static class ReportHtml
             }
 
             html.Append("</details>\n");
+
+            // Folded on screen; in print, a details element shows only its summary, so the list is printed from a copy.
+            html.Append(CultureInfo.InvariantCulture, $"<div class=\"shots-print\"><h2>{Encode(shots?.Message ?? $"{shotList.Count} shots")}</h2>\n");
+            if (shotList.Count > 0)
+            {
+                Table(html, null, shotList);
+            }
+
+            html.Append("</div>\n");
         }
 
         html.Append("""
@@ -157,7 +180,7 @@ public static class ReportHtml
         {
             string ebu = Ebu(finding.EbuQc);
             html.Append(CultureInfo.InvariantCulture, $"""
-                <tr><td class="sev"><span class="sev {StatusStyle.Tone(finding.Severity)}">{finding.Severity}</span></td><td class="check">{Encode(finding.Check)}</td><td>{Encode(finding.Message)}<span class="against">Checked against {Encode(finding.CheckedAgainst)}{(ebu.Length == 0 ? "" : $" · EBU QC {ebu}")}</span></td>{Tc("From", finding.Start)}{Tc("To", finding.End)}</tr>
+                <tr><td class="sev"><span class="sev {StatusStyle.Tone(finding.Severity)}">{finding.Severity}</span></td><td class="check">{Encode(finding.Check)}</td><td>{Encode(finding.Message)}<span class="against">Checked against {Encode(finding.CheckedAgainst)}{(ebu.Length == 0 ? "" : $" · EBU QC {ebu}")}</span></td>{Span(finding.Start, finding.End)}</tr>
 
                 """);
         }
@@ -176,6 +199,13 @@ public static class ReportHtml
     static string Identity(CheckedFile? source) => source is null
         ? ""
         : $"<p class=\"meta\">{Encode(source.Path)} · {Encode(source.SizeText)} · modified {Encode(CheckedFile.Time(source.Modified))}</p>";
+
+    // From and To; a point (a start without an end) spans both columns as "at", rather than leaving To empty.
+    static string Span(Position? start, Position? end) => (start, end) switch
+    {
+        ({ } at, null) => $"<td class=\"tc\" colspan=\"2\">at {Encode(at.Timecode)}</td>",
+        _ => Tc("From", start) + Tc("To", end),
+    };
 
     static string Tc(string label, Position? at) =>
         at is { } position ? $"<td class=\"tc\" data-label=\"{label}\">{Encode(position.Timecode)}</td>" : "<td class=\"tc\"></td>";

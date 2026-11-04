@@ -68,4 +68,34 @@ public class ReportHtmlTests
         Assert.Contains("<p class=\"meta\">Profile ebu-r128", Html(Found("tone", Severity.Pass, "Line-up tone")), StringComparison.Ordinal);
         Assert.Equal("512 bytes", (report.Source with { Size = 512 }).SizeText);
     }
+
+    // In words in the header, a point "at" its timecode across From and To, and the shot list in print.
+    [Fact]
+    public void FormatInWordsAPointAndShotsInPrint()
+    {
+        var format = new MediaFormat("mxf", 20, new VideoFormat("dnxhd", "DNXHR SQ", 1920, 1080, "25/1", "progressive", "yuv422p", 8, "bt709", "bt709", "bt709", "tv", "16:9"), []);
+        var report = new QcReport
+        {
+            Profile = "ebu-r128",
+            StartTimecode = "10:00:00:00",
+            DropFrame = false,
+            Format = format,
+            Findings =
+            [
+                Found("format", Severity.Info, "Format: dnxhd (DNXHR SQ) 1920x1080"),
+                Found("range", Severity.Pass, "Pixels outside broadcast range") with { Start = new Position(12.4, "10:00:12:10") },
+                Found("shots", Severity.Info, "1 shot"),
+                Found("shot", Severity.Info, "Shot 1, 20.00 s"),
+            ],
+        };
+
+        string html = ReportHtml.Write(report, "ep01.mxf");
+
+        Assert.Contains("<dt>Video</dt><dd>Avid DNxHR SQ, 1920&#215;1080, 25 fps progressive, 4:2:2 8-bit, BT.709, limited range, 16:9</dd>", html, StringComparison.Ordinal);
+        Assert.Contains("<dt>Container</dt><dd>MXF</dd>", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Format: dnxhd", html, StringComparison.Ordinal);
+        Assert.Contains("<td class=\"tc\" colspan=\"2\">at 10:00:12:10</td>", html, StringComparison.Ordinal);
+        Assert.Contains("<div class=\"shots-print\"><h2>1 shot</h2>", html, StringComparison.Ordinal);
+        Assert.Equal(2, html.Split("Shot 1, 20.00 s").Length - 1);
+    }
 }
