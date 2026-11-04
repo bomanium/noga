@@ -1,3 +1,4 @@
+using Noga.Checking;
 using Noga.Managed;
 
 namespace Noga.Tests;
@@ -133,6 +134,48 @@ public sealed class SampleTests : IClassFixture<Samples>
         long before = GC.GetAllocatedBytesForCurrentThread();
         Assert.False(ManagedMeasurer.CanMeasure(_samples["programme_prores.mov"]));
         Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 4 << 20);
+    }
+
+    // Jobs runs two checks at once by default (docs/decisions/2026-11-04-checks-side-by-side.md): checks in the same
+    // process side by side, on both paths at once, give the same reports as one at a time.
+    [Fact]
+    public async Task ChecksSideBySideGiveTheSameReports()
+    {
+        string folder = Directory.CreateTempSubdirectory("noga-side-by-side").FullName;
+        try
+        {
+            string Json(CheckResult result, string file) => ReportJson.Write(result.Report with { Source = null }, Path.GetFileName(file));
+            var files = Samples.Programmes.Select(p => _samples[p]).ToArray();
+            var alone = files.ToDictionary(f => f, f => Json(Checker.Run(f, Path.Combine(folder, "alone")), f));
+
+            var results = new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
+            using (var jobs = new Jobs((file, token) =>
+            {
+                var result = Checker.Run(file, Path.Combine(folder, "side-by-side"), cancellationToken: token);
+                results[file] = Json(result, file);
+                return result;
+            },
+                files.Length))
+            {
+                foreach (string file in files)
+                    jobs.Add(file);
+                using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+                for (var changed = jobs.Changed; jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring); changed = jobs.Changed)
+                    await changed.WaitAsync(timeout.Token);
+                Assert.All(jobs.All, j => Assert.Equal(JobState.Done, j.State));
+
+                // They did run side by side: each started before the first one finished.
+                var firstDone = jobs.All.Min(j => j.Finished);
+                Assert.All(jobs.All, j => Assert.True(j.Started < firstDone));
+            }
+
+            foreach (string file in files)
+                Assert.Equal(alone[file], results[file]);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     // docs/decisions/2026-10-31-decoding.md: the same MP4 through both paths gives the same measures, within the

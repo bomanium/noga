@@ -132,12 +132,12 @@ What is next, in order: docs/backlog.md.
   network (`ServeOptions.Shared`: only the `--root` folders, `Roots`, and only with the token link's cookie;
   decisions/2026-11-01-shared-machine.md; HTTPS unless `--http`, `Certificates`: --cert's, else a self-signed one kept in
   the user's profile, its fingerprint printed: decisions/2026-11-03-shared-https.md), ASP.NET Core minimal APIs and one page (`Serve/index.html`, embedded): `Folders` lists the
-  machine's folders to pick files in, `Jobs` runs their checks one at a time (reports beside each file; a file already queued or measuring isn't queued again: decisions/2026-11-04-web-ui-gaps.md), `/api/events`
+  machine's folders to pick files in, `Jobs` runs their checks two at a time on 4 cores or more, else one (`Jobs.DefaultAtATime`, decisions/2026-11-04-checks-side-by-side.md; reports beside each file; a file already queued or measuring isn't queued again: decisions/2026-11-04-web-ui-gaps.md), `/api/events`
   streams them (server-sent events), `Watcher` scans a watched folder every 2 s and queues its media files without a
   report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts (localhost) or requests without the token (shared), and changes without the
   X-Noga header or from another Origin.
 - `src/Noga.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `Jobs`
-  (checks run one at a time) and `MediaFiles` (what counts as media), shared by the CLI, its web UI and the app.
+  (checks run two at a time, else one) and `MediaFiles` (what counts as media), shared by the CLI, its web UI and the app.
 - `src/Noga.App`: `noga-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
   (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports; drops anywhere in the window, the zone lit while dragging and one line once there are checks, rows stacked below 600 px: decisions/2026-11-04-app-drop-zone.md; rows kept and rebuilt only when their check changes, in the web UI too: decisions/2026-11-04-rows-in-place.md; the empty window all drop zone, Add folder…, a row's folder by its end, `Job.ShortFolder`: decisions/2026-11-04-layout-fixes.md), `AppModel`
   (the queue, testable without a window). Published into the CLI's release folder; its PublishLicences ships

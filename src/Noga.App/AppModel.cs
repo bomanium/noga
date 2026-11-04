@@ -3,7 +3,7 @@ using Noga.Checking;
 namespace Noga.App;
 
 /// <summary>
-/// What the window shows, apart from the window: the checks asked for, run one at a time with the command line's
+/// What the window shows, apart from the window: the checks asked for, run two at a time (<see cref="Jobs"/>) with the command line's
 /// Checker (reports beside each file), and the profile they are judged by. A check takes the profile chosen when it
 /// starts, so changing it applies to the checks still waiting.
 /// </summary>

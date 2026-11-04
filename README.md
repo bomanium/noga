@@ -114,8 +114,9 @@ The release's `profiles/` folder has the templates to copy from. `noga --help` l
 noga serve
 ```
 
-This opens a page on `http://localhost:8722` where you pick files on the machine and check them, one at a time; the
-reports are written beside each file. `--watch FOLDER` also checks every media file copied into FOLDER.
+This opens a page on `http://localhost:8722` where you pick files on the machine and check them, two at a time on
+4 cores or more; the reports are written beside each file. `--watch FOLDER` also checks every media file copied into
+FOLDER.
 `--listen 0.0.0.0:8722 --root FOLDER` shares it with your team over HTTPS: only the `--root` folders are visible, and
 only to whoever opens the link it prints, which carries a token.
 

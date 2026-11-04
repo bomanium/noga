@@ -75,6 +75,52 @@ public class JobRowTests
         Assert.NotEqual(first.Id, jobs.Add("a.mov").Id);
     }
 
+    // Two checks at once by default on 4 cores or more (docs/decisions/2026-11-04-checks-side-by-side.md): each of these
+    // finishes only once the other has started, so one at a time would time out; the third waits its turn.
+    [Fact]
+    public async Task TwoChecksRunAtOnce()
+    {
+        using var both = new Barrier(2);
+        int running = 0, most = 0;
+        using var jobs = new Jobs((file, token) =>
+        {
+            int now = Interlocked.Increment(ref running);
+            InterlockedMax(ref most, now);
+            try
+            {
+                if (file != "c.mov" && !both.SignalAndWait(TimeSpan.FromSeconds(30), token))
+                    throw new CheckException($"{file} ran alone");
+                throw new CheckException($"checked {file}");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref running);
+            }
+        },
+            atATime: 2);
+
+        jobs.Add("a.mov");
+        jobs.Add("b.mov");
+        jobs.Add("c.mov");
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        for (var changed = jobs.Changed; jobs.All.Any(j => j.State is JobState.Queued or JobState.Measuring); changed = jobs.Changed)
+            await changed.WaitAsync(timeout.Token);
+
+        Assert.Equal(2, jobs.AtATime);
+        Assert.Equal(2, most);
+        Assert.All(jobs.All, j => Assert.Equal($"checked {j.File}", j.Error));
+        Assert.Equal(Environment.ProcessorCount >= 4 ? 2 : 1, Jobs.DefaultAtATime);
+    }
+
+    static void InterlockedMax(ref int target, int value)
+    {
+        for (int seen = Volatile.Read(ref target); value > seen; seen = Volatile.Read(ref target))
+        {
+            if (Interlocked.CompareExchange(ref target, value, seen) == seen)
+                return;
+        }
+    }
+
     // A deep folder keeps its end, which tells folders apart, rather than a start they all share.
     [Fact]
     public void ADeepFolderKeepsItsEnd()
