@@ -10,10 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- A long check's progress in the web UI and the app
-  - Why: the same review: a 60-minute ProRes master shows "measuring N s" for about 17 minutes, nothing more
-  - Status: Open
-
 - The report's format line in plain words, and print fixed
   - Why: the same review: ffprobe's words in front of clients ("mov,mp4,m4a,3gp,3g2,mj2", "yuv422p10le", "Format:");
     in print the timecodes overrun the To column, the shot list never prints, a point shows an empty To

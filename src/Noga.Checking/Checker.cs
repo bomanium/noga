@@ -12,10 +12,11 @@ public static class Checker
 {
     /// <summary>
     /// Checks <paramref name="file"/> by <paramref name="profile"/> (ebu-r128 when null) and writes FILE.qc.html and
-    /// FILE.qc.json in <paramref name="folder"/> (else beside it).
+    /// FILE.qc.json in <paramref name="folder"/> (else beside it), telling <paramref name="progress"/> how far it has got
+    /// (0 to 1).
     /// </summary>
     /// <exception cref="CheckException">The file isn't there or can't be read.</exception>
-    public static CheckResult Run(string file, string? folder, Profile? profile = null, CancellationToken cancellationToken = default)
+    public static CheckResult Run(string file, string? folder, Profile? profile = null, CancellationToken cancellationToken = default, IProgress<double>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(file);
         if (!File.Exists(file))
@@ -28,7 +29,7 @@ public static class Checker
         Measurements measured;
         try
         {
-            measured = Measure(file, profile, cancellationToken);
+            measured = Measure(file, profile, cancellationToken, progress);
         }
         catch (Exception e) when (e is MediaException or InvalidDataException or NotSupportedException)
         {
@@ -54,20 +55,20 @@ public static class Checker
     // The managed path for what it reads; a file it starts on but can't read to the end (a damaged or cut-off MP4: a
     // NAL unit that overruns its packet, a sample past the end of the file) goes to the FFmpeg path, which reads what
     // there is and reports the rest.
-    static Measurements Measure(string file, Profile profile, CancellationToken cancellationToken)
+    static Measurements Measure(string file, Profile profile, CancellationToken cancellationToken, IProgress<double>? progress)
     {
         if (ManagedMeasurer.CanMeasure(file))
         {
             try
             {
-                return ManagedMeasurer.Measure(file, profile, cancellationToken);
+                return ManagedMeasurer.Measure(file, profile, cancellationToken, progress);
             }
             catch (InvalidDataException)
             {
             }
         }
 
-        return FfmpegMeasurer.Measure(file, profile, cancellationToken);
+        return FfmpegMeasurer.Measure(file, profile, cancellationToken, progress);
     }
 }
 

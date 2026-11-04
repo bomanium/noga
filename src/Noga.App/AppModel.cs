@@ -13,9 +13,15 @@ sealed class AppModel : IDisposable
 
     /// <summary>Checks with <paramref name="check"/> (<see cref="Checker.Run"/> but for tests).</summary>
     public AppModel(Func<string, Profile, CancellationToken, CheckResult> check)
+        : this((file, profile, _, token) => check(file, profile, token))
+    {
+    }
+
+    /// <summary>Checks with <paramref name="check"/>, which tells its progress (0 to 1) to the check's row.</summary>
+    public AppModel(Func<string, Profile, IProgress<double>, CancellationToken, CheckResult> check)
     {
         ArgumentNullException.ThrowIfNull(check);
-        _jobs = new Jobs((file, token) => check(file, Profile, token));
+        _jobs = new Jobs((file, progress, token) => check(file, Profile, progress, token));
     }
 
     /// <summary>The profile the checks still to start are judged by.</summary>

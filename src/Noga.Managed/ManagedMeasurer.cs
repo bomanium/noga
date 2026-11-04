@@ -70,7 +70,7 @@ public static class ManagedMeasurer
 
     /// <summary>Measures <paramref name="path"/> with <paramref name="profile"/>'s measurement settings.</summary>
     /// <exception cref="InvalidDataException">The file isn't an MP4 with H.264 video (and AAC audio, if any).</exception>
-    public static Measurements Measure(string path, Profile profile, CancellationToken cancellationToken = default)
+    public static Measurements Measure(string path, Profile profile, CancellationToken cancellationToken = default, IProgress<double>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(profile);
@@ -91,7 +91,13 @@ public static class ManagedMeasurer
         var (packets, timestamps) = ReadPackets(path, cancellationToken);
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
-        var (pictures, shots) = MeasurePictures(path, timestamps, freezes, interlace, cancellationToken);
+
+        // The picture pass is nearly all of the time (it measures and detects the shots on the same frames); the sound
+        // passes almost none (docs/notes/performance.md).
+        var stages = new CheckProgress(progress);
+        stages.Begin(audio is null ? 1 : 0.97);
+        var (pictures, shots) = MeasurePictures(path, timestamps, freezes, interlace, cancellationToken, new ReportNow<double>(stages.At));
+        stages.Begin(audio is null ? 0 : 0.03);
         measured = Shots.Add(Pictures.Add(measured, pictures, profile) with { Packets = packets, Freezes = freezes.Finish(), Interlace = interlace.Finish() }, shots);
         if (audio is null)
             return measured;
@@ -120,6 +126,7 @@ public static class ManagedMeasurer
             meter.Add(chunk[(int)(skip * audio.Channels)..]);
         });
         var loudness = meter.Finish().Loudness;
+        stages.At(1);
 
         return measured with
         {
@@ -134,7 +141,7 @@ public static class ManagedMeasurer
 
     // Every frame of the video through ManagedCodecs' H.264 decoder, in display order, into FrameReader's PictureMeter
     // and ShotDetector (which pulls the frames one at a time, so each is measured and then detected on).
-    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, FreezeMeter freezes, InterlaceMeter interlace, CancellationToken cancellationToken)
+    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, FreezeMeter freezes, InterlaceMeter interlace, CancellationToken cancellationToken, IProgress<double> progress)
     {
         var tags = Tags.Read(path, cancellationToken);
         using var demuxer = Open(path);
@@ -161,7 +168,7 @@ public static class ManagedMeasurer
             Container = tags.Container,
         };
         PictureMeter? meter = null;
-        var options = Shots.Options with { Yuv420Converter = new SwscaleYuv420() };
+        var options = Shots.Options with { Yuv420Converter = new SwscaleYuv420(), Progress = Shots.Fractions(progress) };
         var shots = ShotDetection.Detect(shotVideo, Frames(), options, cancellationToken);
         return (meter?.Measures, shots);
 

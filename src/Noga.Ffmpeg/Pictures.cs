@@ -11,10 +11,10 @@ public static class Pictures
 {
     /// <summary>
     /// Decodes <paramref name="path"/>'s video with FFmpeg's libraries and measures every frame, into
-    /// <paramref name="freezes"/> too when given.
+    /// <paramref name="freezes"/> too when given, telling <paramref name="at"/> each frame's time (seconds).
     /// </summary>
     /// <exception cref="InvalidDataException">The video isn't planar YUV of 8 to 16 bits.</exception>
-    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null)
+    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null)
     {
         Libraries.Load();
         using var decoder = new FrameDecoder(path, new FrameDecoderOptions { CancellationToken = cancellationToken });
@@ -26,6 +26,7 @@ public static class Pictures
             meter ??= new PictureMeter(PictureFormat.Of(frame, decoder.TimeBase, 0)
                 ?? throw new InvalidDataException($"{path}: {frame.PixelFormat} isn't planar YUV of 8 to 16 bits."));
             meter.Add(frame);
+            at?.Invoke(frame.Pts * (double)decoder.TimeBase.Num / decoder.TimeBase.Den);
             if (freezes is not null || interlace is not null)
             {
                 var format = PictureFormat.Of(frame, decoder.TimeBase, 0)!;

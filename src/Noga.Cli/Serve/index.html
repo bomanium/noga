@@ -181,7 +181,7 @@ function show(jobs) {
   // A row is built again only when its check changes; otherwise it stays and only its time is written, so the
   // focus and a click on Report aren't lost to a row rebuilt each second.
   const wanted = jobs.map(job => {
-    const key = JSON.stringify([job.status, job.reason, job.shortError, job.started, job.finished]);
+    const key = JSON.stringify([job.status, job.reason, job.shortError, job.started, job.finished]);  // not progress: only the time line shows it
     let row = rows.get(job.id);
     if (!row || row.key !== key) rows.set(job.id, row = { ...build(job), key });
     row.where.textContent = where(job);
@@ -216,9 +216,20 @@ function build(job) {
 // How long it has been measuring or took, then the folder (the name is above it): the time first, so a long folder
 // cut off at the end doesn't hide it.
 function where(job) {
-  const measuring = job.state === "Measuring";
-  const time = job.started ? (measuring ? "measuring " + elapsed(job.started) : "took " + elapsed(job.started, job.finished)) + " · " : "";
-  return time + job.folder;
+  const time = timeOf(job);
+  return time ? time + " · " + job.folder : job.folder;
+}
+
+// As Job.Time: "measuring 42% · about 9 min left", "measuring 12 s" before the first report, "took 3 min 05 s".
+function timeOf(job) {
+  if (!job.started) return "";
+  if (job.state !== "Measuring") return "took " + elapsed(job.started, job.finished);
+  if (job.progress == null) return "measuring " + elapsed(job.started);
+  const percent = "measuring " + Math.floor(job.progress * 100) + "%";
+  const seconds = (Date.now() - Date.parse(job.started)) / 1000;
+  if (job.progress < 0.02 || job.progress >= 1 || seconds < 5) return percent;
+  const left = seconds * (1 - job.progress) / job.progress;
+  return percent + " · " + (left < 60 ? "under a minute left" : "about " + Math.ceil(left / 60) + " min left");
 }
 
 // As Job.Format: "12 s", "3 min 05 s".
