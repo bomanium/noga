@@ -223,3 +223,7 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: the second UI/UX review (decisions/2026-11-04-rows-in-place.md): a report passed on to a broadcaster can't
     show which version of the file it covers: no check date, full path, size or modification time
   - Status: Done (2026-11-04: `CheckedFile`, decisions/2026-11-04-checked-file.md)
+
+- A long check's progress in the web UI and the app
+  - Why: the same review: a 60-minute ProRes master shows "measuring N s" for about 17 minutes, nothing more
+  - Status: Done (2026-11-04: `CheckProgress`, `Job.Progress`, decisions/2026-11-04-progress.md)
