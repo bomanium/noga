@@ -42,7 +42,7 @@ public sealed class AppTests : IDisposable
             Profile = profile.Name,
             StartTimecode = "00:00:00:00",
             DropFrame = false,
-            Findings = [new Finding { Check = "loudness.integrated", Severity = severity, Message = "m", CheckedAgainst = "ebur128" }],
+            Findings = [new Finding { Check = "loudness.integrated", Severity = severity, Message = severity == Severity.Pass ? "fine" : "Integrated loudness -34.8 LUFS", CheckedAgainst = "ebur128" }],
         };
         File.WriteAllText(file + ".qc.html", ReportHtml.Write(report, Path.GetFileName(file)));
         File.WriteAllText(file + ".qc.json", ReportJson.Write(report, Path.GetFileName(file)));
@@ -98,9 +98,10 @@ public sealed class AppTests : IDisposable
         Assert.Equal(["good.mov", "bad.mov", "ep01.mxf"], _checked.Select(c => c.File));
         var rows = window.Rows.Select(Text).ToList();
         Assert.Equal(3, rows.Count);
-        Assert.StartsWith("Failed | Report | JSON | ep01.mxf", rows[0], StringComparison.Ordinal);
+        Assert.StartsWith($"Failed | Report | JSON | ep01.mxf | {Path.Combine(_folder, "show")} · took ", rows[0], StringComparison.Ordinal);
+        Assert.EndsWith(" | Integrated loudness -34.8 LUFS", rows[0], StringComparison.Ordinal);
         Assert.StartsWith("Couldn't read | bad.mov", rows[1], StringComparison.Ordinal);
-        Assert.Contains("not media", rows[1], StringComparison.Ordinal);
+        Assert.EndsWith("can't read bad.mov: not media", rows[1], StringComparison.Ordinal);
         Assert.StartsWith("Passed | Report | JSON | good.mov", rows[2], StringComparison.Ordinal);
         Assert.Equal(2, window.Rows[2].GetLogicalDescendants().OfType<Button>().Count());
     }

@@ -112,6 +112,9 @@ public sealed class ServeTests : IAsyncLifetime
         Assert.Equal("Unreadable", jobs[0].GetProperty("status").GetString());
         Assert.Equal("Failure", jobs[1].GetProperty("verdict").GetString());
         Assert.Equal("Failed", jobs[1].GetProperty("status").GetString());
+        Assert.Equal(_folder, jobs[1].GetProperty("folder").GetString());
+        Assert.False(string.IsNullOrEmpty(jobs[1].GetProperty("reason").GetString()));
+        Assert.DoesNotContain(_folder, jobs[0].GetProperty("shortError").GetString(), StringComparison.Ordinal);
         Assert.Equal(QcReport.Failed, jobs[1].GetProperty("exitCode").GetInt32());
         Assert.Equal("Pass", jobs[2].GetProperty("verdict").GetString());
         string html = await _client.GetStringAsync(At("/api/jobs/1/report.html"));

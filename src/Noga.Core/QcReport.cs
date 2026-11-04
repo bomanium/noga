@@ -83,6 +83,24 @@ public sealed record QcReport
     /// <summary>The findings, in the profile's order.</summary>
     public required IReadOnlyList<Finding> Findings { get; init; }
 
+    /// <summary>
+    /// Why it didn't simply pass, in one line for a list of checks: the first failure's message (else the first
+    /// warning's), and how many more failures and warnings there are; null when there are none.
+    /// </summary>
+    public string? Reason
+    {
+        get
+        {
+            var issues = Findings.Where(f => f.Severity >= Severity.Warning).OrderByDescending(f => f.Severity).ToList();
+            return issues.Count switch
+            {
+                0 => null,
+                1 => issues[0].Message,
+                _ => $"{issues[0].Message} (and {issues.Count - 1} more)",
+            };
+        }
+    }
+
     /// <summary>The most severe finding's severity.</summary>
     public Severity Verdict => Findings.Count == 0 ? Severity.Pass : Findings.Max(f => f.Severity);
 
