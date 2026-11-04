@@ -449,7 +449,10 @@ public sealed record Profile
         {
             Check = "loudness.true-peak",
             Severity = peak > MaxTruePeak ? Severity.Failure : Severity.Pass,
-            Message = Invariant($"True peak {l.TruePeak:0.0} dBTP (at most {MaxTruePeak:0.0} dBTP)"),
+            // Silence has no peak: ebur128 gives -inf, which the report says in words rather than as "-Infinity".
+            Message = double.IsNegativeInfinity(l.TruePeak)
+                ? Invariant($"True peak: none, the sound is silent (at most {MaxTruePeak:0.0} dBTP)")
+                : Invariant($"True peak {l.TruePeak:0.0} dBTP (at most {MaxTruePeak:0.0} dBTP)"),
             Value = l.TruePeak,
             Unit = "dBTP",
             CheckedAgainst = LoudnessFilter,

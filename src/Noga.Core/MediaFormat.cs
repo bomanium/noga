@@ -137,9 +137,35 @@ public sealed record VideoFormat(
         string rate = Rate is { } r ? MediaFormat.Invariant($" {r:0.###} fps") : "";
         string scan = FieldOrder is null ? "" : $" {FieldOrder}";
         string depth = BitDepth is { } b ? MediaFormat.Invariant($" {b}-bit") : "";
-        string colour = $"{ColourPrimaries ?? "?"}/{Transfer ?? "?"}/{Matrix ?? "?"} {ColourRange ?? "?"}";
-        return MediaFormat.Invariant($"{Codec}{profile} {Width}x{Height}{rate}{scan}, {PixelFormat ?? "?"}{depth}, {colour}, {DisplayAspect}");
+        string pixels = PixelFormat ?? "pixel format not given";
+        return MediaFormat.Invariant($"{Codec}{profile} {Width}x{Height}{rate}{scan}, {pixels}{depth}, {Colour}, {DisplayAspect}");
     }
+
+    /// <summary>
+    /// The colour tags for a reader: "bt709 tv" when primaries, transfer and matrix agree; each named when they differ;
+    /// those the file doesn't tag said so ("matrix bt709, primaries and transfer not tagged, tv"), not ffprobe's "?" or
+    /// "unknown".
+    /// </summary>
+    public string Colour
+    {
+        get
+        {
+            string? primaries = Tagged(ColourPrimaries), transfer = Tagged(Transfer), matrix = Tagged(Matrix);
+            string range = Tagged(ColourRange) ?? "range not tagged";
+            if (primaries is not null && primaries == transfer && transfer == matrix)
+                return $"{matrix} {range}";
+            if (primaries is null && transfer is null && matrix is null)
+                return $"colour not tagged, {range}";
+            (string Name, string? Value)[] tags = [("primaries", primaries), ("transfer", transfer), ("matrix", matrix)];
+            var known = tags.Where(t => t.Value is not null).Select(t => $"{t.Name} {t.Value}");
+            var missing = tags.Where(t => t.Value is null).Select(t => t.Name).ToList();
+            string notTagged = missing.Count == 0 ? "" : $", {string.Join(" and ", missing)} not tagged";
+            return $"{string.Join(", ", known)}{notTagged}, {range}";
+        }
+    }
+
+    // ffprobe's value when it is one; null for none, "unknown", "unspecified" or "reserved".
+    static string? Tagged(string? value) => value is null or "unknown" or "unspecified" or "reserved" ? null : value;
 
     /// <summary>"25/1", "30000/1001", "25" or "29.97" as a number; null for anything else, or a zero denominator.</summary>
     public static double? Rational(string? text)
