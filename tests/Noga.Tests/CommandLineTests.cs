@@ -158,7 +158,7 @@ public sealed class CommandLineTests : IClassFixture<Programme>
 
         Assert.Empty(error);
         Assert.Equal(QcReport.Failed, code);
-        Assert.Contains("programme.mov: Failure", output, StringComparison.Ordinal);
+        Assert.Contains("programme.mov: Failed (profile ebu-r128", output, StringComparison.Ordinal);
         string html = File.ReadAllText(Path.Combine(folder, "programme.mov.qc.html"));
         Assert.StartsWith("<!DOCTYPE html>", html, StringComparison.Ordinal);
         Assert.Contains("Failed", html, StringComparison.Ordinal);
