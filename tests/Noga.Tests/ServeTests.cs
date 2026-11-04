@@ -66,6 +66,9 @@ public sealed class ServeTests : IAsyncLifetime
         Assert.StartsWith("<!DOCTYPE html>", page, StringComparison.Ordinal);
         Assert.Contains(Product.Version, page, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", page, StringComparison.Ordinal);
+        Assert.Contains("\"PassedWithWarnings\":[\"Passed with warnings\",\"warning\"]", page, StringComparison.Ordinal);
+        Assert.Contains("\"Unreadable\":[\"Couldn\\u0027t read\",\"neutral\"]", page, StringComparison.Ordinal);
+        Assert.Contains(StatusStyle.Css, page, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -106,7 +109,9 @@ public sealed class ServeTests : IAsyncLifetime
         Assert.Equal([3, 2, 1], jobs.Select(j => j.GetProperty("id").GetInt32()));
         Assert.Equal("Failed", jobs[0].GetProperty("state").GetString());
         Assert.Contains("not media", jobs[0].GetProperty("error").GetString(), StringComparison.Ordinal);
+        Assert.Equal("Unreadable", jobs[0].GetProperty("status").GetString());
         Assert.Equal("Failure", jobs[1].GetProperty("verdict").GetString());
+        Assert.Equal("Failed", jobs[1].GetProperty("status").GetString());
         Assert.Equal(QcReport.Failed, jobs[1].GetProperty("exitCode").GetInt32());
         Assert.Equal("Pass", jobs[2].GetProperty("verdict").GetString());
         string html = await _client.GetStringAsync(At("/api/jobs/1/report.html"));

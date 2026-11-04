@@ -15,13 +15,9 @@ public static class ReportHtml
 {
     const string Style = """
         :root { color-scheme: light dark;
-          --fg: #1b1b1b; --muted: #5a5a5a; --line: #ddd; --bg: #fff; --head: #f6f6f4; --link: #1f5d99;
-          --pass-bg: #e3f4e6; --pass: #17602a; --info-bg: #e8eef7; --info: #24466e;
-          --warning-bg: #fdf1d6; --warning: #7a5200; --failure-bg: #fbe3e1; --failure: #8d1c12; }
+          --fg: #1b1b1b; --muted: #5a5a5a; --line: #ddd; --bg: #fff; --head: #f6f6f4; --link: #1f5d99; }
         @media screen and (prefers-color-scheme: dark) { :root {
-          --fg: #e6e6e3; --muted: #a6a6a1; --line: #3a3a38; --bg: #161615; --head: #1f1f1e; --link: #8cbcf0;
-          --pass-bg: #173a22; --pass: #9fdcae; --info-bg: #1c2b40; --info: #a9c4e8;
-          --warning-bg: #3d2f0c; --warning: #f2cf7c; --failure-bg: #4a1a16; --failure: #f6aaa2; } }
+          --fg: #e6e6e3; --muted: #a6a6a1; --line: #3a3a38; --bg: #161615; --head: #1f1f1e; --link: #8cbcf0; } }
         * { box-sizing: border-box; }
         body { font: 15px/1.45 system-ui, sans-serif; margin: 2rem auto; max-width: 72rem; padding: 0 1rem; color: var(--fg); background: var(--bg); }
         h1 { font-size: 1.4rem; margin: 0 0 .2rem; overflow-wrap: anywhere; }
@@ -38,10 +34,6 @@ public static class ReportHtml
         td.tc { font-family: ui-monospace, monospace; font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .against { display: block; color: var(--muted); font-size: .8rem; margin-top: .15rem; }
         .against a { white-space: nowrap; }
-        .pass { background: var(--pass-bg); color: var(--pass); }
-        .info { background: var(--info-bg); color: var(--info); }
-        .warning { background: var(--warning-bg); color: var(--warning); }
-        .failure { background: var(--failure-bg); color: var(--failure); }
         span.sev { display: inline-block; padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
         details { margin-top: 2rem; }
         summary { cursor: pointer; font-weight: 600; }
@@ -90,7 +82,7 @@ public static class ReportHtml
             <title>QC: {Encode(file)}</title>
             <style>
             {Style}
-            </style>
+            {StatusStyle.Css}</style>
             </head>
             <body>
             <header>
@@ -107,7 +99,7 @@ public static class ReportHtml
         }
 
         html.Append(CultureInfo.InvariantCulture, $"""
-            <div class="verdict {Class(report.Verdict <= Severity.Info ? Severity.Pass : report.Verdict)}"><strong>{Verdict(report.Verdict)}</strong><span>{Counts(findings)}</span></div>
+            <div class="verdict {StatusStyle.Tone(StatusStyle.Of(report.Verdict))}"><strong>{StatusStyle.Label(StatusStyle.Of(report.Verdict))}</strong><span>{Counts(findings)}</span></div>
             </header>
 
             """);
@@ -164,7 +156,7 @@ public static class ReportHtml
         {
             string ebu = Ebu(finding.EbuQc);
             html.Append(CultureInfo.InvariantCulture, $"""
-                <tr><td class="sev"><span class="sev {Class(finding.Severity)}">{finding.Severity}</span></td><td class="check">{Encode(finding.Check)}</td><td>{Encode(finding.Message)}<span class="against">Checked against {Encode(finding.CheckedAgainst)}{(ebu.Length == 0 ? "" : $" · EBU QC {ebu}")}</span></td>{Tc("From", finding.Start)}{Tc("To", finding.End)}</tr>
+                <tr><td class="sev"><span class="sev {StatusStyle.Tone(finding.Severity)}">{finding.Severity}</span></td><td class="check">{Encode(finding.Check)}</td><td>{Encode(finding.Message)}<span class="against">Checked against {Encode(finding.CheckedAgainst)}{(ebu.Length == 0 ? "" : $" · EBU QC {ebu}")}</span></td>{Tc("From", finding.Start)}{Tc("To", finding.End)}</tr>
 
                 """);
         }
@@ -178,13 +170,6 @@ public static class ReportHtml
 
     static string Tc(string label, Position? at) =>
         at is { } position ? $"<td class=\"tc\" data-label=\"{label}\">{Encode(position.Timecode)}</td>" : "<td class=\"tc\"></td>";
-
-    static string Verdict(Severity verdict) => verdict switch
-    {
-        Severity.Failure => "Failed",
-        Severity.Warning => "Passed with warnings",
-        _ => "Passed",
-    };
 
     // How many findings of each severity, the most severe first: "1 failure · 2 warnings · 8 passed · 16 information".
     static string Counts(IReadOnlyList<Finding> findings)
@@ -206,8 +191,6 @@ public static class ReportHtml
         parts.Add($"{info} for information");
         return string.Join(" · ", parts);
     }
-
-    static string Class(Severity severity) => severity.ToString().ToLowerInvariant();
 
     static string Encode(string text) => WebUtility.HtmlEncode(text);
 

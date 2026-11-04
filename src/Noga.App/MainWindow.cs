@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Noga.Checking;
 
@@ -91,6 +92,7 @@ sealed class MainWindow : Window
         Content = layout;
 
         Render();
+        ActualThemeVariantChanged += (_, _) => Render();
         _ = FollowAsync();
     }
 
@@ -154,21 +156,28 @@ sealed class MainWindow : Window
 
     Control Row(Job job)
     {
-        var (label, colour) = Badge(job);
+        bool dark = ActualThemeVariant == ThemeVariant.Dark;
+        var colours = StatusStyle.Colours(StatusStyle.Tone(job.Status), dark);
         var badge = new Border
         {
-            Background = new SolidColorBrush(colour),
+            Background = Brush.Parse(colours.Background),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(6, 2),
-            MinWidth = 110,
+            Width = 180,
             VerticalAlignment = VerticalAlignment.Center,
-            Child = new TextBlock { Text = label, Foreground = Brushes.White, FontWeight = FontWeight.SemiBold, HorizontalAlignment = HorizontalAlignment.Center },
+            Child = new TextBlock
+            {
+                Text = StatusStyle.Label(job.Status),
+                Foreground = Brush.Parse(colours.Text),
+                FontWeight = FontWeight.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+            },
         };
         var text = new StackPanel { Spacing = 2, Margin = new Thickness(10, 0) };
         text.Children.Add(new TextBlock { Text = Path.GetFileName(job.File), FontWeight = FontWeight.SemiBold });
         text.Children.Add(new TextBlock { Text = job.File, Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
         if (job.Error is { } error)
-            text.Children.Add(new TextBlock { Text = error, Foreground = Brushes.Firebrick, FontSize = 12, TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock { Text = error, Foreground = Brush.Parse(StatusStyle.Colours("failure", dark).Text), FontSize = 12, TextWrapping = TextWrapping.Wrap });
 
         var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
         if (job.Html is { } html)
@@ -191,20 +200,6 @@ sealed class MainWindow : Window
         button.Click += async (_, _) => await Launcher.LaunchFileInfoAsync(new FileInfo(path));
         return button;
     }
-
-    // The state, or the verdict once done, and its colour (the HTML report's).
-    static (string Label, Color Colour) Badge(Job job) => job.State switch
-    {
-        JobState.Queued => ("Queued", Color.Parse("#6b6b6b")),
-        JobState.Measuring => ("Measuring…", Color.Parse("#2f6fa8")),
-        JobState.Failed => ("Couldn't read", Color.Parse("#8d1c12")),
-        _ => job.Verdict switch
-        {
-            Severity.Failure => ("Failed", Color.Parse("#8d1c12")),
-            Severity.Warning => ("Warnings", Color.Parse("#7a5200")),
-            _ => ("Passed", Color.Parse("#17602a")),
-        },
-    };
 
     static void AutomationName(Control control, string name) => Avalonia.Automation.AutomationProperties.SetName(control, name);
 }

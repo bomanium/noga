@@ -41,6 +41,15 @@ public sealed record Job(int Id, string File, JobState State, DateTimeOffset Add
 
     /// <summary>The JSON report's path, when done.</summary>
     public string? Json { get; init; }
+
+    /// <summary>Where it stands, as the web UI and the app show it (<see cref="StatusStyle"/>).</summary>
+    public Status Status => State switch
+    {
+        JobState.Queued => Status.Queued,
+        JobState.Measuring => Status.Measuring,
+        JobState.Failed => Status.Unreadable,
+        _ => StatusStyle.Of(Verdict ?? Severity.Pass),
+    };
 }
 
 /// <summary>

@@ -269,7 +269,13 @@ static class Server
         .Replace("{{profile}}", WebUtility.HtmlEncode(profile), StringComparison.Ordinal)
         .Replace("{{product}}", WebUtility.HtmlEncode(Product.Name), StringComparison.Ordinal)
         .Replace("{{version}}", WebUtility.HtmlEncode(Product.Version), StringComparison.Ordinal)
-        .Replace("{{watched}}", watched is null ? "" : WebUtility.HtmlEncode(watched), StringComparison.Ordinal);
+        .Replace("{{watched}}", watched is null ? "" : WebUtility.HtmlEncode(watched), StringComparison.Ordinal)
+        .Replace("{{statusCss}}", StatusStyle.Css, StringComparison.Ordinal)
+        .Replace("{{statuses}}", Statuses, StringComparison.Ordinal);
+
+    // Each status's label and tone for the page's script, as the report and the app show them: {"Passed":["Passed","pass"],...}.
+    static string Statuses { get; } = "{" + string.Join(",", Enum.GetValues<Status>().Select(s =>
+        $"\"{s}\":[\"{JsonEncodedText.Encode(StatusStyle.Label(s))}\",\"{StatusStyle.Tone(s)}\"]")) + "}";
 }
 
 /// <summary>How <c>noga serve</c> runs: where it listens, the folder it watches, the folders it shares, its token and certificate.</summary>

@@ -188,3 +188,11 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-04: 48 odd files checked, decisions/2026-11-04-odd-files.md: the crashes and the queue
     fixed, damaged MP4s to the FFmpeg path, `OddFileTests` on 30 of them; the `decode` check fails a picture or sound
     that ends early, or frames that don't decode; sound-only files are checked for their sound)
+
+- One status style for the report, the web UI and the app
+  - Why: the 2026-11-04 UI/UX review (decisions/2026-11-04-report-layout.md): tinted badges in the report and the web
+    UI, solid ones in the app; dark mode only in the app and now the report; "Failure", "Failed" and "Warnings" by
+    surface, and the CLI prints "Info" as a passing file's verdict; the app's dark-mode error text and Failed badge
+    are below WCAG AA. One set of colours and labels (light and dark) in Noga.Core, used by all three, and a neutral
+    style for "Couldn't read"
+  - Status: Done (2026-11-04: `StatusStyle`, decisions/2026-11-04-status-style.md)

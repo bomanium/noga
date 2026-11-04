@@ -18,14 +18,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     10 minutes (ProRes HQ about 17 s a minute on 4 cores, flat memory), and the worst found is fixed (memory that grew
     with a QuickTime PCM file's length, 1.9 GB for 10 minutes). Still to do: the open films, and the figure in the README
 
-- One status style for the report, the web UI and the app
-  - Why: the 2026-11-04 UI/UX review (decisions/2026-11-04-report-layout.md): tinted badges in the report and the web
-    UI, solid ones in the app; dark mode only in the app and now the report; "Failure", "Failed" and "Warnings" by
-    surface, and the CLI prints "Info" as a passing file's verdict; the app's dark-mode error text and Failed badge
-    are below WCAG AA. One set of colours and labels (light and dark) in Noga.Core, used by all three, and a neutral
-    style for "Couldn't read"
-  - Status: Open
-
 - Job rows that explain themselves, in the web UI and the app
   - Why: the same review: a row says "Failed" without why, repeats the full path, and a read error repeats it twice;
     the web UI's badges don't line up and only it shows the elapsed time. A one-line reason (the first failure or
@@ -35,7 +27,7 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 - The web UI's usability gaps
   - Why: the same review: folders and ".." aren't keyboard-reachable (spans), a bad path leaves the old listing under
     it, Check gives no feedback and queues duplicates, non-media files get a Check button, no "check all in this
-    folder", no dark mode, grey text #777 just under AA
+    folder" (its dark mode and its grey text's contrast came with decisions/2026-11-04-status-style.md)
   - Status: Open
 
 - Raw values in findings

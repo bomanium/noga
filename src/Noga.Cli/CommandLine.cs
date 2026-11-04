@@ -101,7 +101,7 @@ static class CommandLine
         var (report, html, json) = result;
         string name = Path.GetFileName(check.File);
         int code = report.ExitCode(check.WarningsFail);
-        output.WriteLine($"{name}: {report.Verdict} (profile {report.Profile}, exit code {code})");
+        output.WriteLine($"{name}: {StatusStyle.Label(StatusStyle.Of(report.Verdict))} (profile {report.Profile}, exit code {code})");
 
         // Each shot is in the reports; here only how many ("shots").
         foreach (var finding in report.Findings.Where(f => f.Check != "shot"))
