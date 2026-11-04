@@ -21,6 +21,9 @@ public enum JobState
 /// <summary>One file's check in the web UI.</summary>
 public sealed record Job(int Id, string File, JobState State, DateTimeOffset Added)
 {
+    /// <summary>How far its measuring has got, from 0 to 1, while measuring; null before the first report.</summary>
+    public double? Progress { get; init; }
+
     /// <summary>When its measuring started.</summary>
     public DateTimeOffset? Started { get; init; }
 
@@ -47,6 +50,35 @@ public sealed record Job(int Id, string File, JobState State, DateTimeOffset Add
 
     /// <summary>How long it has been measuring, or took; null before it starts.</summary>
     public TimeSpan? Elapsed(DateTimeOffset now) => Started is { } started ? (Finished ?? now) - started : null;
+
+    /// <summary>
+    /// How long its measuring will take still, from how far it has got in the time so far; null until it is 2% in and
+    /// 5 s along, when the guess would mean little.
+    /// </summary>
+    public TimeSpan? Remaining(DateTimeOffset now) =>
+        State == JobState.Measuring && Progress is >= 0.02 and < 1 and { } done && Elapsed(now) is { TotalSeconds: >= 5 } elapsed
+            ? elapsed * ((1 - done) / done)
+            : null;
+
+    /// <summary>How long is left as a row says it: "under a minute left", "about 9 min left".</summary>
+    public static string FormatRemaining(TimeSpan remaining) =>
+        remaining < TimeSpan.FromMinutes(1) ? "under a minute left" : $"about {(int)Math.Ceiling(remaining.TotalMinutes)} min left";
+
+    /// <summary>
+    /// Where it stands, for the line under its name: "measuring 42% · about 9 min left", "measuring 12 s" before the
+    /// first report, "took 3 min 05 s" once done; empty while queued.
+    /// </summary>
+    public string Time(DateTimeOffset now)
+    {
+        if (Elapsed(now) is not { } elapsed)
+            return "";
+        if (State != JobState.Measuring)
+            return $"took {Format(elapsed)}";
+        if (Progress is not { } done)
+            return $"measuring {Format(elapsed)}";
+        string percent = $"measuring {Math.Floor(done * 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%";
+        return Remaining(now) is { } left ? $"{percent} · {FormatRemaining(left)}" : percent;
+    }
 
     /// <summary>A duration as a row shows it: "12 s", "3 min 05 s".</summary>
     public static string Format(TimeSpan duration)
@@ -81,12 +113,18 @@ public sealed class Jobs : IDisposable
     readonly List<Job> _jobs = [];
     readonly Channel<int> _queue = Channel.CreateUnbounded<int>();
     readonly CancellationTokenSource _stopping = new();
-    readonly Func<string, CancellationToken, CheckResult> _check;
+    readonly Func<string, IProgress<double>, CancellationToken, CheckResult> _check;
     readonly Task _worker;
     TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>Runs checks with <paramref name="check"/> (<see cref="Checker.Run"/>'s, writing beside the file).</summary>
     public Jobs(Func<string, CancellationToken, CheckResult> check)
+        : this((file, _, token) => check(file, token))
+    {
+    }
+
+    /// <summary>Runs checks with <paramref name="check"/>, which tells its progress (0 to 1) to the job's row.</summary>
+    public Jobs(Func<string, IProgress<double>, CancellationToken, CheckResult> check)
     {
         _check = check;
         _worker = Task.Run(Work);
@@ -163,7 +201,14 @@ public sealed class Jobs : IDisposable
                 var job = Update(id, j => j with { State = JobState.Measuring, Started = DateTimeOffset.Now });
                 try
                 {
-                    var result = _check(job.File, _stopping.Token);
+                    // Each whole percent, so the rows and the events aren't redrawn more than a hundred times a check.
+                    var progress = new ReportNow(fraction =>
+                    {
+                        double percent = Math.Floor(fraction * 100) / 100;
+                        if (Get(id)?.Progress != percent)
+                            Update(id, j => j.State == JobState.Measuring ? j with { Progress = percent } : j);
+                    });
+                    var result = _check(job.File, progress, _stopping.Token);
                     Update(id, j => j with
                     {
                         State = JobState.Done,
@@ -216,4 +261,10 @@ public sealed class Jobs : IDisposable
         _changed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         changed.SetResult();
     }
+}
+
+// Reports at once, on the reporting thread (Progress<T> would post them to the thread pool, out of order).
+file sealed class ReportNow(Action<double> report) : IProgress<double>
+{
+    public void Report(double value) => report(value);
 }

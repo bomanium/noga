@@ -44,7 +44,11 @@ static class Server
     /// <summary>Builds the server <paramref name="options"/> describe, checking files with <paramref name="check"/>.</summary>
     /// <exception cref="DirectoryNotFoundException">The watched folder or a root isn't a folder.</exception>
     /// <exception cref="ArgumentException">A shared server without a root or a token.</exception>
-    public static WebApplication Build(ServeOptions options, Func<string, CancellationToken, CheckResult> check)
+    public static WebApplication Build(ServeOptions options, Func<string, CancellationToken, CheckResult> check) =>
+        Build(options, (file, _, token) => check(file, token));
+
+    /// <summary>The server, its checks telling their progress (0 to 1) to the page.</summary>
+    public static WebApplication Build(ServeOptions options, Func<string, IProgress<double>, CancellationToken, CheckResult> check)
     {
         ArgumentNullException.ThrowIfNull(options);
         var roots = new Roots(options.Watch is null ? options.Roots : [.. options.Roots, options.Watch]);
@@ -104,7 +108,7 @@ static class Server
         try
         {
             options = WithCertificate(options);
-            app = Build(options, (file, token) => Checker.Run(file, null, options.Profile, token));
+            app = Build(options, (file, progress, token) => Checker.Run(file, null, options.Profile, token, progress));
         }
         catch (Exception e) when (e is DirectoryNotFoundException or ArgumentException or IOException or UnauthorizedAccessException or CryptographicException)
         {

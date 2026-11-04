@@ -206,7 +206,8 @@ sealed class MainWindow : Window
         var wanted = new List<Control>();
         foreach (var job in _model.Jobs)
         {
-            if (!_rows.TryGetValue(job.Id, out var row) || row.Job != job || row.Dark != dark || row.Narrow != narrow)
+            // Its progress shows only in the time line, written below; a new percent doesn't rebuild the row.
+            if (!_rows.TryGetValue(job.Id, out var row) || row.Job with { Progress = null } != job with { Progress = null } || row.Dark != dark || row.Narrow != narrow)
                 _rows[job.Id] = row = Row(job, dark, narrow);
             row.Time.Text = Where(job);
             wanted.Add(row.Control);
@@ -229,10 +230,8 @@ sealed class MainWindow : Window
     // folder trimmed at the end doesn't hide it.
     static string Where(Job job)
     {
-        string time = job.Elapsed(DateTimeOffset.Now) is { } elapsed
-            ? (job.State == JobState.Measuring ? "measuring " : "took ") + Job.Format(elapsed) + " · "
-            : "";
-        return time + job.Folder;
+        string time = job.Time(DateTimeOffset.Now);
+        return time.Length == 0 ? job.Folder : $"{time} · {job.Folder}";
     }
 
     (Control Control, TextBlock Time, Job Job, bool Dark, bool Narrow) Row(Job job, bool dark, bool narrow)

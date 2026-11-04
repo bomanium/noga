@@ -14,7 +14,7 @@ sealed class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var model = new AppModel((file, profile, token) => Checker.Run(file, null, profile, token));
+            var model = new AppModel((file, profile, progress, token) => Checker.Run(file, null, profile, token, progress));
             model.Add(desktop.Args ?? []);
             desktop.MainWindow = new MainWindow(model);
             desktop.ShutdownRequested += (_, _) => model.Dispose();

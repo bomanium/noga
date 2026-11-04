@@ -25,10 +25,17 @@ public static class FfmpegMeasurer
     /// <summary>The frame rate a file with sound only counts its timecodes at.</summary>
     const int SoundOnlyRate = 25;
 
-    /// <summary>Measures <paramref name="path"/> with <paramref name="profile"/>'s measurement settings.</summary>
+    // Each stage's share of a check's time (docs/notes/performance.md): the picture pass, the shots' second decode,
+    // and the sound, almost nothing.
+    const double PictureShare = 0.78, ShotsShare = 0.2;
+
+    /// <summary>
+    /// Measures <paramref name="path"/> with <paramref name="profile"/>'s measurement settings, telling
+    /// <paramref name="progress"/> how far it has got (0 to 1).
+    /// </summary>
     /// <exception cref="InvalidDataException">The file has neither a video nor an audio stream.</exception>
     /// <exception cref="FrameReaderException">FFmpeg's libraries didn't load, or the file can't be read.</exception>
-    public static Measurements Measure(string path, Profile profile, CancellationToken cancellationToken = default)
+    public static Measurements Measure(string path, Profile profile, CancellationToken cancellationToken = default, IProgress<double>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(profile);
@@ -46,33 +53,47 @@ public static class FfmpegMeasurer
             NotMeasured = ["bars", "black"],
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
+        var stages = new CheckProgress(progress);
 
         // Sound only (docs/decisions/2026-11-04-odd-files.md): a WAV or an M4A, whose cover art is a video stream to
         // FFmpeg but not a picture (MediaFormat leaves it out); its timecodes count at a nominal 25 fps.
         if (video is null || measured.Format is { Video: null })
         {
             measured = StartTimecode.Add(measured with { RateNumerator = SoundOnlyRate, RateDenominator = 1, NotMeasured = [], HasPicture = false }, path, cancellationToken);
-            return MeasureSound(path, profile, measured, cancellationToken);
+            stages.Begin(1);
+            return MeasureSound(path, profile, measured, cancellationToken, stages);
         }
 
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
-        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes, interlace), profile) with
+        double duration = measured.Duration;
+        stages.Begin(PictureShare);
+        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes, interlace, seconds => stages.AtSeconds(seconds, duration)), profile) with
         {
             Freezes = freezes.Finish(),
             Interlace = interlace.Finish(),
             Packets = Packets.Read(path, cancellationToken),
         };
-        measured = Shots.Add(measured, Shots.Detect(path, cancellationToken));
-        return info.HasAudio ? MeasureSound(path, profile, measured, cancellationToken) : measured;
+        stages.Begin(ShotsShare);
+        measured = Shots.Add(measured, Shots.Detect(path, cancellationToken, new ReportNow<double>(stages.At)));
+        stages.Begin(1 - PictureShare - ShotsShare);
+        var sound = info.HasAudio ? MeasureSound(path, profile, measured, cancellationToken, stages) : measured;
+        stages.At(1);
+        return sound;
     }
 
-    static Measurements MeasureSound(string path, Profile profile, Measurements measured, CancellationToken cancellationToken)
+    static Measurements MeasureSound(string path, Profile profile, Measurements measured, CancellationToken cancellationToken, CheckProgress stages)
     {
         // Every audio track, each from the end of its own line-up (docs/decisions/2026-11-01-every-audio-track.md);
         // the first's figures are the file's, the others' each a TrackMeasures.
         int tracks = Math.Max(1, measured.AudioTrack?.Count ?? 1);
-        var all = Enumerable.Range(0, tracks).Select(stream => MeasureTrack(path, profile, stream, measured.Duration, cancellationToken)).ToList();
+        var all = new List<TrackMeasures>();
+        for (int stream = 0; stream < tracks; stream++)
+        {
+            all.Add(MeasureTrack(path, profile, stream, measured.Duration, cancellationToken));
+            stages.At((stream + 1.0) / tracks);
+        }
+
         var first = all[0];
         return measured with
         {
