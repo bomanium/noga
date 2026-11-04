@@ -27,6 +27,7 @@ static class Folders
     /// <paramref name="path"/>'s contents; <see cref="Drives"/>: the drives on Windows (the root elsewhere), or, when
     /// <paramref name="roots"/> limit access, the roots. Inside roots, links are left out (they could lead out of them).
     /// </summary>
+    /// A file's path lists the folder it is in.
     /// <exception cref="DirectoryNotFoundException">There is no such folder.</exception>
     /// <exception cref="UnauthorizedAccessException">The folder can't be read, or isn't in the roots.</exception>
     public static Listing List(string? path, Roots? roots = null)
@@ -44,6 +45,10 @@ static class Folders
 
         if (limited && !roots!.Contains(path))
             throw new UnauthorizedAccessException($"Not in a shared folder: {path}");
+
+        // A file's path (pasted from a file manager) opens the folder it is in.
+        if (File.Exists(path) && Path.GetDirectoryName(Path.GetFullPath(path)) is { } containing)
+            return List(containing, roots);
         var folder = new DirectoryInfo(Path.GetFullPath(path));
         if (!folder.Exists)
             throw new DirectoryNotFoundException($"No such folder: {path}");

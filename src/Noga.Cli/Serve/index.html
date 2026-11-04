@@ -38,6 +38,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 #entries .size { color: var(--muted); font-size: .8rem; white-space: nowrap; }
 #entries li button { padding: .1rem .6rem; font-size: .85rem; }
 #jobs li { border-bottom: 1px solid var(--faint); padding: .5rem .2rem; display: grid; grid-template-columns: 10.5rem 1fr auto; gap: .2rem .7rem; align-items: baseline; }
+#jobs li.empty { display: block; }
 #jobs .file { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #jobs .where { grid-column: 2 / 4; color: var(--muted); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #jobs .links { white-space: nowrap; }
@@ -62,7 +63,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   <section>
     <h2>Pick a file on this machine</h2>
     <form id="go">
-      <input type="text" id="path" aria-label="Folder or file path" spellcheck="false">
+      <input type="text" id="path" aria-label="Folder or file path (a file opens its folder)" spellcheck="false">
       <button type="submit" class="quiet">Open</button>
     </form>
     <div id="problem" role="alert"></div>
@@ -217,7 +218,7 @@ function build(job) {
 // cut off at the end doesn't hide it.
 function where(job) {
   const time = timeOf(job);
-  return time ? time + " · " + job.folder : job.folder;
+  return time ? time + " · " + job.shortFolder : job.shortFolder;
 }
 
 // As Job.Time: "measuring 42% · about 9 min left", "measuring 12 s" before the first report, "took 3 min 05 s".

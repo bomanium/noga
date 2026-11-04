@@ -21,7 +21,7 @@ public enum Status
     /// <summary>At least one failure (exit code 1).</summary>
     Failed,
 
-    /// <summary>The file couldn't be read (exit code 2): no verdict, so not a failure's red.</summary>
+    /// <summary>The file couldn't be read (exit code 2): no verdict, so not a failure's red, nor a queued check's grey.</summary>
     Unreadable,
 }
 
@@ -43,6 +43,7 @@ public static class StatusStyle
         ["warning"] = ("#fdf1d6", "#7a5200", "#3d2f0c", "#f2cf7c"),
         ["failure"] = ("#fbe3e1", "#8d1c12", "#4a1a16", "#f6aaa2"),
         ["neutral"] = ("#ececea", "#4a4a48", "#2e2e2c", "#cfcfca"),
+        ["unreadable"] = ("#efe8f7", "#55307f", "#2f2440", "#d3bff0"),
     };
 
     /// <summary>The tone names, which are the CSS classes <see cref="Css"/> styles.</summary>
@@ -74,6 +75,7 @@ public static class StatusStyle
         Status.Passed => "pass",
         Status.PassedWithWarnings => "warning",
         Status.Failed => "failure",
+        Status.Unreadable => "unreadable",
         _ => "neutral",
     };
 

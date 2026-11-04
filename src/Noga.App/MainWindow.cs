@@ -38,6 +38,7 @@ sealed class MainWindow : Window
     };
 
     readonly CancellationTokenSource _closing = new();
+    readonly Grid _body = new() { RowDefinitions = new RowDefinitions("*,Auto") };
 
     // Each check's row as last drawn, with what it was drawn from.
     readonly Dictionary<int, (Control Control, TextBlock Time, Job Job, bool Dark, bool Narrow)> _rows = [];
@@ -66,15 +67,19 @@ sealed class MainWindow : Window
         var pick = new Button { Content = "Add files…" };
         pick.Click += async (_, _) => await PickAsync();
         AutomationName(pick, "Add files");
+        var pickFolder = new Button { Content = "Add folder…" };
+        pickFolder.Click += async (_, _) => await PickFolderAsync();
+        AutomationName(pickFolder, "Add folder");
+        var picks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { pickFolder, pick } };
 
         var top = new DockPanel { LastChildFill = false, Margin = new Thickness(0, 0, 0, 12) };
         var profileRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         profileRow.Children.Add(new TextBlock { Text = "Profile", VerticalAlignment = VerticalAlignment.Center });
         profileRow.Children.Add(profiles);
         DockPanel.SetDock(profileRow, Dock.Left);
-        DockPanel.SetDock(pick, Dock.Right);
+        DockPanel.SetDock(picks, Dock.Right);
         top.Children.Add(profileRow);
-        top.Children.Add(pick);
+        top.Children.Add(picks);
 
         var drop = new Border
         {
@@ -84,7 +89,7 @@ sealed class MainWindow : Window
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(16),
             Margin = new Thickness(0, 0, 0, 12),
-            Child = new StackPanel { Spacing = 4, Children = { _hint, _more } },
+            Child = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { _hint, _more } },
         };
         DropZone = drop;
 
@@ -103,11 +108,17 @@ sealed class MainWindow : Window
             Highlight(false);
             Dropped(e.DataTransfer);
         });
+
+        // Until the first check, the drop zone fills the window under the top row; then it keeps to a line and the list
+        // takes the room (Render sets the rows).
         DockPanel.SetDock(top, Dock.Top);
-        DockPanel.SetDock(drop, Dock.Top);
+        Grid.SetRow(drop, 0);
+        var list = new ScrollViewer { Content = _list };
+        Grid.SetRow(list, 1);
+        _body.Children.Add(drop);
+        _body.Children.Add(list);
         layout.Children.Add(top);
-        layout.Children.Add(drop);
-        layout.Children.Add(new ScrollViewer { Content = _list });
+        layout.Children.Add(_body);
         Content = layout;
 
         Render();
@@ -162,6 +173,14 @@ sealed class MainWindow : Window
         _hint.Text = added == 0 ? "No video files there: drop files or folders" : "Drop video files or folders here";
     }
 
+    async Task PickFolderAsync()
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Folders to check", AllowMultiple = true });
+        int added = _model.Add(folders.Select(f => f.TryGetLocalPath()).OfType<string>());
+        if (folders.Count > 0 && added == 0)
+            _hint.Text = "No video files there: drop files or folders";
+    }
+
     async Task PickAsync()
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Files to check", AllowMultiple = true });
@@ -199,6 +218,8 @@ sealed class MainWindow : Window
         bool any = _model.Jobs.Count > 0;
         _more.IsVisible = !any;
         DropZone.Padding = new Thickness(any ? 8 : 16);
+        _body.RowDefinitions[0].Height = any ? GridLength.Auto : GridLength.Star;
+        _body.RowDefinitions[1].Height = any ? GridLength.Star : GridLength.Auto;
 
         // A row is built again only when its check changes (or the theme or the width does); otherwise it stays, and
         // only its time is written, so the focus and a click on Report aren't lost to a row rebuilt each second.
@@ -231,7 +252,7 @@ sealed class MainWindow : Window
     static string Where(Job job)
     {
         string time = job.Time(DateTimeOffset.Now);
-        return time.Length == 0 ? job.Folder : $"{time} · {job.Folder}";
+        return time.Length == 0 ? job.ShortFolder : $"{time} · {job.ShortFolder}";
     }
 
     (Control Control, TextBlock Time, Job Job, bool Dark, bool Narrow) Row(Job job, bool dark, bool narrow)
@@ -271,7 +292,7 @@ sealed class MainWindow : Window
         // In a narrow window the badge and the buttons share a line and the text takes the width under them, rather
         // than being squeezed between them a few words wide.
         var row = new DockPanel { Tag = job };
-        var head = narrow ? new DockPanel { Margin = new Thickness(0, 0, 0, 4) } : row;
+        var head = narrow ? new DockPanel { Margin = new Thickness(0, 0, 0, 4), LastChildFill = false } : row;
         DockPanel.SetDock(badge, Dock.Left);
         DockPanel.SetDock(links, Dock.Right);
         head.Children.Add(badge);

@@ -136,6 +136,19 @@ public sealed class AppTests : IDisposable
         Assert.Null(window.DropZone.Background);
     }
 
+    // Until the first check, the drop zone fills the window; folders can be picked as well as files.
+    [AvaloniaFact]
+    public void AnEmptyWindowIsTheDropZone()
+    {
+        using var model = new AppModel(Check);
+        var window = new MainWindow(model);
+        window.Show();
+
+        var body = (Grid)window.DropZone.Parent!;
+        Assert.True(body.RowDefinitions[0].Height.IsStar);
+        Assert.Contains(window.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Add folder…");
+    }
+
     [AvaloniaFact]
     public void ChecksAreJudgedByTheProfileChosen()
     {
