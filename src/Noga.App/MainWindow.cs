@@ -39,6 +39,9 @@ sealed class MainWindow : Window
 
     readonly CancellationTokenSource _closing = new();
 
+    // Each check's row as last drawn, with what it was drawn from.
+    readonly Dictionary<int, (Control Control, TextBlock Time, Job Job, bool Dark, bool Narrow)> _rows = [];
+
     public MainWindow(AppModel model)
     {
         _model = model;
@@ -196,14 +199,44 @@ sealed class MainWindow : Window
         bool any = _model.Jobs.Count > 0;
         _more.IsVisible = !any;
         DropZone.Padding = new Thickness(any ? 8 : 16);
-        _list.Children.Clear();
+
+        // A row is built again only when its check changes (or the theme or the width does); otherwise it stays, and
+        // only its time is written, so the focus and a click on Report aren't lost to a row rebuilt each second.
+        bool dark = ActualThemeVariant == ThemeVariant.Dark, narrow = Narrow;
+        var wanted = new List<Control>();
         foreach (var job in _model.Jobs)
-            _list.Children.Add(Row(job));
+        {
+            if (!_rows.TryGetValue(job.Id, out var row) || row.Job != job || row.Dark != dark || row.Narrow != narrow)
+                _rows[job.Id] = row = Row(job, dark, narrow);
+            row.Time.Text = Where(job);
+            wanted.Add(row.Control);
+        }
+
+        // The list changed only where it must: a new check goes in at the top, a changed one in its place.
+        for (int i = 0; i < wanted.Count; i++)
+        {
+            if (i < _list.Children.Count && _list.Children[i] == wanted[i])
+                continue;
+            _list.Children.Remove(wanted[i]);
+            _list.Children.Insert(i, wanted[i]);
+        }
+
+        while (_list.Children.Count > wanted.Count)
+            _list.Children.RemoveAt(_list.Children.Count - 1);
     }
 
-    Control Row(Job job)
+    // How long it has been measuring or took, then the folder (the name is above it): the time first, so a long
+    // folder trimmed at the end doesn't hide it.
+    static string Where(Job job)
     {
-        bool dark = ActualThemeVariant == ThemeVariant.Dark;
+        string time = job.Elapsed(DateTimeOffset.Now) is { } elapsed
+            ? (job.State == JobState.Measuring ? "measuring " : "took ") + Job.Format(elapsed) + " · "
+            : "";
+        return time + job.Folder;
+    }
+
+    (Control Control, TextBlock Time, Job Job, bool Dark, bool Narrow) Row(Job job, bool dark, bool narrow)
+    {
         var colours = StatusStyle.Colours(StatusStyle.Tone(job.Status), dark);
         var badge = new Border
         {
@@ -222,13 +255,8 @@ sealed class MainWindow : Window
         };
         var text = new StackPanel { Spacing = 2, Margin = new Thickness(10, 0) };
         text.Children.Add(new TextBlock { Text = Path.GetFileName(job.File), FontWeight = FontWeight.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-
-        // How long it has been measuring or took, then the folder (the name is above it): the time first, so a long
-        // folder trimmed at the end doesn't hide it.
-        string time = job.Elapsed(DateTimeOffset.Now) is { } elapsed
-            ? (job.State == JobState.Measuring ? "measuring " : "took ") + Job.Format(elapsed) + " · "
-            : "";
-        text.Children.Add(new TextBlock { Text = time + job.Folder, Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
+        var where = new TextBlock { Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
+        text.Children.Add(where);
         if (job.Reason is { } reason)
             text.Children.Add(new TextBlock { Text = reason, FontSize = 12, TextWrapping = TextWrapping.Wrap });
         if (job.ShortError is { } error)
@@ -244,12 +272,12 @@ sealed class MainWindow : Window
         // In a narrow window the badge and the buttons share a line and the text takes the width under them, rather
         // than being squeezed between them a few words wide.
         var row = new DockPanel { Tag = job };
-        var head = Narrow ? new DockPanel { Margin = new Thickness(0, 0, 0, 4) } : row;
+        var head = narrow ? new DockPanel { Margin = new Thickness(0, 0, 0, 4) } : row;
         DockPanel.SetDock(badge, Dock.Left);
         DockPanel.SetDock(links, Dock.Right);
         head.Children.Add(badge);
         head.Children.Add(links);
-        if (Narrow)
+        if (narrow)
         {
             DockPanel.SetDock(head, Dock.Top);
             row.Children.Add(head);
@@ -257,7 +285,7 @@ sealed class MainWindow : Window
         }
 
         row.Children.Add(text);
-        return new Border { Padding = new Thickness(6), Child = row };
+        return (new Border { Padding = new Thickness(6), Child = row }, where, job, dark, narrow);
     }
 
     // The report is the main action (the accent button); the JSON, for pipelines, a quiet one.

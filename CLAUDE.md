@@ -139,7 +139,7 @@ What is next, in order: docs/backlog.md.
 - `src/Noga.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `Jobs`
   (checks run one at a time) and `MediaFiles` (what counts as media), shared by the CLI, its web UI and the app.
 - `src/Noga.App`: `noga-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
-  (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports; drops anywhere in the window, the zone lit while dragging and one line once there are checks, rows stacked below 600 px: decisions/2026-11-04-app-drop-zone.md), `AppModel`
+  (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports; drops anywhere in the window, the zone lit while dragging and one line once there are checks, rows stacked below 600 px: decisions/2026-11-04-app-drop-zone.md; rows kept and rebuilt only when their check changes, in the web UI too: decisions/2026-11-04-rows-in-place.md), `AppModel`
   (the queue, testable without a window). Published into the CLI's release folder; its PublishLicences ships
   SkiaSharp's notices and ANGLE's licence, and on Linux the desktop entry (`packaging/linux/`: `noga-app.desktop`,
   `install-desktop-entry.sh`, which writes it with the folder's absolute paths into ~/.local/share/applications) with

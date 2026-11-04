@@ -78,6 +78,26 @@ public sealed class AppTests : IDisposable
     static string Text(Control row) =>
         string.Join(" | ", row.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
 
+    // A finished check's row stays the same control when more are queued and redrawn, so the focus and a click on its
+    // Report button aren't lost to a row rebuilt (docs/decisions/2026-11-04-rows-in-place.md).
+    [AvaloniaFact]
+    public void RowsStayWhenOthersAreAdded()
+    {
+        string first = Touch("first.mov"), second = Touch("second.mov");
+        using var model = new AppModel(Check);
+        var window = new MainWindow(model);
+        window.Show();
+
+        model.Add([first]);
+        Settle(model, window);
+        var row = window.Rows.Single();
+        model.Add([second]);
+        Settle(model, window);
+
+        Assert.Equal(2, window.Rows.Count);
+        Assert.Same(row, window.Rows[1]);
+    }
+
     [AvaloniaFact]
     public void DroppedFilesAndFoldersAreQueuedAndShowTheirVerdicts()
     {
