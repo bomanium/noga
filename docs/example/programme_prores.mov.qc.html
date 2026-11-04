@@ -15,6 +15,9 @@ h1 { font-size: 1.4rem; margin: 0 0 .2rem; overflow-wrap: anywhere; }
 h2 { font-size: 1rem; margin: 2rem 0 .4rem; }
 a { color: var(--link); }
 .meta, .format { color: var(--muted); margin: 0 0 .3rem; overflow-wrap: anywhere; }
+dl.format { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; margin: .5rem 0 0; }
+dl.format dt { font-weight: 600; }
+dl.format dd { margin: 0; }
 .verdict { margin: 1.2rem 0 0; padding: .9rem 1.1rem; border-radius: .4rem; }
 .verdict strong { display: block; font-size: 1.5rem; line-height: 1.2; }
 .verdict span { font-variant-numeric: tabular-nums; }
@@ -22,11 +25,12 @@ table { border-collapse: collapse; width: 100%; table-layout: fixed; }
 col.sev { width: 6.5em; } col.check { width: 11em; } col.tc { width: 7.5em; }
 th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-td.tc { font-family: ui-monospace, monospace; font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.tc { font-family: ui-monospace, monospace; font-size: .9em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .against { display: block; color: var(--muted); font-size: .8rem; margin-top: .15rem; }
 .against a { white-space: nowrap; }
 span.sev { display: inline-block; padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
-details { margin-top: 2rem; }
+details, .shots-print { margin-top: 2rem; }
+.shots-print { display: none; }
 summary { cursor: pointer; font-weight: 600; }
 summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
 @media (max-width: 40rem) {
@@ -47,6 +51,8 @@ summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
   tr { break-inside: avoid; }
   thead { display: table-header-group; }
   .verdict, span.sev { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  details { display: none; }
+  .shots-print { display: block; }
 }
 :root { --pass-bg: #e3f4e6; --pass: #17602a; --info-bg: #e8eef7; --info: #24466e; --warning-bg: #fdf1d6; --warning: #7a5200; --failure-bg: #fbe3e1; --failure: #8d1c12; --neutral-bg: #ececea; --neutral: #4a4a48; }
 @media screen and (prefers-color-scheme: dark) {
@@ -62,9 +68,9 @@ summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
 <body>
 <header>
 <h1>programme_prores.mov</h1>
-<p class="meta">Checked 2026-11-04 15:18 +00:00 · Profile ebu-r128 · starts at 10:00:00:00 · Noga 0.1.0-alpha.2</p>
+<p class="meta">Checked 2026-11-04 16:44 +00:00 · Profile ebu-r128 · starts at 10:00:00:00 · Noga 0.1.0-alpha.2</p>
 <p class="meta">/home/user/media-qc/samples/programme_prores.mov · 94.2 MB (94,201,579 bytes) · modified 2026-11-03 21:14 +00:00</p>
-<p class="format" title="ffprobe -show_format -show_streams (exact)">Format: prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, matrix bt709, primaries and transfer not tagged, tv, 16:9; audio: pcm_s24le 48000 Hz 2 ch (stereo) 24-bit; mov,mp4,m4a,3gp,3g2,mj2, 20.00 s</p>
+<dl class="format" title="ffprobe -show_format -show_streams"><dt>Video</dt><dd>Apple ProRes 422 HQ, 1920&#215;1080, 25 fps progressive, 4:2:2 10-bit, BT.709 matrix, primaries and transfer not tagged, limited range, 16:9</dd><dt>Audio</dt><dd>PCM 24-bit, 48 kHz, stereo</dd><dt>Container</dt><dd>QuickTime (MOV)</dd><dt>Duration</dt><dd>00:00:20:00 (20.00 s)</dd></dl>
 <div class="verdict failure"><strong>Failed</strong><span>1 failure · 2 warnings · 8 passed · 14 for information</span></div>
 </header>
 <h2>Failures and warnings</h2>
@@ -87,7 +93,7 @@ summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">black</td><td>Black for 3.00 s at the tail<span class="against">Checked against blackdetect=d=2:pix_th=0.10:pic_th=0.98 (each end within one frame) · EBU QC <a href="https://qc.ebu.io/items/0272B" title="EBU QC 0272B v1.0">0272B Black Frames Report</a></span></td><td class="tc" data-label="From">10:00:17:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">interlace</td><td>The picture looks progressive: 0 frames top field first, 0 bottom field first, 376 progressive, 124 undetermined<span class="against">Checked against idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact) · EBU QC <a href="https://qc.ebu.io/items/0048B" title="EBU QC 0048B v1.0">0048B Video Scanning</a></span></td><td class="tc"></td><td class="tc"></td></tr>
 <tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">interlace.flag</td><td>The stream says progressive (progressive), as the picture looks<span class="against">Checked against idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact), against ffprobe&#39;s field_order · EBU QC <a href="https://qc.ebu.io/items/0048B" title="EBU QC 0048B v1.0">0048B Video Scanning</a></span></td><td class="tc"></td><td class="tc"></td></tr>
-<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">range</td><td>Pixels outside broadcast range: at most 0.67% of the picture (at most 1%)<span class="against">Checked against signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under 1 s apart joined · EBU QC <a href="https://qc.ebu.io/items/0051B" title="EBU QC 0051B v2.0">0051B Video Signal Levels</a></span></td><td class="tc" data-label="From">10:00:12:10</td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">range</td><td>Pixels outside broadcast range: at most 0.67% of the picture (at most 1%)<span class="against">Checked against signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under 1 s apart joined · EBU QC <a href="https://qc.ebu.io/items/0051B" title="EBU QC 0051B v2.0">0051B Video Signal Levels</a></span></td><td class="tc" colspan="2">at 10:00:12:10</td></tr>
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">crop</td><td>The picture fills the 1920x1080 frame<span class="against">Checked against cropdetect=limit=24/255:round=16:skip=2:reset=0 (exact) · EBU QC <a href="https://qc.ebu.io/items/0015B" title="EBU QC 0015B v3.0">0015B Black Bars</a></span></td><td class="tc"></td><td class="tc"></td></tr>
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">frames</td><td>All 500 frames intra-coded (I)<span class="against">Checked against ffprobe -select_streams v:0 -show_frames -show_entries frame=pict_type (each frame&#39;s, exact) · EBU QC <a href="https://qc.ebu.io/items/0046F" title="EBU QC 0046F v1.0">0046F GOP Length - Structure</a></span></td><td class="tc"></td><td class="tc"></td></tr>
 <tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">decode.frames</td><td>Every frame the file lists decoded: 500 of 500<span class="against">Checked against ffprobe -select_streams v:0 -count_packets -count_frames -show_entries stream=nb_frames,nb_read_packets,nb_read_frames (exact; an MXF&#39;s listed frames its duration times r_frame_rate) · EBU QC <a href="https://qc.ebu.io/items/0081X" title="EBU QC 0081X v2.0">0081X Video Frame Count</a></span></td><td class="tc"></td><td class="tc"></td></tr>
@@ -117,5 +123,17 @@ summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
 </tbody>
 </table>
 </details>
+<div class="shots-print"><h2>4 shots, the shortest 3.00 s</h2>
+<table>
+<colgroup><col class="sev"><col class="check"><col><col class="tc"><col class="tc"></colgroup>
+<thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th></tr></thead>
+<tbody>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 1, 5.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:00:00</td><td class="tc" data-label="To">10:00:05:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 2, 3.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:05:00</td><td class="tc" data-label="To">10:00:08:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 3, 9.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:08:00</td><td class="tc" data-label="To">10:00:17:00</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">shot</td><td>Shot 4, 3.00 s<span class="against">Checked against PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)</span></td><td class="tc" data-label="From">10:00:17:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
+</tbody>
+</table>
+</div>
 </body>
 </html>
