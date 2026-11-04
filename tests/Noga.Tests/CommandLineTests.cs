@@ -165,6 +165,10 @@ public sealed class CommandLineTests : IClassFixture<Programme>
         using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, "programme.mov.qc.json")));
         Assert.Equal("failure", json.RootElement.GetProperty("verdict").GetString(), ignoreCase: true);
         Assert.Equal(QcReport.Failed, json.RootElement.GetProperty("exitCode").GetInt32());
+        Assert.Equal(Path.GetFullPath(_programme.Path), json.RootElement.GetProperty("path").GetString());
+        Assert.Equal(new FileInfo(_programme.Path).Length, json.RootElement.GetProperty("size").GetInt64());
+        Assert.True(DateTimeOffset.Now - json.RootElement.GetProperty("checked").GetDateTimeOffset() < TimeSpan.FromMinutes(10));
+        Assert.Contains(Path.GetFullPath(_programme.Path), html, StringComparison.Ordinal);
         var checks = json.RootElement.GetProperty("findings").EnumerateArray().Select(f => f.GetProperty("check").GetString()).ToList();
         Assert.Contains("tone", checks);
         Assert.Contains("silence", checks);

@@ -80,6 +80,12 @@ public sealed record QcReport
     /// <summary>Whether timecodes are drop-frame.</summary>
     public required bool DropFrame { get; init; }
 
+    /// <summary>
+    /// Which file was checked and when (its full path, size and modified time, and the time the check started), so a
+    /// report passed on says which version of the file it covers; null when the report was made from measures alone.
+    /// </summary>
+    public CheckedFile? Source { get; init; }
+
     /// <summary>The findings, in the profile's order.</summary>
     public required IReadOnlyList<Finding> Findings { get; init; }
 
@@ -111,4 +117,40 @@ public sealed record QcReport
         Severity.Warning => warningsFail ? Failed : Warnings,
         _ => Passed,
     };
+}
+
+/// <summary>
+/// The file a report is of: its full <paramref name="Path"/>, its <paramref name="Size"/> in bytes and when it was last
+/// <paramref name="Modified"/>, as the check found it, and when it was <paramref name="Checked"/>.
+/// </summary>
+public sealed record CheckedFile(string Path, long Size, DateTimeOffset Modified, DateTimeOffset Checked)
+{
+    /// <summary>The file as it is now, checked now.</summary>
+    public static CheckedFile Of(string file)
+    {
+        var info = new FileInfo(file);
+        return new CheckedFile(info.FullName, info.Length, info.LastWriteTime, DateTimeOffset.Now);
+    }
+
+    /// <summary>A size for people: "94.2 MB (94,201,579 bytes)".</summary>
+    public string SizeText
+    {
+        get
+        {
+            string[] units = ["bytes", "KB", "MB", "GB", "TB"];
+            double size = Size;
+            int unit = 0;
+            while (size >= 1000 && unit < units.Length - 1)
+            {
+                size /= 1000;
+                unit++;
+            }
+
+            string bytes = Size.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+            return unit == 0 ? $"{bytes} bytes" : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{size:0.0} {units[unit]} ({bytes} bytes)");
+        }
+    }
+
+    /// <summary>A time as the report shows it: "2026-11-04 14:32 +01:00".</summary>
+    public static string Time(DateTimeOffset time) => time.ToString("yyyy-MM-dd HH:mm zzz", System.Globalization.CultureInfo.InvariantCulture);
 }
