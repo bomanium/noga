@@ -10,6 +10,26 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
+- The report and the JSON say when the file was checked and which file it was
+  - Why: the second UI/UX review (decisions/2026-11-04-rows-in-place.md): a report passed on to a broadcaster can't
+    show which version of the file it covers: no check date, full path, size or modification time
+  - Status: Open
+
+- A long check's progress in the web UI and the app
+  - Why: the same review: a 60-minute ProRes master shows "measuring N s" for about 17 minutes, nothing more
+  - Status: Open
+
+- The report's format line in plain words, and print fixed
+  - Why: the same review: ffprobe's words in front of clients ("mov,mp4,m4a,3gp,3g2,mj2", "yuv422p10le", "Format:");
+    in print the timecodes overrun the To column, the shot list never prints, a point shows an empty To
+  - Status: Open
+
+- Small layout fixes from the second review
+  - Why: the same review: the web UI's empty "Checks" text squeezed into the badge column, its path field refusing a
+    file; the app's narrow-window buttons against the badge, its empty window mostly blank, no "Add folder…"; both
+    showing the start of a deep folder rather than its end; "Couldn't read" in the same grey as "Queued"
+  - Status: Open
+
 - Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
   worst fixed, the figure in the README
   - Why: deliveries run 30 to 90 minutes of ProRes HQ, and nothing says how long a check takes or what memory it
