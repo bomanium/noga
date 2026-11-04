@@ -145,6 +145,10 @@ What is next, in order: docs/backlog.md.
   with the `ffmpeg` command line (`FfmpegCli`), which must be on PATH (CI installs it). `SampleTests` do the same on
   make-samples.sh's programme in each format; their fixture runs make-samples.sh into `samples/` when the files
   aren't there or an older script made them (`samples/.make-samples.sha256`) (bash, ffmpeg with libx264; ~1 min the first time).
+- `tests/Noga.Tests/OddFileTests.cs`: odd and broken files (`OddFiles`: made with the ffmpeg command line, some cut
+  short or overwritten), each a report or a read error that names it, never a fault (decisions/2026-11-04-odd-files.md).
+  `Checker.Run` gives a file the managed path can't read to the end to the FFmpeg path and turns any other fault into
+  that file's CheckException; `Jobs` fails the one job on anything and goes on.
 - `tests/Noga.FilmTests`: every figure on Blender's open films against the ffmpeg command line (FfmpegCli, linked
   from Noga.Tests). Runs only where NOGA_FILMS names the films' folder (`tools/get-films.sh [folder]`, default
   `films/`, ~650 MB, pinned by SHA-256); elsewhere `no.runsettings` filters every test out. ~30 min.
