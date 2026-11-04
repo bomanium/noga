@@ -40,7 +40,8 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 Each finding also names its [EBU QC](https://qc.ebu.io) item. Timecodes run from the file's start timecode,
 drop-frame at 29.97 and 59.94.
 
-It reads ProRes and DNxHR in MOV and MXF, H.264 in MP4, and whatever else FFmpeg reads. H.264 and AAC in MP4 are
+It reads ProRes and DNxHR in MOV and MXF, H.264 in MP4, and whatever else FFmpeg reads. A file with sound only (a
+WAV or AIFF stem, an M4A) gets its sound's checks; the report says which picture checks weren't made. H.264 and AAC in MP4 are
 decoded in managed code ([ManagedCodecs](https://github.com/bisforboman/ManagedCodecs)); everything else goes
 through FFmpeg's libraries, which come with Noga. A test checks that both paths give the same figures on the same
 file.
