@@ -5,27 +5,66 @@ using System.Text;
 namespace Noga;
 
 /// <summary>
-/// The HTML report: one self-contained page (no scripts, no external files) for a person to read and pass on: the
-/// verdict, then every finding with its timecodes, its value and what it is checked against.
+/// The HTML report: one self-contained page (no scripts, no external files) for a person to read, print and pass on.
+/// The answer first: the verdict with a count per severity, then the failures and warnings, then the other checks, each
+/// finding with its timecodes, its value and, on a muted second line, what it is checked against and its EBU QC item.
+/// The file's format is in the header, the shot list folded away at the end (docs/decisions/2026-11-04-report-layout.md).
+/// Readable on a phone (rows stack), in dark mode, and printed.
 /// </summary>
 public static class ReportHtml
 {
     const string Style = """
-        body { font: 15px/1.45 system-ui, sans-serif; margin: 2rem auto; max-width: 72rem; padding: 0 1rem; color: #1b1b1b; }
-        h1 { font-size: 1.4rem; margin-bottom: .2rem; }
-        .meta { color: #555; margin: 0 0 1.2rem; }
-        .verdict { display: inline-block; padding: .3rem .8rem; border-radius: .3rem; font-weight: 600; margin-bottom: 1.2rem; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid #ddd; }
-        th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #555; }
-        td.tc { font-family: ui-monospace, monospace; white-space: nowrap; }
-        td.against { color: #555; font-size: .85rem; overflow-wrap: anywhere; }
-        td.ebu { font-size: .85rem; white-space: nowrap; }
-        .pass { background: #e3f4e6; color: #17602a; }
-        .info { background: #e8eef7; color: #24466e; }
-        .warning { background: #fdf1d6; color: #7a5200; }
-        .failure { background: #fbe3e1; color: #8d1c12; }
-        span.sev { padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
+        :root { color-scheme: light dark;
+          --fg: #1b1b1b; --muted: #5a5a5a; --line: #ddd; --bg: #fff; --head: #f6f6f4; --link: #1f5d99;
+          --pass-bg: #e3f4e6; --pass: #17602a; --info-bg: #e8eef7; --info: #24466e;
+          --warning-bg: #fdf1d6; --warning: #7a5200; --failure-bg: #fbe3e1; --failure: #8d1c12; }
+        @media screen and (prefers-color-scheme: dark) { :root {
+          --fg: #e6e6e3; --muted: #a6a6a1; --line: #3a3a38; --bg: #161615; --head: #1f1f1e; --link: #8cbcf0;
+          --pass-bg: #173a22; --pass: #9fdcae; --info-bg: #1c2b40; --info: #a9c4e8;
+          --warning-bg: #3d2f0c; --warning: #f2cf7c; --failure-bg: #4a1a16; --failure: #f6aaa2; } }
+        * { box-sizing: border-box; }
+        body { font: 15px/1.45 system-ui, sans-serif; margin: 2rem auto; max-width: 72rem; padding: 0 1rem; color: var(--fg); background: var(--bg); }
+        h1 { font-size: 1.4rem; margin: 0 0 .2rem; overflow-wrap: anywhere; }
+        h2 { font-size: 1rem; margin: 2rem 0 .4rem; }
+        a { color: var(--link); }
+        .meta, .format { color: var(--muted); margin: 0 0 .3rem; overflow-wrap: anywhere; }
+        .verdict { margin: 1.2rem 0 0; padding: .9rem 1.1rem; border-radius: .4rem; }
+        .verdict strong { display: block; font-size: 1.5rem; line-height: 1.2; }
+        .verdict span { font-variant-numeric: tabular-nums; }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        col.sev { width: 6.5em; } col.check { width: 11em; } col.tc { width: 7.5em; }
+        th, td { text-align: left; vertical-align: top; padding: .45rem .6rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+        th { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+        td.tc { font-family: ui-monospace, monospace; font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .against { display: block; color: var(--muted); font-size: .8rem; margin-top: .15rem; }
+        .against a { white-space: nowrap; }
+        .pass { background: var(--pass-bg); color: var(--pass); }
+        .info { background: var(--info-bg); color: var(--info); }
+        .warning { background: var(--warning-bg); color: var(--warning); }
+        .failure { background: var(--failure-bg); color: var(--failure); }
+        span.sev { display: inline-block; padding: .1rem .45rem; border-radius: .25rem; font-size: .8rem; font-weight: 600; }
+        details { margin-top: 2rem; }
+        summary { cursor: pointer; font-weight: 600; }
+        summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
+        @media (max-width: 40rem) {
+          body { margin: 1rem auto; }
+          table, tbody, tr, td { display: block; width: 100%; }
+          thead, colgroup { display: none; }
+          tr { padding: .5rem 0; border-bottom: 1px solid var(--line); }
+          td { border: 0; padding: .1rem 0; }
+          td.check { display: inline-block; width: auto; margin-left: .4rem; font-weight: 600; }
+          td.sev { display: inline-block; width: auto; }
+          td.tc { display: inline-block; width: auto; margin-right: .6rem; }
+          td.tc:empty { display: none; }
+          td.tc[data-label]::before { content: attr(data-label) " "; font-family: system-ui, sans-serif; color: var(--muted); }
+        }
+        @media print {
+          body { margin: 0; max-width: none; font-size: 10pt; }
+          a { color: inherit; text-decoration: none; }
+          tr { break-inside: avoid; }
+          thead { display: table-header-group; }
+          .verdict, span.sev { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
         """;
 
     /// <summary>The report as an HTML page, for <paramref name="file"/> (its name as shown).</summary>
@@ -33,6 +72,14 @@ public static class ReportHtml
     {
         ArgumentNullException.ThrowIfNull(report);
         ArgumentNullException.ThrowIfNull(file);
+        var findings = report.Findings;
+        var format = findings.FirstOrDefault(f => f.Check == "format" && f.Severity == Severity.Info);
+        var shots = findings.FirstOrDefault(f => f.Check == "shots");
+        var shotList = findings.Where(f => f.Check == "shot").ToList();
+        var rest = findings.Where(f => f != format && f != shots && f.Check != "shot").ToList();
+        var issues = rest.Where(f => f.Severity >= Severity.Warning).OrderByDescending(f => f.Severity).ToList();
+        var others = rest.Where(f => f.Severity < Severity.Warning).ToList();
+
         var html = new StringBuilder();
         html.Append(CultureInfo.InvariantCulture, $"""
             <!DOCTYPE html>
@@ -46,25 +93,46 @@ public static class ReportHtml
             </style>
             </head>
             <body>
+            <header>
             <h1>{Encode(file)}</h1>
             <p class="meta">Profile {Encode(report.Profile)} · starts at {Encode(report.StartTimecode)}{(report.DropFrame ? " (drop-frame)" : "")} · {Encode(Product.Name)} {Encode(Product.Version)}</p>
-            <div class="verdict {Class(report.Verdict <= Severity.Info ? Severity.Pass : report.Verdict)}">{Verdict(report.Verdict)}</div>
-            <table>
-            <thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th><th>Checked against</th><th>EBU QC</th></tr></thead>
-            <tbody>
 
             """);
-        foreach (var finding in report.Findings)
+        if (format is not null)
         {
             html.Append(CultureInfo.InvariantCulture, $"""
-                <tr><td><span class="sev {Class(finding.Severity)}">{finding.Severity}</span></td><td>{Encode(finding.Check)}</td><td>{Encode(finding.Message)}</td><td class="tc">{Encode(finding.Start?.Timecode ?? "")}</td><td class="tc">{Encode(finding.End?.Timecode ?? "")}</td><td class="against">{Encode(finding.CheckedAgainst)}</td><td class="ebu">{Ebu(finding.EbuQc)}</td></tr>
+                <p class="format" title="{Encode(format.CheckedAgainst)}">{Encode(format.Message)}</p>
 
                 """);
         }
 
+        html.Append(CultureInfo.InvariantCulture, $"""
+            <div class="verdict {Class(report.Verdict <= Severity.Info ? Severity.Pass : report.Verdict)}"><strong>{Verdict(report.Verdict)}</strong><span>{Counts(findings)}</span></div>
+            </header>
+
+            """);
+        if (issues.Count > 0)
+        {
+            Table(html, issues.Any(f => f.Severity == Severity.Failure) ? "Failures and warnings" : "Warnings", issues);
+        }
+
+        Table(html, issues.Count > 0 ? "The other checks" : "The checks", others);
+        if (shots is not null || shotList.Count > 0)
+        {
+            html.Append(CultureInfo.InvariantCulture, $"""
+                <details>
+                <summary>{Encode(shots?.Message ?? $"{shotList.Count} shots")}{(shots is null ? "" : $"<span class=\"against\">{Encode(shots.CheckedAgainst)}</span>")}</summary>
+
+                """);
+            if (shotList.Count > 0)
+            {
+                Table(html, null, shotList);
+            }
+
+            html.Append("</details>\n");
+        }
+
         html.Append("""
-            </tbody>
-            </table>
             </body>
             </html>
 
@@ -72,12 +140,72 @@ public static class ReportHtml
         return html.ToString();
     }
 
+    // One table of findings, under its heading (none for the shot list, whose summary is its heading).
+    static void Table(StringBuilder html, string? heading, IReadOnlyList<Finding> findings)
+    {
+        if (findings.Count == 0)
+        {
+            return;
+        }
+
+        if (heading is not null)
+        {
+            html.Append(CultureInfo.InvariantCulture, $"<h2>{Encode(heading)}</h2>\n");
+        }
+
+        html.Append("""
+            <table>
+            <colgroup><col class="sev"><col class="check"><col><col class="tc"><col class="tc"></colgroup>
+            <thead><tr><th>Result</th><th>Check</th><th>Finding</th><th>From</th><th>To</th></tr></thead>
+            <tbody>
+
+            """);
+        foreach (var finding in findings)
+        {
+            string ebu = Ebu(finding.EbuQc);
+            html.Append(CultureInfo.InvariantCulture, $"""
+                <tr><td class="sev"><span class="sev {Class(finding.Severity)}">{finding.Severity}</span></td><td class="check">{Encode(finding.Check)}</td><td>{Encode(finding.Message)}<span class="against">Checked against {Encode(finding.CheckedAgainst)}{(ebu.Length == 0 ? "" : $" · EBU QC {ebu}")}</span></td>{Tc("From", finding.Start)}{Tc("To", finding.End)}</tr>
+
+                """);
+        }
+
+        html.Append("""
+            </tbody>
+            </table>
+
+            """);
+    }
+
+    static string Tc(string label, Position? at) =>
+        at is { } position ? $"<td class=\"tc\" data-label=\"{label}\">{Encode(position.Timecode)}</td>" : "<td class=\"tc\"></td>";
+
     static string Verdict(Severity verdict) => verdict switch
     {
         Severity.Failure => "Failed",
         Severity.Warning => "Passed with warnings",
         _ => "Passed",
     };
+
+    // How many findings of each severity, the most severe first: "1 failure · 2 warnings · 8 passed · 16 information".
+    static string Counts(IReadOnlyList<Finding> findings)
+    {
+        int Count(Severity severity) => findings.Count(f => f.Severity == severity && f.Check != "shot");
+        var parts = new List<string>();
+        int failures = Count(Severity.Failure), warnings = Count(Severity.Warning), passed = Count(Severity.Pass), info = Count(Severity.Info);
+        if (failures > 0)
+        {
+            parts.Add(failures == 1 ? "1 failure" : $"{failures} failures");
+        }
+
+        if (warnings > 0)
+        {
+            parts.Add(warnings == 1 ? "1 warning" : $"{warnings} warnings");
+        }
+
+        parts.Add($"{passed} passed");
+        parts.Add($"{info} for information");
+        return string.Join(" · ", parts);
+    }
 
     static string Class(Severity severity) => severity.ToString().ToLowerInvariant();
 
