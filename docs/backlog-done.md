@@ -208,3 +208,8 @@ Finished items from [backlog.md](backlog.md), oldest first.
     it, Check gives no feedback and queues duplicates, non-media files get a Check button, no "check all in this
     folder" (its dark mode and its grey text's contrast came with decisions/2026-11-04-status-style.md)
   - Status: Done (2026-11-04: decisions/2026-11-04-web-ui-gaps.md)
+
+- Raw values in findings
+  - Why: the same review: a silent file's true peak reads "-Infinity dBTP" and passes; the format line shows ffprobe's
+    unknown colour values as "?/?/bt709"
+  - Status: Done (2026-11-04: `VideoFormat.Colour`, decisions/2026-11-04-raw-values.md)

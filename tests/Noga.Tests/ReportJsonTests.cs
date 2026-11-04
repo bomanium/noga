@@ -30,6 +30,7 @@ public class ReportJsonTests
         Assert.StartsWith("blackdetect=d=2:pix_th=0.10:pic_th=0.98", black.GetProperty("checkedAgainst").GetString(), StringComparison.Ordinal);
         var peak = root.GetProperty("findings").EnumerateArray().Single(f => f.GetProperty("check").GetString() == "loudness.true-peak");
         Assert.Equal("-Infinity", peak.GetProperty("value").GetString());
+        Assert.Equal("True peak: none, the sound is silent (at most -1.0 dBTP)", peak.GetProperty("message").GetString());
     }
 
     [Fact]

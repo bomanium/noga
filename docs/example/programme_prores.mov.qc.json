@@ -11,7 +11,7 @@
     {
       "check": "format",
       "severity": "Info",
-      "message": "Format: prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, ?/?/bt709 tv, 16:9; audio: pcm_s24le 48000 Hz 2 ch (stereo) 24-bit; mov,mp4,m4a,3gp,3g2,mj2, 20.00 s",
+      "message": "Format: prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, matrix bt709, primaries and transfer not tagged, tv, 16:9; audio: pcm_s24le 48000 Hz 2 ch (stereo) 24-bit; mov,mp4,m4a,3gp,3g2,mj2, 20.00 s",
       "checkedAgainst": "ffprobe -show_format -show_streams (exact)"
     },
     {

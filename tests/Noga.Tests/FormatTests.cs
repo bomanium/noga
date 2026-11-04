@@ -22,6 +22,19 @@ public sealed class FormatTests : IDisposable
 
     // An interlaced ProRes with its colour tagged and two audio tracks (stereo, then 5.1): every value is the command
     // line's ffprobe's, read in-process through FrameReader.
+    // The colour tags read as words: agreeing ones once, untagged ones said so, never ffprobe's "?" or "unknown".
+    [Fact]
+    public void ColourTagsReadAsWords()
+    {
+        Assert.Equal("bt709 tv", Hd.Colour);
+        Assert.Equal(
+            "prores (HQ) 1920x1080 25 fps tt, yuv422p10le 10-bit, bt709 tv, 16:9",
+            Hd.ToString());
+        Assert.Equal("matrix bt709, primaries and transfer not tagged, tv", (Hd with { ColourPrimaries = null, Transfer = "unknown" }).Colour);
+        Assert.Equal("primaries bt2020, transfer smpte2084, matrix bt2020nc, pc", (Hd with { ColourPrimaries = "bt2020", Transfer = "smpte2084", Matrix = "bt2020nc", ColourRange = "pc" }).Colour);
+        Assert.Equal("colour not tagged, range not tagged", (Hd with { ColourPrimaries = null, Transfer = null, Matrix = "unknown", ColourRange = null }).Colour);
+    }
+
     [Fact]
     public void TheFormatIsFfprobesOnBothCounts()
     {
