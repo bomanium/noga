@@ -10,13 +10,7 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
-  worst fixed, the figure in the README
-  - Why: deliveries run 30 to 90 minutes of ProRes HQ, and nothing says how long a check takes or what memory it
-    needs (decisions/2026-11-03-launch-readiness.md)
-  - Status: In progress: `tools/benchmark.sh` and docs/notes/performance.md measure generated programmes looped to
-    10 minutes (ProRes HQ about 17 s a minute on 4 cores, flat memory), and the worst found is fixed (memory that grew
-    with a QuickTime PCM file's length, 1.9 GB for 10 minutes). Still to do: the open films, and the figure in the README
+- Nothing yet: the next item comes from the owner, or from Maybe
 
 ## Waiting
 
@@ -33,11 +27,12 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     (decisions/2026-11-04-odd-files.md)
   - Status: Maybe
 
-- Faster checks: run 2 checks at a time in `Jobs`; measure the picture pass while the next frame is decoded; take the
-  shots from the picture pass's frames on the FFmpeg path too, rather than from a second decode
-  - Why: docs/notes/performance.md: a check keeps about 2 of 4 cores busy, and 2 at a time finished a queue 1.6x
-    sooner. PictureMeter runs on one thread (40% of the time), and the shots decode the video again (20%). A 1-hour
-    ProRes HQ master takes about 17 minutes on a 4-core machine
+- Faster single checks: measure the picture pass while the next frame is decoded; take the shots from the picture
+  pass's frames on the FFmpeg path too, rather than from a second decode
+  - Why: docs/notes/performance.md: a check keeps about 2 of 4 cores busy. PictureMeter runs on one thread (40% of the
+    time), and the shots decode the video again (20%). A 1-hour ProRes HQ master takes about 17-25 minutes on a
+    4-core machine. Two checks at a time is done (decisions/2026-11-04-checks-side-by-side.md), but it doesn't help
+    one long file
   - Status: Maybe
 
 - More from the 2026-11-03 review: short-term and momentary loudness limits and a loudness-range window,

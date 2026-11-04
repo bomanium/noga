@@ -179,8 +179,8 @@ What is next, in order: docs/backlog.md.
   Ubuntu arm64 base image pinned by SHA-256, so no binfmt handler; tiered compilation off, which qemu-user crashes):
   its AppImage unpacked and run, and each sample's findings the same as x64's (decisions/2026-11-03-linux-arm64.md).
   ~2-3 min; CI runs it after publish.
-- `tools/benchmark.sh [--minutes N] [--queue N] [--jobs "1 2 4"] [folder]`: a check's speed and peak memory on each
-  sample and on 10-minute programmes looped from them, and a queue run 1, 2, 4 at a time, into `artifacts/benchmark/`
+- `tools/benchmark.sh [--minutes N] [--queue N] [--jobs "1 2 4"] [--films FILMS] [folder]`: a check's speed and peak
+  memory on each sample, on 10-minute programmes looped from them and on get-films.sh's films (--films), and a queue run 1, 2, 4 at a time, into `artifacts/benchmark/`
   (`benchmark.md`); the figures and where the time goes: docs/notes/performance.md. ~8 min.
 - `docs/`: `backlog.md`, `decisions/`, `dependencies.md`, `notes/origin.md`, `notes/performance.md`; `example/` (the
   README's example reports: `noga check samples/programme_prores.mov --out docs/example`) and `images/` (the README's

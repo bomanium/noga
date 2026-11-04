@@ -238,3 +238,12 @@ Finished items from [backlog.md](backlog.md), oldest first.
     file; the app's narrow-window buttons against the badge, its empty window mostly blank, no "Add folder…"; both
     showing the start of a deep folder rather than its end; "Couldn't read" in the same grey as "Queued"
   - Status: Done (2026-11-04: decisions/2026-11-04-layout-fixes.md)
+
+- Speed on long files: seconds per minute of footage and peak memory, measured on the open films (films.yml), the
+  worst fixed, the figure in the README
+  - Why: deliveries run 30 to 90 minutes of ProRes HQ, and nothing says how long a check takes or what memory it
+    needs (decisions/2026-11-03-launch-readiness.md)
+  - Status: Done (2026-11-04: `tools/benchmark.sh --films`. The open films check at 5-14 s a minute with flat memory,
+    and nothing there needed fixing. The worst problem found, memory that grew with a QuickTime PCM file's length, was
+    fixed first. The figures are in the README and docs/notes/performance.md. Also two checks at a time in `Jobs`,
+    1.76x sooner: decisions/2026-11-04-checks-side-by-side.md)

@@ -29,7 +29,29 @@ same work every second as the short one. These are one run each, and the figures
 - A check keeps about 2 of the 4 cores busy, on either path.
 - Memory stays flat with length: 315 MB for 10 minutes of ProRes.
 
-## Where the time goes
+## The open films, and a second run (2026-11-04)
+
+Noga 0.1.0-alpha.2 (a230fec), 2026-11-04: another cloud container with 4 CPUs (Intel Xeon @ 2.80GHz) and 15 GB.
+`tools/benchmark.sh --films films`, the films from `tools/get-films.sh`. This container was slower than the first:
+the same 10-minute ProRes took 245 s rather than 172 s. So compare the rows of a run with each other, not across runs.
+
+| File | Length | Wall | CPU | Cores busy | Wall a programme minute | Peak memory |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| programme_prores.mov | 20 s | 9.2 s | 17.9 s | 1.9 | 27.6 s | 186 MB |
+| programme_dnxhr.mxf | 20 s | 4.5 s | 10.6 s | 2.4 | 13.5 s | 170 MB |
+| programme_h264.mp4 | 20 s | 7.0 s | 13.4 s | 1.9 | 21.0 s | 164 MB |
+| programme_10min_h264.mp4 | 600 s | 122.3 s | 264.4 s | 2.2 | 12.2 s | 192 MB |
+| programme_10min_prores.mov | 600 s | 245.2 s | 507.3 s | 2.1 | 24.5 s | 227 MB |
+| Big Buck Bunny (1080p30 H.264, MP3 and AC-3 5.1, MP4) | 635 s | 146.8 s | 379.5 s | 2.6 | 13.9 s | 255 MB |
+| Tears of Steel (1280x534 24 fps H.264, MP3, MOV) | 734 s | 59.2 s | 160.6 s | 2.7 | 4.8 s | 154 MB |
+
+- Both films go to the FFmpeg path: Big Buck Bunny has two audio tracks, Tears of Steel is a MOV, and both have MP3.
+- Real footage costs about what the looped programmes do: 1080p H.264 about 14 s a minute, and 720p about a third of
+  that. Memory stays flat, at 255 MB at most for 10.5 minutes with two audio tracks.
+- So nothing on the films needed fixing. A 1-hour ProRes HQ master takes about 17-25 minutes on 4 cores, and
+  1080p H.264 about 15.
+
+
 
 A 3-minute ProRes programme (the 20 s one looped) on the FFmpeg path, each stage timed on its own (50 s in all):
 
@@ -55,9 +77,21 @@ them if it ran more than one:
 | 2 | 33.4 s | 4.2 s | 1.64x | 186 MB |
 | 4 | 30.6 s | 3.8 s | 1.79x | 191 MB |
 
-Two at a time finishes a queue about 1.6x sooner on 4 cores, and four at a time adds little more. `Jobs` (the web UI,
-the watch folder, the app) runs one at a time, so half the machine sits idle during a batch. Memory is per check,
+Two at a time finishes a queue about 1.6x sooner on 4 cores, and four at a time adds little more. Memory is per check,
 about 200-300 MB each.
+
+So `Jobs` (the web UI, the watch folder, the app) runs two at a time on 4 cores or more
+(decisions/2026-11-04-checks-side-by-side.md). The same queue on 2026-11-04's machine, in separate processes and then
+in one process through `Jobs` (a Release build; the peak memory is the one process's, all its checks together):
+
+| At a time | Separate processes | Against one | One process, `Jobs` | Against one | Peak memory (`Jobs`) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 77.0 s | 1.00x | 74.0 s | 1.00x | 394 MB |
+| 2 | 44.6 s | 1.73x | 42.1 s | 1.76x | 560 MB |
+| 4 | 35.0 s | 2.20x | 36.1 s | 2.05x | 795 MB |
+
+Checks side by side in one process gain as much as in separate processes. Two at a time takes about 170 MB more than
+one.
 
 ## What the first run found: memory that grew with length
 
@@ -74,9 +108,8 @@ make-samples.sh's ProRes (`SampleTests.AskingTheManagedPathDoesNotReadAPcmTrack`
 
 ## Not measured yet
 
-- Real masters, 30-60 minutes, and UHD files: these figures are lavfi programmes, looped.
+- Real masters, 30-60 minutes, and UHD files: these figures are lavfi programmes, looped, and the open films
+  (10-12 minutes, H.264).
 - Files on a network share. The web UI and the watch folder are made for those, and reading them may cost more than
   the decoding does.
 - Windows, and the linux-arm64 build on real ARM hardware.
-- Running several checks in one process, as `Jobs` would if it ran more than one at a time. The queue above runs
-  separate processes.
