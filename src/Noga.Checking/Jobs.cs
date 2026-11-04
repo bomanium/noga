@@ -36,6 +36,25 @@ public sealed record Job(int Id, string File, JobState State, DateTimeOffset Add
     /// <summary>Why it failed.</summary>
     public string? Error { get; init; }
 
+    /// <summary>Why it failed, the file named rather than its whole path, which the row already shows.</summary>
+    public string? ShortError => Error?.Replace(File, Path.GetFileName(File), StringComparison.Ordinal);
+
+    /// <summary>When done with failures or warnings, the first of them and how many more (<see cref="QcReport.Reason"/>).</summary>
+    public string? Reason { get; init; }
+
+    /// <summary>The folder the file is in.</summary>
+    public string Folder => Path.GetDirectoryName(File) ?? "";
+
+    /// <summary>How long it has been measuring, or took; null before it starts.</summary>
+    public TimeSpan? Elapsed(DateTimeOffset now) => Started is { } started ? (Finished ?? now) - started : null;
+
+    /// <summary>A duration as a row shows it: "12 s", "3 min 05 s".</summary>
+    public static string Format(TimeSpan duration)
+    {
+        int seconds = Math.Max(0, (int)Math.Round(duration.TotalSeconds));
+        return seconds < 60 ? $"{seconds} s" : $"{seconds / 60} min {seconds % 60:00} s";
+    }
+
     /// <summary>The HTML report's path, when done.</summary>
     public string? Html { get; init; }
 
@@ -146,6 +165,7 @@ public sealed class Jobs : IDisposable
                         Finished = DateTimeOffset.Now,
                         Verdict = result.Report.Verdict,
                         ExitCode = result.Report.ExitCode(),
+                        Reason = result.Report.Reason,
                         Html = result.Html,
                         Json = result.Json,
                     });

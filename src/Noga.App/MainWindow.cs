@@ -93,6 +93,16 @@ sealed class MainWindow : Window
 
         Render();
         ActualThemeVariantChanged += (_, _) => Render();
+
+        // A measuring check's time goes up each second.
+        var ticking = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        ticking.Tick += (_, _) =>
+        {
+            if (_model.Jobs.Any(j => j.State == JobState.Measuring))
+                Render();
+        };
+        ticking.Start();
+        Closed += (_, _) => ticking.Stop();
         _ = FollowAsync();
     }
 
@@ -175,15 +185,23 @@ sealed class MainWindow : Window
         };
         var text = new StackPanel { Spacing = 2, Margin = new Thickness(10, 0) };
         text.Children.Add(new TextBlock { Text = Path.GetFileName(job.File), FontWeight = FontWeight.SemiBold });
-        text.Children.Add(new TextBlock { Text = job.File, Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
-        if (job.Error is { } error)
+
+        // The folder (the name is above it), and how long it has been measuring or took.
+        string time = job.Elapsed(DateTimeOffset.Now) is { } elapsed
+            ? (job.State == JobState.Measuring ? " · " : " · took ") + Job.Format(elapsed)
+            : "";
+        text.Children.Add(new TextBlock { Text = job.Folder + time, Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
+        if (job.Reason is { } reason)
+            text.Children.Add(new TextBlock { Text = reason, FontSize = 12, TextWrapping = TextWrapping.Wrap });
+        if (job.ShortError is { } error)
             text.Children.Add(new TextBlock { Text = error, Foreground = Brush.Parse(StatusStyle.Colours("failure", dark).Text), FontSize = 12, TextWrapping = TextWrapping.Wrap });
+        ToolTip.SetTip(text, job.File);
 
         var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
         if (job.Html is { } html)
-            links.Children.Add(Open("Report", html));
+            links.Children.Add(Open("Report", html, main: true));
         if (job.Json is { } json)
-            links.Children.Add(Open("JSON", json));
+            links.Children.Add(Open("JSON", json, main: false));
 
         var row = new DockPanel { Tag = job };
         DockPanel.SetDock(badge, Dock.Left);
@@ -194,9 +212,15 @@ sealed class MainWindow : Window
         return new Border { Padding = new Thickness(6), Child = row };
     }
 
-    Button Open(string label, string path)
+    // The report is the main action (the accent button); the JSON, for pipelines, a quiet one.
+    Button Open(string label, string path, bool main)
     {
         var button = new Button { Content = label };
+        if (main)
+            button.Classes.Add("accent");
+        else
+            button.FontSize = 12;
+
         button.Click += async (_, _) => await Launcher.LaunchFileInfoAsync(new FileInfo(path));
         return button;
     }

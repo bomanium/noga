@@ -18,12 +18,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     10 minutes (ProRes HQ about 17 s a minute on 4 cores, flat memory), and the worst found is fixed (memory that grew
     with a QuickTime PCM file's length, 1.9 GB for 10 minutes). Still to do: the open films, and the figure in the README
 
-- Job rows that explain themselves, in the web UI and the app
-  - Why: the same review: a row says "Failed" without why, repeats the full path, and a read error repeats it twice;
-    the web UI's badges don't line up and only it shows the elapsed time. A one-line reason (the first failure or
-    warning), the folder instead of the path, a short error, elapsed time in both, "Report" as the main action
-  - Status: Open
-
 - The web UI's usability gaps
   - Why: the same review: folders and ".." aren't keyboard-reachable (spans), a bad path leaves the old listing under
     it, Check gives no feedback and queues duplicates, non-media files get a Check button, no "check all in this
