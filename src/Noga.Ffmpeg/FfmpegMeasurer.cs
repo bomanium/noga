@@ -22,8 +22,11 @@ public static class FfmpegMeasurer
     /// </summary>
     const double Ungated = -70;
 
+    /// <summary>The frame rate a file with sound only counts its timecodes at.</summary>
+    const int SoundOnlyRate = 25;
+
     /// <summary>Measures <paramref name="path"/> with <paramref name="profile"/>'s measurement settings.</summary>
-    /// <exception cref="InvalidDataException">The file has no video stream.</exception>
+    /// <exception cref="InvalidDataException">The file has neither a video nor an audio stream.</exception>
     /// <exception cref="FrameReaderException">FFmpeg's libraries didn't load, or the file can't be read.</exception>
     public static Measurements Measure(string path, Profile profile, CancellationToken cancellationToken = default)
     {
@@ -32,15 +35,26 @@ public static class FfmpegMeasurer
         Libraries.Load();
 
         var info = MediaProbe.Probe(path, new ProbeOptions { CancellationToken = cancellationToken });
-        var video = info.Video ?? throw new InvalidDataException($"{path} has no video stream.");
+        var video = info.Video;
+        if (video is null && !info.HasAudio)
+            throw new InvalidDataException($"{path} has neither picture nor sound.");
         var measured = new Measurements
         {
-            Duration = (info.Duration ?? video.Duration ?? TimeSpan.Zero).TotalSeconds,
-            RateNumerator = video.FrameRate.Num,
-            RateDenominator = video.FrameRate.Den,
+            Duration = (info.Duration ?? video?.Duration ?? TimeSpan.Zero).TotalSeconds,
+            RateNumerator = video?.FrameRate.Num ?? SoundOnlyRate,
+            RateDenominator = video?.FrameRate.Den ?? 1,
             NotMeasured = ["bars", "black"],
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
+
+        // Sound only (docs/decisions/2026-11-04-odd-files.md): a WAV or an M4A, whose cover art is a video stream to
+        // FFmpeg but not a picture (MediaFormat leaves it out); its timecodes count at a nominal 25 fps.
+        if (video is null || measured.Format is { Video: null })
+        {
+            measured = StartTimecode.Add(measured with { RateNumerator = SoundOnlyRate, RateDenominator = 1, NotMeasured = [], HasPicture = false }, path, cancellationToken);
+            return MeasureSound(path, profile, measured, cancellationToken);
+        }
+
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
         measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes, interlace), profile) with
@@ -50,9 +64,11 @@ public static class FfmpegMeasurer
             Packets = Packets.Read(path, cancellationToken),
         };
         measured = Shots.Add(measured, Shots.Detect(path, cancellationToken));
-        if (!info.HasAudio)
-            return measured;
+        return info.HasAudio ? MeasureSound(path, profile, measured, cancellationToken) : measured;
+    }
 
+    static Measurements MeasureSound(string path, Profile profile, Measurements measured, CancellationToken cancellationToken)
+    {
         // Every audio track, each from the end of its own line-up (docs/decisions/2026-11-01-every-audio-track.md);
         // the first's figures are the file's, the others' each a TrackMeasures.
         int tracks = Math.Max(1, measured.AudioTrack?.Count ?? 1);

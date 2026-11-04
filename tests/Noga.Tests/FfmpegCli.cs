@@ -91,13 +91,16 @@ internal static partial class FfmpegCli
     /// </summary>
     public static void AssertDecode(string file, Measurements measured)
     {
-        using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-select_streams", "v:0", "-count_packets", "-count_frames", "-show_entries", "stream=nb_frames,nb_read_packets,nb_read_frames", "-of", "json"));
-        var stream = json.RootElement.GetProperty("streams")[0];
-        long Count(string name) => long.Parse(stream.GetProperty(name).GetString()!, CultureInfo.InvariantCulture);
-        Assert.NotNull(measured.Packets);
-        Assert.Equal(Count("nb_read_packets"), measured.Packets.Count);
-        Assert.Equal(Count("nb_read_frames"), measured.PictureTypes.Length);
-        Assert.Equal(stream.TryGetProperty("nb_frames", out _) ? (int)Count("nb_frames") : null, measured.Format?.Video?.ListedFrames);
+        if (measured.HasPicture)
+        {
+            using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-select_streams", "v:0", "-count_packets", "-count_frames", "-show_entries", "stream=nb_frames,nb_read_packets,nb_read_frames", "-of", "json"));
+            var stream = json.RootElement.GetProperty("streams")[0];
+            long Count(string name) => long.Parse(stream.GetProperty(name).GetString()!, CultureInfo.InvariantCulture);
+            Assert.NotNull(measured.Packets);
+            Assert.Equal(Count("nb_read_packets"), measured.Packets.Count);
+            Assert.Equal(Count("nb_read_frames"), measured.PictureTypes.Length);
+            Assert.Equal(stream.TryGetProperty("nb_frames", out _) ? (int)Count("nb_frames") : null, measured.Format?.Video?.ListedFrames);
+        }
 
         var tracks = new List<(int Number, ChannelMeasures? Channels)> { (1, measured.Channels) };
         tracks.AddRange(measured.OtherTracks.Select(t => (t.Number, t.Channels)));

@@ -90,6 +90,9 @@ public sealed record Measurements
     /// <summary>The video packets' keyframes and sizes (ffprobe -show_packets'); null when not read.</summary>
     public VideoPackets? Packets { get; init; }
 
+    /// <summary>Whether the file has a picture; false for sound only (a WAV, an M4A), whose picture checks aren't made.</summary>
+    public bool HasPicture { get; init; } = true;
+
     /// <summary>
     /// The checks this decoder path doesn't measure yet ("black", "bars"): their lists above are empty because
     /// nothing looked, not because nothing was found, and the report says so.
