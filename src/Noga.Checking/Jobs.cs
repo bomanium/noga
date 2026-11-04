@@ -153,6 +153,11 @@ public sealed class Jobs : IDisposable
                 {
                     Update(id, j => j with { State = JobState.Failed, Finished = DateTimeOffset.Now, Error = e.Message });
                 }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    // Anything else is still this one file's: the queue goes on to the next.
+                    Update(id, j => j with { State = JobState.Failed, Finished = DateTimeOffset.Now, Error = $"{e.GetType().Name}: {e.Message}" });
+                }
             }
         }
         catch (OperationCanceledException)
