@@ -98,12 +98,22 @@ public sealed class AppTests : IDisposable
         Assert.Equal(["good.mov", "bad.mov", "ep01.mxf"], _checked.Select(c => c.File));
         var rows = window.Rows.Select(Text).ToList();
         Assert.Equal(3, rows.Count);
-        Assert.StartsWith($"Failed | Report | JSON | ep01.mxf | {Path.Combine(_folder, "show")} · took ", rows[0], StringComparison.Ordinal);
+        Assert.StartsWith("Failed | Report | JSON | ep01.mxf | took ", rows[0], StringComparison.Ordinal);
+        Assert.Contains($" s · {Path.Combine(_folder, "show")} | ", rows[0], StringComparison.Ordinal);
         Assert.EndsWith(" | Integrated loudness -34.8 LUFS", rows[0], StringComparison.Ordinal);
         Assert.StartsWith("Couldn't read | bad.mov", rows[1], StringComparison.Ordinal);
         Assert.EndsWith("can't read bad.mov: not media", rows[1], StringComparison.Ordinal);
         Assert.StartsWith("Passed | Report | JSON | good.mov", rows[2], StringComparison.Ordinal);
         Assert.Equal(2, window.Rows[2].GetLogicalDescendants().OfType<Button>().Count());
+
+        // With checks there, the drop zone keeps to its first line; files dragged over the window light it up.
+        var hints = window.DropZone.GetLogicalDescendants().OfType<TextBlock>().ToList();
+        Assert.True(hints[0].IsVisible);
+        Assert.False(hints[1].IsVisible);
+        window.Highlight(true);
+        Assert.NotNull(window.DropZone.Background);
+        window.Highlight(false);
+        Assert.Null(window.DropZone.Background);
     }
 
     [AvaloniaFact]

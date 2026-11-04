@@ -213,3 +213,8 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: the same review: a silent file's true peak reads "-Infinity dBTP" and passes; the format line shows ffprobe's
     unknown colour values as "?/?/bt709"
   - Status: Done (2026-11-04: `VideoFormat.Colour`, decisions/2026-11-04-raw-values.md)
+
+- The app's drop zone and narrow window
+  - Why: the same review: the drop zone always takes room and doesn't highlight on drag-over; at a narrow width the
+    hint is cut mid-word and file names clip without an ellipsis
+  - Status: Done (2026-11-04: decisions/2026-11-04-app-drop-zone.md)

@@ -18,7 +18,25 @@ sealed class MainWindow : Window
 {
     readonly AppModel _model;
     readonly StackPanel _list = new() { Spacing = 6 };
-    readonly TextBlock _hint = new() { Text = "Drop video files or folders here", FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center };
+    readonly TextBlock _hint = new()
+    {
+        Text = "Drop video files or folders here",
+        FontSize = 16,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        TextAlignment = TextAlignment.Center,
+        TextWrapping = TextWrapping.Wrap,
+    };
+
+    // The second line, shown until the first check, when the drop zone shrinks to its first line.
+    readonly TextBlock _more = new()
+    {
+        Text = "Each is checked where it is; its reports are written beside it.",
+        Opacity = 0.7,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        TextAlignment = TextAlignment.Center,
+        TextWrapping = TextWrapping.Wrap,
+    };
+
     readonly CancellationTokenSource _closing = new();
 
     public MainWindow(AppModel model)
@@ -63,27 +81,25 @@ sealed class MainWindow : Window
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(16),
             Margin = new Thickness(0, 0, 0, 12),
-            Child = new StackPanel
-            {
-                Spacing = 4,
-                Children =
-                {
-                    _hint,
-                    new TextBlock
-                    {
-                        Text = "Each is checked where it is; its reports are written beside it.",
-                        Opacity = 0.7,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                    },
-                },
-            },
+            Child = new StackPanel { Spacing = 4, Children = { _hint, _more } },
         };
-        DragDrop.SetAllowDrop(drop, true);
-        drop.AddHandler(DragDrop.DragOverEvent, (_, e) => e.DragEffects = e.DataTransfer.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None);
-        drop.AddHandler(DragDrop.DropEvent, (_, e) => Dropped(e.DataTransfer));
         DropZone = drop;
 
-        var layout = new DockPanel { Margin = new Thickness(16) };
+        // Files can be dropped anywhere in the window (on the list too); the drop zone lights up while they are over it.
+        var layout = new DockPanel { Margin = new Thickness(16), Background = Brushes.Transparent };
+        DragDrop.SetAllowDrop(layout, true);
+        layout.AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        {
+            bool files = e.DataTransfer.Contains(DataFormat.File);
+            e.DragEffects = files ? DragDropEffects.Copy : DragDropEffects.None;
+            Highlight(files);
+        });
+        layout.AddHandler(DragDrop.DragLeaveEvent, (_, _) => Highlight(false));
+        layout.AddHandler(DragDrop.DropEvent, (_, e) =>
+        {
+            Highlight(false);
+            Dropped(e.DataTransfer);
+        });
         DockPanel.SetDock(top, Dock.Top);
         DockPanel.SetDock(drop, Dock.Top);
         layout.Children.Add(top);
@@ -93,6 +109,11 @@ sealed class MainWindow : Window
 
         Render();
         ActualThemeVariantChanged += (_, _) => Render();
+        SizeChanged += (_, e) =>
+        {
+            if (e.PreviousSize.Width < NarrowWidth != e.NewSize.Width < NarrowWidth)
+                Render();
+        };
 
         // A measuring check's time goes up each second.
         var ticking = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -157,8 +178,24 @@ sealed class MainWindow : Window
         }
     }
 
+    // Below this width, a row's badge and buttons go on a line of their own.
+    const double NarrowWidth = 600;
+
+    bool Narrow => Bounds.Width is > 0 and < NarrowWidth;
+
+    // The drop zone while files are dragged over the window: the accent border on the info tint.
+    internal void Highlight(bool on)
+    {
+        DropZone.BorderBrush = on ? Brush.Parse("#2f6fa8") : Brushes.Gray;
+        DropZone.Background = on ? Brush.Parse(StatusStyle.Colours("info", ActualThemeVariant == ThemeVariant.Dark).Background) : null;
+    }
+
     void Render()
     {
+        // Once there are checks, the drop zone keeps to one line and leaves the room to them.
+        bool any = _model.Jobs.Count > 0;
+        _more.IsVisible = !any;
+        DropZone.Padding = new Thickness(any ? 8 : 16);
         _list.Children.Clear();
         foreach (var job in _model.Jobs)
             _list.Children.Add(Row(job));
@@ -184,13 +221,14 @@ sealed class MainWindow : Window
             },
         };
         var text = new StackPanel { Spacing = 2, Margin = new Thickness(10, 0) };
-        text.Children.Add(new TextBlock { Text = Path.GetFileName(job.File), FontWeight = FontWeight.SemiBold });
+        text.Children.Add(new TextBlock { Text = Path.GetFileName(job.File), FontWeight = FontWeight.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
 
-        // The folder (the name is above it), and how long it has been measuring or took.
+        // How long it has been measuring or took, then the folder (the name is above it): the time first, so a long
+        // folder trimmed at the end doesn't hide it.
         string time = job.Elapsed(DateTimeOffset.Now) is { } elapsed
-            ? (job.State == JobState.Measuring ? " · " : " · took ") + Job.Format(elapsed)
+            ? (job.State == JobState.Measuring ? "measuring " : "took ") + Job.Format(elapsed) + " · "
             : "";
-        text.Children.Add(new TextBlock { Text = job.Folder + time, Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
+        text.Children.Add(new TextBlock { Text = time + job.Folder, Opacity = 0.65, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
         if (job.Reason is { } reason)
             text.Children.Add(new TextBlock { Text = reason, FontSize = 12, TextWrapping = TextWrapping.Wrap });
         if (job.ShortError is { } error)
@@ -203,11 +241,21 @@ sealed class MainWindow : Window
         if (job.Json is { } json)
             links.Children.Add(Open("JSON", json, main: false));
 
+        // In a narrow window the badge and the buttons share a line and the text takes the width under them, rather
+        // than being squeezed between them a few words wide.
         var row = new DockPanel { Tag = job };
+        var head = Narrow ? new DockPanel { Margin = new Thickness(0, 0, 0, 4) } : row;
         DockPanel.SetDock(badge, Dock.Left);
         DockPanel.SetDock(links, Dock.Right);
-        row.Children.Add(badge);
-        row.Children.Add(links);
+        head.Children.Add(badge);
+        head.Children.Add(links);
+        if (Narrow)
+        {
+            DockPanel.SetDock(head, Dock.Top);
+            row.Children.Add(head);
+            text.Margin = default;
+        }
+
         row.Children.Add(text);
         return new Border { Padding = new Thickness(6), Child = row };
     }
