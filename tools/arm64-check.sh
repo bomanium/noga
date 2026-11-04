@@ -43,7 +43,10 @@ said=$(arm "$unpacked/squashfs-root/noga" --version)
 [ "$said" = "$version" ] || { echo "arm64-check: the AppImage's noga --version said: $said" >&2; exit 1; }
 echo "arm64-check: $image runs ($said)"
 
-# The checks: the same exit code and the same findings (check, severity, value, message) as x64's.
+# The checks: the same exit code and the same findings (check, severity, value, message) as x64's. Each value to 12
+# significant digits: floating-point sums can round their last bit differently on arm64 and x64 (Vector<T> is 128 bits
+# wide on one and 256 on the other), as a true peak of make-samples.sh's pink noise, which differs every run, once did
+# in its 15th digit; the messages compare the figures as the report shows them, exactly.
 out=$(mktemp -d)
 trap 'rm -rf "$unpacked" "$out"' EXIT
 for sample in "${samples[@]}"; do
@@ -51,7 +54,7 @@ for sample in "${samples[@]}"; do
   code_arm=0; arm "artifacts/noga-$version-linux-arm64/noga" check "$sample" --out "$out/arm64" > /dev/null || code_arm=$?
   code_x64=0; "artifacts/noga-$version-linux-x64/noga" check "$sample" --out "$out/x64" > /dev/null || code_x64=$?
   [ "$code_arm" = "$code_x64" ] || { echo "arm64-check: $name exits $code_arm on arm64, $code_x64 on x64" >&2; exit 1; }
-  findings() { python3 -c 'import json,sys; print(json.dumps([[f["check"], f["severity"], f.get("value"), f.get("message")] for f in json.load(open(sys.argv[1]))["findings"]], indent=1))' "$1"; }
+  findings() { python3 -c 'import json,sys; v=lambda x: float(f"{x:.12g}") if isinstance(x, float) else x; print(json.dumps([[f["check"], f["severity"], v(f.get("value")), f.get("message")] for f in json.load(open(sys.argv[1]))["findings"]], indent=1))' "$1"; }
   if ! diff <(findings "$out/x64/$name.qc.json") <(findings "$out/arm64/$name.qc.json") > "$out/diff.txt"; then
     echo "arm64-check: $name's findings differ on arm64 (> lines) from x64 (< lines):" >&2
     cat "$out/diff.txt" >&2
