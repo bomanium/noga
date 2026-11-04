@@ -218,3 +218,8 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: the same review: the drop zone always takes room and doesn't highlight on drag-over; at a narrow width the
     hint is cut mid-word and file names clip without an ellipsis
   - Status: Done (2026-11-04: decisions/2026-11-04-app-drop-zone.md)
+
+- The report and the JSON say when the file was checked and which file it was
+  - Why: the second UI/UX review (decisions/2026-11-04-rows-in-place.md): a report passed on to a broadcaster can't
+    show which version of the file it covers: no check date, full path, size or modification time
+  - Status: Done (2026-11-04: `CheckedFile`, decisions/2026-11-04-checked-file.md)

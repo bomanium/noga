@@ -10,11 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- The report and the JSON say when the file was checked and which file it was
-  - Why: the second UI/UX review (decisions/2026-11-04-rows-in-place.md): a report passed on to a broadcaster can't
-    show which version of the file it covers: no check date, full path, size or modification time
-  - Status: Open
-
 - A long check's progress in the web UI and the app
   - Why: the same review: a 60-minute ProRes master shows "measuring N s" for about 17 minutes, nothing more
   - Status: Open

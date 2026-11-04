@@ -7,6 +7,10 @@
   "exitCode": 1,
   "startTimecode": "10:00:00:00",
   "dropFrame": false,
+  "path": "/home/user/media-qc/samples/programme_prores.mov",
+  "size": 94201579,
+  "modified": "2026-11-03T21:14:59.650531+00:00",
+  "checked": "2026-11-04T15:18:37.4798833+00:00",
   "findings": [
     {
       "check": "format",
