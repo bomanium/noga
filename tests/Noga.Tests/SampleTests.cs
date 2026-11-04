@@ -74,6 +74,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         FfmpegCli.AssertCrop(file, measured);
         FfmpegCli.AssertPictureTypes(file, measured);
         FfmpegCli.AssertPackets(file, measured);
+        FfmpegCli.AssertDecode(file, measured);
     }
 
     // The ProRes programme by the 1080p25 ProRes template: its format is the template's, but make-samples.sh doesn't tag
@@ -199,5 +200,6 @@ public sealed class SampleTests : IClassFixture<Samples>
         FfmpegCli.AssertCrop(file, managed);
         FfmpegCli.AssertPictureTypes(file, managed);
         FfmpegCli.AssertPackets(file, managed);
+        FfmpegCli.AssertDecode(file, managed);
     }
 }

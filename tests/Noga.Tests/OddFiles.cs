@@ -30,6 +30,12 @@ public sealed class OddFiles : IDisposable
         ["short_audio.mp4"] = $"-f lavfi -i {Picture} -f lavfi -i sine=duration=0.5 {H264} -c:a aac",
         ["drop_frame.mov"] = $"-f lavfi -i testsrc2=s=320x180:r=30000/1001:d=2 -f lavfi -i {Tone} {ProRes} -c:a pcm_s24le -timecode 01:00:00;00",
 
+        // Sound only: a stem, an M4A with cover art (a video stream to FFmpeg, not a picture)
+        ["sound_only.wav"] = $"-f lavfi -i {Tone} -c:a pcm_s24le",
+        ["sound_only.mov"] = $"-f lavfi -i {Tone} -c:a pcm_s24le",
+        ["sound_only.aiff"] = $"-f lavfi -i {Tone} -c:a pcm_s16be",
+        ["cover_art.m4a"] = $"-f lavfi -i {Tone} -f lavfi -i color=red:s=64x64:d=0.04 -map 0 -map 1 -c:a aac -c:v mjpeg -disposition:v attached_pic",
+
         // Streams
         ["video_only.mp4"] = $"-f lavfi -i {Picture} {H264}",
         ["video_only.mov"] = $"-f lavfi -i {Picture} {ProRes}",

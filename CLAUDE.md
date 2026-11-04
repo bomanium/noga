@@ -102,7 +102,13 @@ What is next, in order: docs/backlog.md.
   `TailBlack` (`head.*`, `tail.*`: what the head and tail must have, a failure when short;
   decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (Noga.Ffmpeg's
   `InterlaceMeter`, vf_idet.c ported, on both paths' frames), reported as `interlace` and judged against field_order
-  as `interlace.flag` (a warning when they disagree: decisions/2026-11-03-interlacing.md).
+  as `interlace.flag` (a warning when they disagree: decisions/2026-11-03-interlacing.md). `Profile.Decode`: what was
+  decoded against what the file lists, in MOV/MP4/MXF (`VideoFormat.ListedFrames`, `StreamDuration`,
+  `VideoPackets.Count`, `PictureTypes`, each track's `ChannelMeasures.Duration`): `decode.frames` (cut short),
+  `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md).
+  `Measurements.HasPicture`: false for sound only (WAV, AIFF, an M4A whose cover art isn't a picture), measured on
+  the FFmpeg path's `MeasureSound`, reported as `picture` (its checks not made; timecodes at 25 fps), the head's bars
+  and black not judged.
 - `src/Noga.Ffmpeg`: the FFmpeg decoding path. `FfmpegMeasurer.Measure(file, profile)` fills `Measurements`
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,

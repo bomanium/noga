@@ -81,7 +81,42 @@ internal static partial class FfmpegCli
         Assert.Equal(expected.Bytes, got.Bytes);
         Assert.Equal(expected.BytesPerSecond, got.BytesPerSecond);
         Assert.Equal(expected.Keyframes, got.Keyframes);
+        Assert.Equal(expected.Count, got.Count);
     }
+
+    /// <summary>
+    /// What was decoded against what the file lists (Profile.DecodeFilter, SoundDecodeFilter): the frames the container
+    /// lists, the packets read and the frames decoded are ffprobe -count_packets -count_frames' exactly, and each audio
+    /// track's decoded length is the samples ffmpeg's astats counts, within one AAC frame (1024 samples).
+    /// </summary>
+    public static void AssertDecode(string file, Measurements measured)
+    {
+        if (measured.HasPicture)
+        {
+            using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-select_streams", "v:0", "-count_packets", "-count_frames", "-show_entries", "stream=nb_frames,nb_read_packets,nb_read_frames", "-of", "json"));
+            var stream = json.RootElement.GetProperty("streams")[0];
+            long Count(string name) => long.Parse(stream.GetProperty(name).GetString()!, CultureInfo.InvariantCulture);
+            Assert.NotNull(measured.Packets);
+            Assert.Equal(Count("nb_read_packets"), measured.Packets.Count);
+            Assert.Equal(Count("nb_read_frames"), measured.PictureTypes.Length);
+            Assert.Equal(stream.TryGetProperty("nb_frames", out _) ? (int)Count("nb_frames") : null, measured.Format?.Video?.ListedFrames);
+        }
+
+        var tracks = new List<(int Number, ChannelMeasures? Channels)> { (1, measured.Channels) };
+        tracks.AddRange(measured.OtherTracks.Select(t => (t.Number, t.Channels)));
+        foreach (var (number, channels) in tracks)
+        {
+            if (channels is null)
+                continue;
+            string log = Run(file, $"-map 0:a:{number - 1} -af astats=measure_overall=Number_of_samples:measure_perchannel=none");
+            long samples = long.Parse(NumberOfSamples().Match(log).Groups[1].Value, CultureInfo.InvariantCulture);
+            int rate = measured.Format!.Audio.Single(a => a.Number == number).SampleRate!.Value;
+            Assert.InRange(channels.Duration * rate, samples - 1024, samples + 1024);
+        }
+    }
+
+    [GeneratedRegex(@"Number of samples: (\d+)")]
+    private static partial Regex NumberOfSamples();
 
     /// <summary>The start timecode is the tag the ffprobe command line gives.</summary>
     public static void AssertStartTimecode(string file, Measurements measured) =>

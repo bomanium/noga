@@ -162,6 +162,12 @@ public sealed record Profile
     /// <summary>What the bitrate is checked against.</summary>
     public static string BitrateFilter => "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts_time,size (summed per second, exact)";
 
+    /// <summary>What the frames decoded are checked against: the frames the container lists, the packets read and the frames decoded.</summary>
+    public static string DecodeFilter => "ffprobe -select_streams v:0 -count_packets -count_frames -show_entries stream=nb_frames,nb_read_packets,nb_read_frames (exact; an MXF's listed frames its duration times r_frame_rate)";
+
+    /// <summary>What the sound decoded is checked against: the stream's duration and the samples ffmpeg decodes.</summary>
+    public static string SoundDecodeFilter => "ffprobe -show_entries stream=duration, against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
+
     /// <summary>What the shot list is checked against: not FFmpeg, which has no detector that gives these shots.</summary>
     public static string ShotsFilter => "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)";
 
@@ -205,6 +211,17 @@ public sealed record Profile
             });
         }
 
+        if (!measured.HasPicture)
+        {
+            findings.Add(new Finding
+            {
+                Check = "picture",
+                Severity = Severity.Info,
+                Message = "Sound only: the picture's checks (black, bars, freezes, interlacing, range, crop, frames, keyframes, bitrate, shots, the head's bars and black) aren't made; timecodes count at 25 fps",
+                CheckedAgainst = "ffprobe -show_streams (no video stream but cover art)",
+            });
+        }
+
         FormatFindings(findings, measured);
 
         foreach (var bars in measured.Bars)
@@ -234,6 +251,7 @@ public sealed record Profile
         Range(findings, measured, At);
         Crop(findings, measured.Crop);
         PictureTypes(findings, measured.PictureTypes);
+        Decode(findings, measured, frame, At);
         Keyframes(findings, measured, At);
         Bitrate(findings, measured, At);
         Shots(findings, measured.Shots, At);
@@ -502,6 +520,90 @@ public sealed record Profile
         into.Add(new Finding { Check = "frames", Severity = Severity.Info, Message = message, Value = types.Length, Unit = "frames", CheckedAgainst = PictureTypesFilter });
     }
 
+    // What was decoded against what the file lists (docs/decisions/2026-11-04-odd-files.md): a picture that ends before
+    // the frames the container lists (cut short), frames read that don't decode (damaged) and a track whose sound ends
+    // more than a frame before its stream's duration each fail. Judged where the container indexes its streams (MOV,
+    // MP4 and their kin, MXF: one sample a frame, durations that are the essence's); elsewhere (MKV, MPEG, AVI) they
+    // are estimates or absent, and the frames decoded are reported.
+    static void Decode(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
+    {
+        if (measured.Format is not { } format)
+            return;
+        string container = format.Container;
+        bool mxf = container == "mxf";
+        if (!mxf && !container.StartsWith("mov,", StringComparison.Ordinal) && container is not ("wav" or "aiff"))
+            return;
+        if (measured.Packets is { } packets && format.Video is { } video)
+            DecodePicture(into, measured, packets, video, mxf, frame, at);
+
+        var tracks = new List<(int Number, ChannelMeasures? Channels)> { (1, measured.Channels) };
+        tracks.AddRange(measured.OtherTracks.Select(t => (t.Number, t.Channels)));
+        foreach (var (number, channels) in tracks)
+        {
+            if (channels is not { } c || format.Audio.FirstOrDefault(a => a.Number == number)?.StreamDuration is not { } length)
+                continue;
+            bool whole = c.Duration >= length - frame;
+            into.Add(new Finding
+            {
+                Check = "decode.sound",
+                Severity = whole ? Severity.Pass : Severity.Failure,
+                Message = whole
+                    ? Invariant($"The sound decoded to the end: {c.Duration:0.00} s of the {length:0.00} s the track lists")
+                    : Invariant($"The sound ends {length - c.Duration:0.00} s early: {c.Duration:0.00} s of the {length:0.00} s the track lists decoded"),
+                Value = c.Duration,
+                Unit = "s",
+                Start = whole ? null : at(c.Duration),
+                End = whole ? null : at(length),
+                Track = measured.OtherTracks.Count > 0 ? number : null,
+                CheckedAgainst = SoundDecodeFilter,
+            });
+        }
+    }
+
+    static void DecodePicture(List<Finding> into, Measurements measured, VideoPackets packets, VideoFormat video, bool mxf, double frame, Func<double, Position> at)
+    {
+        long decoded = measured.PictureTypes.Length, read = packets.Count;
+        long? listed = video.ListedFrames ?? (mxf && video.StreamDuration is { } seconds && video.Rate is { } rate ? (long)Math.Round(seconds * rate) : (long?)null);
+        if (listed is { } frames && read < frames)
+        {
+            into.Add(new Finding
+            {
+                Check = "decode.frames",
+                Severity = Severity.Failure,
+                Message = Invariant($"The picture ends early: {decoded} of the {frames} frames the file lists decoded ({read} in the file), {(frames - decoded) * frame:0.00} s missing"),
+                Value = decoded,
+                Unit = "frames",
+                Start = at(decoded * frame),
+                End = at(frames * frame),
+                CheckedAgainst = DecodeFilter,
+            });
+        }
+        else if (decoded < read)
+        {
+            into.Add(new Finding
+            {
+                Check = "decode.errors",
+                Severity = Severity.Failure,
+                Message = Invariant($"{read - decoded} of the {read} frames in the file don't decode"),
+                Value = read - decoded,
+                Unit = "frames",
+                CheckedAgainst = DecodeFilter,
+            });
+        }
+        else if (listed is { } all)
+        {
+            into.Add(new Finding
+            {
+                Check = "decode.frames",
+                Severity = Severity.Pass,
+                Message = Invariant($"Every frame the file lists decoded: {decoded} of {all}"),
+                Value = decoded,
+                Unit = "frames",
+                CheckedAgainst = DecodeFilter,
+            });
+        }
+    }
+
     // The longest interval between two keyframes (a single keyframe's: the file's length).
     static void Keyframes(List<Finding> into, Measurements measured, Func<double, Position> at)
     {
@@ -595,7 +697,8 @@ public sealed record Profile
     void HeadAndTail(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
     {
         var bars = measured.Bars.FirstOrDefault(b => b.Start < frame / 2);
-        if (HeadBars is { } headBars)
+        bool picture = measured.HasPicture;
+        if (HeadBars is { } headBars && picture)
         {
             double got = bars.Duration;
             into.Add(Need("head.bars", got, headBars, got > 0 ? Invariant($"Bars at the head for {got:0.00} s") : "No bars at the head", BarsFilter, bars));
@@ -608,7 +711,7 @@ public sealed record Profile
             into.Add(Need("head.tone", got, headTone, got > 0 ? Invariant($"Line-up tone at the head for {got:0.00} s") : "No line-up tone at the head", ToneFilter, new TimeRange(tone.Start, tone.End)));
         }
 
-        if (HeadBlack is { } headBlack)
+        if (HeadBlack is { } headBlack && picture)
         {
             double from = bars.Duration > 0 ? bars.End : 0;
             var black = measured.Black.FirstOrDefault(b => b.Start <= from + frame && b.End > from);
@@ -616,7 +719,7 @@ public sealed record Profile
             into.Add(Need("head.black", got, headBlack, got > 0 ? Invariant($"Black with silence before the programme for {got:0.00} s") : "No black with silence before the programme", BlackFilter + "; " + SilenceFilter, black));
         }
 
-        if (TailBlack is { } tailBlack)
+        if (TailBlack is { } tailBlack && picture)
         {
             var black = measured.Black.FirstOrDefault(b => b.End > measured.Duration - (frame / 2));
             double got = Silent(black);

@@ -179,3 +179,12 @@ Finished items from [backlog.md](backlog.md), oldest first.
     shipped inside the release (decisions/2026-11-03-launch-readiness.md)
   - Status: Done (2026-11-03: README.md rewritten, with docs/example/'s reports and docs/images/'s screenshots; the
     report's "checked against" column now wraps, as its filter strings made the page wider than the window)
+
+- Robustness on odd files: generated broken and unusual files (truncated, no moov, variable frame rate, audio-only,
+  video-only, 10-bit 4:2:2 and 4K, HDR-tagged, several video streams), each a clean report or a clear read error
+  (exit 2), never an unhandled exception
+  - Why: small shops get messy files, and a crash on the first one costs trust; no test reads a broken file yet
+    (decisions/2026-11-03-launch-readiness.md)
+  - Status: Done (2026-11-04: 48 odd files checked, decisions/2026-11-04-odd-files.md: the crashes and the queue
+    fixed, damaged MP4s to the FFmpeg path, `OddFileTests` on 30 of them; the `decode` check fails a picture or sound
+    that ends early, or frames that don't decode; sound-only files are checked for their sound)
