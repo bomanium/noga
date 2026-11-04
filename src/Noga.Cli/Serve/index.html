@@ -184,13 +184,14 @@ function show(jobs) {
       links.append(el("a", { className: "open", href: `/api/jobs/${job.id}/report.html`, target: "_blank", rel: "noopener", textContent: "Report" }));
       links.append(el("a", { className: "json", href: `/api/jobs/${job.id}/report.json`, target: "_blank", rel: "noopener", textContent: "JSON" }));
     }
-    // The folder (the name is above it), and how long it has been measuring or took.
-    const time = job.started ? (state === "measuring" ? " · " + elapsed(job.started) : " · took " + elapsed(job.started, job.finished)) : "";
+    // How long it has been measuring or took, then the folder (the name is above it): the time first, so a long
+    // folder cut off at the end doesn't hide it.
+    const time = job.started ? (state === "measuring" ? "measuring " + elapsed(job.started) : "took " + elapsed(job.started, job.finished)) + " · " : "";
     const li = el("li", {},
       el("span", { className: "state " + tone, textContent: label }),
       el("span", { className: "file", textContent: file, title: job.file }),
       links,
-      el("span", { className: "where", textContent: job.folder + time, title: job.file }));
+      el("span", { className: "where", textContent: time + job.folder, title: job.file }));
     if (job.reason) li.append(el("span", { className: "reason", textContent: job.reason }));
     if (job.shortError) li.append(el("span", { className: "error", textContent: job.shortError }));
     return li;
