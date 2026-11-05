@@ -11,35 +11,58 @@ public static class Pictures
 {
     /// <summary>
     /// Decodes <paramref name="path"/>'s video with FFmpeg's libraries and measures every frame, into
-    /// <paramref name="freezes"/> too when given, telling <paramref name="at"/> each frame's time (seconds).
+    /// <paramref name="freezes"/> and <paramref name="interlace"/> too when given, telling <paramref name="at"/> each
+    /// frame's time (seconds); the meters take the frames on threads of their own (<see cref="FrameMeters"/>).
     /// </summary>
     /// <exception cref="InvalidDataException">The video isn't planar YUV of 8 to 16 bits.</exception>
     public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null)
     {
         Libraries.Load();
         using var decoder = new FrameDecoder(path, new FrameDecoderOptions { CancellationToken = cancellationToken });
-        PictureMeter? meter = null;
-        while (decoder.Next())
+        FrameMeters? meters = null;
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            using var frame = decoder.TakeFrame();
-            meter ??= new PictureMeter(PictureFormat.Of(frame, decoder.TimeBase, 0)
-                ?? throw new InvalidDataException($"{path}: {frame.PixelFormat} isn't planar YUV of 8 to 16 bits."));
-            meter.Add(frame);
-            at?.Invoke(frame.Pts * (double)decoder.TimeBase.Num / decoder.TimeBase.Den);
-            if (freezes is not null || interlace is not null)
+            while (decoder.Next())
             {
-                var format = PictureFormat.Of(frame, decoder.TimeBase, 0)!;
-                var y = frame.GetPlane(0, out int yStride);
-                var u = frame.GetPlane(1, out int uStride);
-                var v = frame.GetPlane(2, out int vStride);
-                double unit = (double)decoder.TimeBase.Num / decoder.TimeBase.Den;
-                freezes?.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, frame.Pts * unit);
-                interlace?.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth);
-            }
-        }
+                cancellationToken.ThrowIfCancellationRequested();
+                var frame = decoder.TakeFrame();
+                if (meters is null)
+                {
+                    // The first frame's format: the meters' and the planes' layout.
+                    if (PictureFormat.Of(frame, decoder.TimeBase, 0) is not { } format)
+                    {
+                        frame.Dispose();
+                        throw new InvalidDataException($"{path}: {frame.PixelFormat} isn't planar YUV of 8 to 16 bits.");
+                    }
 
-        return meter?.Measures;
+                    meters = new FrameMeters(format, freezes, interlace, at, cancellationToken);
+                }
+
+                meters.Post(new Decoded(frame));
+            }
+
+            return meters?.Finish();
+        }
+        finally
+        {
+            meters?.Dispose();
+        }
+    }
+
+    // FFmpeg's frame, as the meters read it.
+    sealed class Decoded(DecodedFrame frame) : IMeteredFrame
+    {
+        public int Width => frame.Width;
+
+        public int Height => frame.Height;
+
+        public long Pts => frame.Pts;
+
+        public PictureType Type => frame.PictureType;
+
+        public ReadOnlySpan<byte> Plane(int index, out int stride) => frame.GetPlane(index, out stride);
+
+        public void Dispose() => frame.Dispose();
     }
 
     /// <summary><paramref name="measured"/> with black, bars, pixels outside broadcast range, the active picture and each frame's picture type.</summary>

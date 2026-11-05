@@ -25,9 +25,9 @@ public static class FfmpegMeasurer
     /// <summary>The frame rate a file with sound only counts its timecodes at.</summary>
     const int SoundOnlyRate = 25;
 
-    // Each stage's share of a check's time (docs/notes/performance.md): the picture pass, the shots' second decode,
-    // and the sound, almost nothing.
-    const double PictureShare = 0.78, ShotsShare = 0.2;
+    // Each part's share of a check's progress (docs/notes/performance.md): the picture pass, the shots' own decode,
+    // and the sound, almost nothing. They run side by side, so the check is done when the slowest is.
+    const double PictureShare = 0.78, ShotsShare = 0.2, SoundShare = 0.02;
 
     /// <summary>
     /// Measures <paramref name="path"/> with <paramref name="profile"/>'s measurement settings, telling
@@ -60,29 +60,46 @@ public static class FfmpegMeasurer
         if (video is null || measured.Format is { Video: null })
         {
             measured = StartTimecode.Add(measured with { RateNumerator = SoundOnlyRate, RateDenominator = 1, NotMeasured = [], HasPicture = false }, path, cancellationToken);
-            stages.Begin(1);
-            return MeasureSound(path, profile, measured, cancellationToken, stages);
+            return MeasureSound(path, profile, measured, cancellationToken, stages.Together(1)[0]);
         }
 
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
         double duration = measured.Duration;
-        stages.Begin(PictureShare);
-        measured = Pictures.Add(measured, Pictures.Measure(path, cancellationToken, freezes, interlace, seconds => stages.AtSeconds(seconds, duration)), profile) with
+        var parts = stages.Together(PictureShare, ShotsShare, SoundShare);
+
+        // The picture pass, the shots (ShotDetector decodes the video again: the frame source it would take the
+        // picture pass's frames through has no 10-bit 4:2:2, ProRes HQ's) and the sound, side by side.
+        PictureMeasures? pictures = null;
+        VideoPackets? packets = null;
+        ShotDetector.DetectionResult? shots = null;
+        var sound = measured;
+        SideBySide.Run(
+            cancellationToken,
+            token =>
+            {
+                pictures = Pictures.Measure(path, token, freezes, interlace, seconds => parts[0].Report(duration > 0 ? seconds / duration : 0));
+                packets = Packets.Read(path, token);
+            },
+            token => shots = Shots.Detect(path, token, parts[1]),
+            token =>
+            {
+                if (info.HasAudio)
+                    sound = MeasureSound(path, profile, measured, token, parts[2]);
+            });
+        foreach (var part in parts)
+            part.Report(1);
+
+        measured = Pictures.Add(sound, pictures, profile) with
         {
             Freezes = freezes.Finish(),
             Interlace = interlace.Finish(),
-            Packets = Packets.Read(path, cancellationToken),
+            Packets = packets,
         };
-        stages.Begin(ShotsShare);
-        measured = Shots.Add(measured, Shots.Detect(path, cancellationToken, new ReportNow<double>(stages.At)));
-        stages.Begin(1 - PictureShare - ShotsShare);
-        var sound = info.HasAudio ? MeasureSound(path, profile, measured, cancellationToken, stages) : measured;
-        stages.At(1);
-        return sound;
+        return Shots.Add(measured, shots!);
     }
 
-    static Measurements MeasureSound(string path, Profile profile, Measurements measured, CancellationToken cancellationToken, CheckProgress stages)
+    static Measurements MeasureSound(string path, Profile profile, Measurements measured, CancellationToken cancellationToken, IProgress<double> progress)
     {
         // Every audio track, each from the end of its own line-up (docs/decisions/2026-11-01-every-audio-track.md);
         // the first's figures are the file's, the others' each a TrackMeasures.
@@ -91,7 +108,7 @@ public static class FfmpegMeasurer
         for (int stream = 0; stream < tracks; stream++)
         {
             all.Add(MeasureTrack(path, profile, stream, measured.Duration, cancellationToken));
-            stages.At((stream + 1.0) / tracks);
+            progress.Report((stream + 1.0) / tracks);
         }
 
         var first = all[0];

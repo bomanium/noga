@@ -116,7 +116,12 @@ What is next, in order: docs/backlog.md.
   packets (av_read_frame through FFmpeg.AutoGen: keyframes and bitrate, as ffprobe -show_packets). `Shots`: the
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
   the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
-  `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths. `CheckProgress`: how far a check has got, its stages weighted by their share of the time, for both paths (`IProgress<double>` through `Checker.Run` into `Job.Progress`; a row's "measuring 42% · about 9 min left", `Job.Time`: decisions/2026-11-04-progress.md).
+  `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths. `FrameMeters`: the picture's meters (PictureMeter on `FrameMeters.PictureLanes` threads, each frame's measures
+  joined; `FreezeMeter`; `InterlaceMeter`) each on a thread of its own while the next frames decode, for both paths'
+  frames (`IMeteredFrame`), through `Lanes` (each item to every consumer, disposed once all are done);
+  `SideBySide.Run`: the picture pass, the shots and the sound at the same time, failing with the first part's error
+  in order (decisions/2026-11-05-faster-single-checks.md). `CheckProgress`: how far a check has got, its stages (or
+  parts side by side, `Together`) weighted by their share of the time, for both paths (`IProgress<double>` through `Checker.Run` into `Job.Progress`; a row's "measuring 42% · about 9 min left", `Job.Time`: decisions/2026-11-04-progress.md).
 - `src/Noga.Managed`: the managed decoding path, for H.264/AAC in MP4. `ManagedMeasurer` (`CanMeasure`,
   `Measure`) demuxes and decodes the H.264 and AAC with ManagedCodecs and measures with FrameReader's managed meters
   (LoudnessMeter, ReferenceToneFinder, SilenceFinder, PictureMeter) for files with one audio track (several go to the
