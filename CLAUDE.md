@@ -6,9 +6,9 @@ pipelines) of a file's black spans, colour bars, line-up tone, silences, loudnes
 range, crop/letterbox, frame types, bitrate and keyframes, and its shot list, each figure saying how it is checked
 against FFmpeg. Not a Netflix/DPP compliance replacement. MIT (LICENSE), earning from support, integration and custom
 profiles rather than copies (decisions/2026-11-03-mit-licence.md). Named Noga (Swedish: careful, thorough; the command
-`noga`, the app `noga-app`), formerly the working name media-qc (decisions/2026-11-03-name-noga.md); the repository
-goes public once the owner has renamed it on GitHub. Repo: `github.com/bomanium/noga` (private until then; formerly
-`bomanium/media-qc`, which GitHub redirects). Where the idea came from, the market and the gaps: docs/notes/origin.md.
+`noga`, the app `noga-app`), formerly the working name media-qc (decisions/2026-11-03-name-noga.md); public since
+2026-11-05, a project rather than a product (decisions/2026-11-05-going-public.md). Repo: `github.com/bomanium/noga`
+(formerly `bomanium/media-qc`, which GitHub redirects). Where the idea came from, the market and the gaps: docs/notes/origin.md.
 
 It builds on the owner's public libraries: ManagedCodecs (pure C# H.264/MJPEG/AAC decoding), ShotDetector and
 FrameReader (FrameReader reads anything through FFmpeg in-process), and the picture and sound measures in
@@ -44,7 +44,7 @@ What is next, in order: docs/backlog.md.
   shipped beside them. No GPL or AGPL, also not through an FFmpeg build with `--enable-gpl` (libx264 and the like).
   Every dependency and its licence goes in docs/dependencies.md, in the PR that adds it.
 - **Not published to NuGet**: an application (`IsPackable` is false in Directory.Build.props). CI runs on
-  ubuntu only (Actions minutes while private; Windows costs 2x, macOS 10x); external actions are pinned by commit SHA with
+  ubuntu only (chosen while private, when Windows cost 2x and macOS 10x; a public repository's standard runners are free); external actions are pinned by commit SHA with
   the tag in a comment (`uses: actions/checkout@<sha> # v7`; `git ls-remote https://github.com/<owner>/<repo>
   refs/tags/<tag>`), and each workflow's token defaults to `contents: read`.
 - **Decisions are the owner's.** Ask with the multiple-choice prompt (AskUserQuestion), the recommendation first,
