@@ -22,11 +22,7 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Waiting
 
-- The repository renamed and public, and the name's last checks
-  - Why: decisions/2026-11-03-name-noga.md: the code is renamed Noga; the owner renames the GitHub repository to
-    bomanium/noga (Settings, General), checks noga.* domains and the trademark registers (EUIPO, USPTO: NOGA in
-    classes 9 and 42), then makes it public (decisions/2026-11-03-mit-licence.md)
-  - Status: Waiting (on the owner)
+Nothing waiting.
 
 ## Maybe
 

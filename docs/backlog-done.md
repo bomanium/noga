@@ -269,3 +269,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
     R 128 s1's short-term maximum and the like, checked against ebur128's readings every 100 ms
   - Status: Done (2026-11-05: the loudest momentary and short-term loudness on every report, profile files' limits
     and a range window, a failure past them; ebu-r128-s1 for short-form content; decisions/2026-11-05-short-term-loudness.md)
+
+- The repository renamed and public, and the name's last checks
+  - Why: decisions/2026-11-03-name-noga.md: the code is renamed Noga; the owner renames the GitHub repository to
+    bomanium/noga, checks noga.* domains and the trademark registers, then makes it public
+  - Status: Done (2026-11-05: renamed to bomanium/noga, the default branch set to main, public; the domain and
+    trademark checks not needed for a project rather than a product: decisions/2026-11-05-going-public.md)
