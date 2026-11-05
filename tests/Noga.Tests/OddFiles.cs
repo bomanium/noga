@@ -11,6 +11,10 @@ public sealed class OddFiles : IDisposable
 {
     const string Picture = "testsrc2=s=320x180:r=25:d=2";
     const string Tone = "sine=frequency=1000:duration=2:sample_rate=48000";
+
+    // 20 s, so that a gap or two is under 1% of the steps between frames (a variable frame rate over it).
+    const string Long = "testsrc2=s=320x180:r=25:d=20";
+    const string LongTone = "sine=frequency=1000:duration=20:sample_rate=48000";
     const string H264 = "-c:v libx264 -preset ultrafast -pix_fmt yuv420p";
     const string ProRes = "-c:v prores_ks -profile:v 3";
 
@@ -31,6 +35,11 @@ public sealed class OddFiles : IDisposable
         ["sound_short.mov"] = $"-f lavfi -i {Picture} -f lavfi -i sine=frequency=1000:duration=1.88:sample_rate=48000 {ProRes} -c:a pcm_s24le",
         ["loud.mov"] = $"-f lavfi -i testsrc2=s=320x180:r=25:d=4 -f lavfi -i anoisesrc=c=pink:a=1:d=4:r=48000 {ProRes} -c:a pcm_s24le",
         ["sound_late.mov"] = $"-f lavfi -i {Picture} -itsoffset 0.2 -f lavfi -i sine=frequency=1000:duration=1.8:sample_rate=48000 {ProRes} -c:a pcm_s24le",
+        ["dropped.mov"] = $"-f lavfi -i {Long},select=not(between(n\\,20\\,22)) -f lavfi -i {LongTone} {ProRes} -fps_mode passthrough -c:a pcm_s24le",
+        ["variable_rate.mov"] = $"-f lavfi -i {Long},setpts=(N+0.3*floor(N/2))/25/TB -f lavfi -i {LongTone} {ProRes} -fps_mode passthrough -c:a pcm_s24le",
+        ["dropped.mp4"] = $"-f lavfi -i {Long},select=not(eq(n\\,10)+eq(n\\,30)) -f lavfi -i {LongTone} {H264} -fps_mode passthrough -c:a aac",
+        ["all_tone.mov"] = $"-f lavfi -i testsrc2=s=320x180:r=25:d=23 -f lavfi -i {LongTone} {ProRes} -c:a pcm_s24le",
+        ["all_tone.mp4"] = $"-f lavfi -i testsrc2=s=320x180:r=25:d=23 -f lavfi -i {LongTone} {H264} -c:a aac",
         ["drop_frame.mov"] = $"-f lavfi -i testsrc2=s=320x180:r=30000/1001:d=2 -f lavfi -i {Tone} {ProRes} -c:a pcm_s24le -timecode 01:00:00;00",
 
         // Sound only: a stem, an M4A with cover art (a video stream to FFmpeg, not a picture)

@@ -269,3 +269,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
     R 128 s1's short-term maximum and the like, checked against ebur128's readings every 100 ms
   - Status: Done (2026-11-05: the loudest momentary and short-term loudness on every report, profile files' limits
     and a range window, a failure past them; ebu-r128-s1 for short-form content; decisions/2026-11-05-short-term-loudness.md)
+
+- Dropped frames: gaps in the video's timestamps
+  - Why: a frame missing from the file (a capture or encode that dropped it) isn't caught: decode.frames compares with
+    the file's own count, which leaves it out
+  - Status: Done (2026-11-05: `frames.dropped`, each gap a failure unless a profile's `maxDroppedFrames` allows it;
+    `frames.variable-rate`, a warning, its gaps not judged; each packet's time ffprobe -show_packets' on both paths;
+    decisions/2026-11-05-dropped-frames.md)

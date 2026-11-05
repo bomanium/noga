@@ -170,6 +170,7 @@ public static class Profiles
             TailBlack = file.TailBlack ?? start.TailBlack,
             SyncFrames = file.SyncFrames ?? start.SyncFrames,
             SyncFailure = file.SyncFailure ?? start.SyncFailure,
+            MaxDroppedFrames = file.MaxDroppedFrames ?? start.MaxDroppedFrames,
             MaxMomentary = file.MaxMomentary ?? start.MaxMomentary,
             MaxShortTerm = file.MaxShortTerm ?? start.MaxShortTerm,
             MinRange = file.MinRange ?? start.MinRange,
@@ -190,8 +191,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: toneLevel is at most 0 dBFS; toneTolerance, headBars, headTone, headBlack and tailBlack at least 0.", nameof(json));
         if (profile.MaxMomentary is > 0 || profile.MaxShortTerm is > 0 || profile.MinRange is < 0 || profile.MaxRange is < 0 || profile.MinRange > profile.MaxRange)
             throw new ArgumentException($"{source}: maxMomentary and maxShortTerm are at most 0 LUFS; minRange and maxRange at least 0, the first no more than the second.", nameof(json));
-        if (profile.SyncFrames < 0 || profile.SyncFailure <= 0)
-            throw new ArgumentException($"{source}: syncFrames is at least 0, syncFailure positive.", nameof(json));
+        if (profile.SyncFrames < 0 || profile.SyncFailure <= 0 || profile.MaxDroppedFrames < 0)
+            throw new ArgumentException($"{source}: syncFrames and maxDroppedFrames are at least 0, syncFailure positive.", nameof(json));
         if (profile.Format is { } format)
             Check(format, source);
         return profile;
@@ -225,6 +226,7 @@ internal sealed record ProfileFile(
     double? TailBlack,
     int? SyncFrames,
     double? SyncFailure,
+    int? MaxDroppedFrames,
     double? MaxMomentary,
     double? MaxShortTerm,
     double? MinRange,

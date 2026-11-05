@@ -49,6 +49,11 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         // 2026-11-05: 0082W, whose default tolerance is one frame; the catalogue has no item for a start offset.
         "av.length" => new("0082W", "Audio / Video Duration Match", "2.0"),
 
+        // Gaps in the picture's timestamps and a variable frame rate (docs/decisions/2026-11-05-dropped-frames.md), read
+        // from the API on 2026-11-05: 0108F, Timestamp Discontinuity; 0042F, the frame rate.
+        "frames.dropped" => new("0108F", "Timestamp Discontinuity", "2.0"),
+        "frames.variable-rate" => new("0042F", "Frame Rate", "2.0"),
+
         // The delivery format (docs/decisions/2026-11-03-delivery-format.md), read from the API on 2026-11-03: the
         // essence's (F) items, a wrapper's (W) where the catalogue has no other.
         "format.video-codec" => new("0105F", "Video Codec", "1.0"),

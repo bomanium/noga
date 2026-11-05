@@ -111,6 +111,15 @@ public sealed class OddFileTests : IClassFixture<OddFiles>
     public void WhatWasDecodedIsFfprobesAndFfmpegs(string name) =>
         FfmpegCli.AssertDecode(_files.Path(name), Ffmpeg.FfmpegMeasurer.Measure(_files.Path(name), Profile.EbuR128));
 
+    // Sound that is all tone, shorter than the picture: no line-up (it runs to the sound's end), so measured from the start.
+    [Fact]
+    public void ToneToTheEndOfShortSoundIsNoLineUp()
+    {
+        Assert.True(Managed.ManagedMeasurer.CanMeasure(_files.Path("all_tone.mp4")));
+        Assert.Equal(0, Ffmpeg.FfmpegMeasurer.Measure(_files.Path("all_tone.mov"), Profile.EbuR128).LoudnessFrom);
+        Assert.Equal(0, Managed.ManagedMeasurer.Measure(_files.Path("all_tone.mp4"), Profile.EbuR128).LoudnessFrom);
+    }
+
     // Sound only (docs/decisions/2026-11-04-odd-files.md): its sound checked and judged, its picture's checks not made, the
     // head's bars and black not asked of it.
     [Theory]

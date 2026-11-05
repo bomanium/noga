@@ -118,6 +118,12 @@ public sealed record Profile
     public double SyncFailure { get; init; } = 1;
 
     /// <summary>
+    /// How many frames may be missing from the picture (gaps in its timestamps) before it fails; 0, any gap fails
+    /// (docs/decisions/2026-11-05-dropped-frames.md).
+    /// </summary>
+    public int MaxDroppedFrames { get; init; }
+
+    /// <summary>
     /// The loudest momentary loudness allowed (LUFS, ebur128's M); null: reported, not judged. Louder fails
     /// (docs/decisions/2026-11-05-short-term-loudness.md).
     /// </summary>
@@ -133,7 +139,13 @@ public sealed record Profile
     public double? MaxRange { get; init; }
 
     /// <summary>What the sound's length is checked against, as the picture's.</summary>
-    public static string AvLengthFilter => "ffprobe -select_streams v:0 -count_frames (nb_read_frames times the frame's duration) against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
+    public static string AvLengthFilter => "ffprobe -select_streams v:0 -count_frames (nb_read_frames, and the frames missing in its gaps, times the frame's duration) against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
+
+    /// <summary>What the gaps in the picture's timestamps are checked against.</summary>
+    public static string DroppedFilter => "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts,dts (each packet's, exact): a step over 1.5 frames is a gap of its frames less one";
+
+    /// <summary>What a variable frame rate is checked against.</summary>
+    public static string VariableRateFilter => "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts,dts (each packet's, exact): over 1% of the steps (and more than one) not one frame, within half a frame, at r_frame_rate";
 
     /// <summary>What the sound's start is checked against, as the picture's.</summary>
     public static string AvStartFilter => "ffprobe -show_entries stream=start_time (each stream's, exact)";
@@ -288,7 +300,8 @@ public sealed record Profile
         Crop(findings, measured.Crop);
         PictureTypes(findings, measured.PictureTypes);
         Decode(findings, measured, frame, At);
-        AudioVideo(findings, measured, frame, At);
+        long dropped = Dropped(findings, measured, frame, At);
+        AudioVideo(findings, measured, frame, dropped, At);
         Keyframes(findings, measured, At);
         Bitrate(findings, measured, At);
         Shots(findings, measured.Shots, At);
@@ -682,11 +695,12 @@ public sealed record Profile
 
     // Each audio track's length and start against the picture's (docs/decisions/2026-11-05-av-lengths.md): what decoded
     // (the picture's frames, the track's samples) and where the streams start (ffprobe's start_time).
-    void AudioVideo(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
+    // The picture's length counts the frames missing from it (Dropped): the picture runs on through a gap.
+    void AudioVideo(List<Finding> into, Measurements measured, double frame, long dropped, Func<double, Position> at)
     {
         if (!measured.HasPicture || measured.PictureTypes.Length == 0)
             return;
-        double picture = measured.PictureTypes.Length * frame;
+        double picture = (measured.PictureTypes.Length + dropped) * frame;
         var tracks = new List<(int Number, ChannelMeasures? Channels)> { (1, measured.Channels) };
         tracks.AddRange(measured.OtherTracks.Select(t => (t.Number, t.Channels)));
         int? Track(int number) => measured.OtherTracks.Count > 0 ? number : null;
@@ -739,6 +753,96 @@ public sealed record Profile
             });
         }
     }
+
+    // The steps between the picture's frames, in display order (docs/decisions/2026-11-05-dropped-frames.md): one frame,
+    // within half a frame, is regular; over 1.5 frames is a gap, its frames less one missing. Over 1% of the steps (and
+    // more than one) not regular is a variable frame rate, a warning, and its gaps aren't judged: a phone's or a screen
+    // recording's steps are irregular by design. Missing frames over MaxDroppedFrames fail, each gap a finding (the
+    // first MaxGaps; the rest in one); within it, they are reported. Gives the frames missing where judged, else 0.
+    long Dropped(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
+    {
+        if (!measured.HasPicture || measured.Packets is not { Times.Count: > 1 } packets || !(frame > 0))
+            return 0;
+        var times = packets.Times;
+        int steps = times.Count - 1, irregular = 0;
+        var gaps = new List<(double After, double Next, long Missing)>();
+        for (int i = 1; i < times.Count; i++)
+        {
+            double step = (times[i] - times[i - 1]) / frame;
+            if (Math.Abs(step - 1) <= 0.5)
+                continue;
+            irregular++;
+            if (step > 1.5)
+                gaps.Add((times[i - 1], times[i], (long)Math.Round(step) - 1));
+        }
+
+        if (irregular > 1 && irregular > steps * 0.01)
+        {
+            into.Add(new Finding
+            {
+                Check = "frames.variable-rate",
+                Severity = Severity.Warning,
+                Message = Invariant($"Variable frame rate: {irregular} of the {steps} steps between frames aren't one frame at {1 / frame:0.###} fps; gaps (dropped frames) not judged"),
+                Value = irregular,
+                Unit = "steps",
+                CheckedAgainst = VariableRateFilter,
+            });
+            return 0;
+        }
+
+        long missing = gaps.Sum(g => g.Missing);
+        if (gaps.Count == 0)
+        {
+            into.Add(new Finding
+            {
+                Check = "frames.dropped",
+                Severity = Severity.Pass,
+                Message = Invariant($"No frames missing: each of the {times.Count} frames one frame after the last"),
+                Value = 0,
+                Unit = "frames",
+                CheckedAgainst = DroppedFilter,
+            });
+            return 0;
+        }
+
+        var severity = missing > MaxDroppedFrames ? Severity.Failure : Severity.Info;
+        string allowed = severity == Severity.Info ? Invariant($" (the profile allows {MaxDroppedFrames})") : "";
+        foreach (var (after, next, count) in gaps.Take(MaxGaps))
+        {
+            into.Add(new Finding
+            {
+                Check = "frames.dropped",
+                Severity = severity,
+                Message = Invariant($"{count} frame{(count == 1 ? "" : "s")} missing: the picture jumps {next - after:0.000} s{allowed}"),
+                Value = count,
+                Unit = "frames",
+                Start = at(after + frame),
+                End = at(next),
+                CheckedAgainst = DroppedFilter,
+            });
+        }
+
+        if (gaps.Count > MaxGaps)
+        {
+            var rest = gaps.Skip(MaxGaps).ToList();
+            into.Add(new Finding
+            {
+                Check = "frames.dropped",
+                Severity = severity,
+                Message = Invariant($"{rest.Sum(g => g.Missing)} frames missing in {rest.Count} more gaps, {missing} in all{allowed}"),
+                Value = rest.Sum(g => g.Missing),
+                Unit = "frames",
+                Start = at(rest[0].After + frame),
+                End = at(rest[^1].Next),
+                CheckedAgainst = DroppedFilter,
+            });
+        }
+
+        return missing;
+    }
+
+    // The gaps reported one by one; the rest in one finding.
+    const int MaxGaps = 20;
 
     // Within SyncFrames frames passes (a hair over, from rounding, too); over SyncFailure seconds fails; between warns.
     Severity Judge(double off, double frame) =>

@@ -108,7 +108,10 @@ What is next, in order: docs/backlog.md.
   `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md).
   `av.length`, `av.start`: each track's decoded length and start (`StartTime`, ffprobe's start_time) against the
   picture's, within `Profile.SyncFrames` frames passing, over `Profile.SyncFailure` seconds failing, between warning
-  (decisions/2026-11-05-av-lengths.md). `LoudnessMeasure.MaxMomentary`, `MaxShortTerm` (and when): ebur128's highest M
+  (decisions/2026-11-05-av-lengths.md). `frames.dropped`: gaps in the picture's timestamps (`VideoPackets.Times`,
+  each packet's pts sorted; a step over 1.5 frames), each a failure past `Profile.MaxDroppedFrames` (0), counted in
+  `av.length`'s picture; `frames.variable-rate`: over 1% of the steps not one frame warns, its gaps not judged
+  (decisions/2026-11-05-dropped-frames.md). `LoudnessMeasure.MaxMomentary`, `MaxShortTerm` (and when): ebur128's highest M
   and S from the line-up's end, Noga.Ffmpeg's `LoudnessBlocks` on both paths; `loudness.momentary`, `loudness.short-term`
   and `loudness.range` judged by `Profile.MaxMomentary`, `MaxShortTerm`, `MinRange`, `MaxRange` (a failure past them;
   `Profiles.EbuR128S1`, ebu-r128-s1, sets -18 short-term: decisions/2026-11-05-short-term-loudness.md).

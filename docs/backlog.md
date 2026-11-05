@@ -20,13 +20,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     check rests on its RGB conversion
   - Status: Open
 
-- Dropped frames: gaps in the video's timestamps
-  - Why: a frame missing from the file (a capture or encode that dropped it) isn't caught: decode.frames compares with
-    the file's own count, which leaves it out. Packets.Read already has each packet's pts; a step over one frame
-    duration in a constant-frame-rate file is a gap, reported with its timecode and frames missing, checked against
-    ffprobe -show_packets to the timestamp. A warning or a failure is the owner's choice
-  - Status: Open
-
 - The start timecode against the frame rate
   - Why: a drop-frame timecode (";") on a rate that has none (25, 23.976), or a 29.97/59.94 file whose timecode
     isn't drop-frame when the delivery asks for it, goes unremarked; Timecode and the timecode tag are already read,
