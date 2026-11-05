@@ -32,6 +32,12 @@ Nothing waiting.
 
 ## Maybe
 
+- Noga's meters and a packet reader published into FrameReader, in one release, and Noga switched over
+  - Why: 2026-10-31-where-the-measures-live.md puts the measures in the public packages; FreezeMeter, InterlaceMeter,
+    ChannelMeter, LoudnessBlocks, the timestamp gaps and Packets.Read (FFmpeg.AutoGen directly) were written here.
+    One release, not one per meter; the verdicts stay (decisions/2026-11-05-meters-upstream.md)
+  - Status: Maybe
+
 - Dropped frames filled by a repeat: single frames identical to the one before
   - Why: capture cards and encoders often fill a dropped frame by repeating the last, which the timestamps don't
     show and freeze (2 s at least) misses. FreezeMeter's arithmetic with a duration of one frame, checked against
