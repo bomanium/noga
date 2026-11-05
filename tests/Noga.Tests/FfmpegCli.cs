@@ -115,6 +115,24 @@ internal static partial class FfmpegCli
         }
     }
 
+    /// <summary>
+    /// Where each stream starts (Profile.AvStartFilter): the picture's and every audio track's start_time, ffprobe's
+    /// exactly (to its microseconds).
+    /// </summary>
+    public static void AssertStarts(string file, Measurements measured)
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-show_entries", "stream=codec_type,start_time", "-of", "json"));
+        var streams = json.RootElement.GetProperty("streams").EnumerateArray().ToList();
+        static double? Start(System.Text.Json.JsonElement stream) =>
+            stream.TryGetProperty("start_time", out var value) ? double.Parse(value.GetString()!, CultureInfo.InvariantCulture) : null;
+        Assert.NotNull(measured.Format);
+        var format = measured.Format;
+        if (format.Video is { } video)
+            Assert.Equal(Start(streams.First(s => s.GetProperty("codec_type").GetString() == "video")), video.StartTime);
+        var audio = streams.Where(s => s.GetProperty("codec_type").GetString() == "audio").ToList();
+        Assert.Equal(audio.Select(Start), format.Audio.Select(a => a.StartTime));
+    }
+
     [GeneratedRegex(@"Number of samples: (\d+)")]
     private static partial Regex NumberOfSamples();
 

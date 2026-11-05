@@ -106,6 +106,9 @@ What is next, in order: docs/backlog.md.
   decoded against what the file lists, in MOV/MP4/MXF (`VideoFormat.ListedFrames`, `StreamDuration`,
   `VideoPackets.Count`, `PictureTypes`, each track's `ChannelMeasures.Duration`): `decode.frames` (cut short),
   `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md).
+  `av.length`, `av.start`: each track's decoded length and start (`StartTime`, ffprobe's start_time) against the
+  picture's, within `Profile.SyncFrames` frames passing, over `Profile.SyncFailure` seconds failing, between warning
+  (decisions/2026-11-05-av-lengths.md).
   `Measurements.HasPicture`: false for sound only (WAV, AIFF, an M4A whose cover art isn't a picture), measured on
   the FFmpeg path's `MeasureSound`, reported as `picture` (its checks not made; timecodes at 25 fps), the head's bars
   and black not judged.

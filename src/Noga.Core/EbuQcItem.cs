@@ -12,7 +12,8 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
     /// <summary>
     /// The catalogue item a check is, read from qc.ebu.io's API on 2026-11-01; null for checks it has none for: the
     /// bitrate measured from the packets (0158W reads the wrapper's), the shot list (0128B finds short shots, not
-    /// shots), the format's summary, the container, the transfer, the matrix and the audio track count.
+    /// shots), the format's summary, the container, the transfer, the matrix, the audio track count and the sound's
+    /// start against the picture's.
     /// </summary>
     public static EbuQcItem? For(string check) => check switch
     {
@@ -43,6 +44,10 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "decode.frames" => new("0081X", "Video Frame Count", "2.0"),
         "decode.errors" => new("0036F", "Video Coding Syntax", "2.0"),
         "decode.sound" => new("0009X", "Audio Duration", "2.0"),
+
+        // The sound's length against the picture's (docs/decisions/2026-11-05-av-lengths.md), read from the API on
+        // 2026-11-05: 0082W, whose default tolerance is one frame; the catalogue has no item for a start offset.
+        "av.length" => new("0082W", "Audio / Video Duration Match", "2.0"),
 
         // The delivery format (docs/decisions/2026-11-03-delivery-format.md), read from the API on 2026-11-03: the
         // essence's (F) items, a wrapper's (W) where the catalogue has no other.

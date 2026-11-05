@@ -108,6 +108,21 @@ public sealed record Profile
     /// <summary>The black, with silence, the file must end with (seconds at least); null: not required.</summary>
     public double? TailBlack { get; init; }
 
+    /// <summary>
+    /// How many frames the sound's length or start may differ from the picture's before it warns (EBU QC 0082W's
+    /// default tolerance, one frame; docs/decisions/2026-11-05-av-lengths.md).
+    /// </summary>
+    public int SyncFrames { get; init; } = 1;
+
+    /// <summary>How far (seconds) the sound's length or start may differ from the picture's before it fails.</summary>
+    public double SyncFailure { get; init; } = 1;
+
+    /// <summary>What the sound's length is checked against, as the picture's.</summary>
+    public static string AvLengthFilter => "ffprobe -select_streams v:0 -count_frames (nb_read_frames times the frame's duration) against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
+
+    /// <summary>What the sound's start is checked against, as the picture's.</summary>
+    public static string AvStartFilter => "ffprobe -show_entries stream=start_time (each stream's, exact)";
+
     /// <summary>What the picture's interlacing is checked against.</summary>
     public static string InterlaceFilter => "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact)";
 
@@ -252,6 +267,7 @@ public sealed record Profile
         Crop(findings, measured.Crop);
         PictureTypes(findings, measured.PictureTypes);
         Decode(findings, measured, frame, At);
+        AudioVideo(findings, measured, frame, At);
         Keyframes(findings, measured, At);
         Bitrate(findings, measured, At);
         Shots(findings, measured.Shots, At);
@@ -606,6 +622,77 @@ public sealed record Profile
             });
         }
     }
+
+    // Each audio track's length and start against the picture's (docs/decisions/2026-11-05-av-lengths.md): what decoded
+    // (the picture's frames, the track's samples) and where the streams start (ffprobe's start_time).
+    void AudioVideo(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
+    {
+        if (!measured.HasPicture || measured.PictureTypes.Length == 0)
+            return;
+        double picture = measured.PictureTypes.Length * frame;
+        var tracks = new List<(int Number, ChannelMeasures? Channels)> { (1, measured.Channels) };
+        tracks.AddRange(measured.OtherTracks.Select(t => (t.Number, t.Channels)));
+        int? Track(int number) => measured.OtherTracks.Count > 0 ? number : null;
+        double? Offset(int number) => measured.Format is { Video.StartTime: { } video } format
+            && format.Audio.FirstOrDefault(a => a.Number == number)?.StartTime is { } audio ? audio - video : null;
+        foreach (var (number, channels) in tracks)
+        {
+            if (channels is not { } c || c.Duration <= 0)
+                continue;
+            double sound = c.Duration, off = sound - picture;
+
+            // Where the sound is missing or runs on: at its start when it starts late or early, else at its end.
+            double starts = Offset(number) ?? 0, ends = starts + sound;
+            (double From, double To) gap = Math.Abs(starts) > Math.Abs(ends - picture)
+                ? (Math.Min(0, starts), Math.Max(0, starts))
+                : (Math.Min(ends, picture), Math.Max(ends, picture));
+            var severity = Judge(off, frame);
+            into.Add(new Finding
+            {
+                Check = "av.length",
+                Severity = severity,
+                Message = severity == Severity.Pass
+                    ? Invariant($"The sound is as long as the picture: {sound:0.00} s against {picture:0.00} s (within {Frames(SyncFrames)})")
+                    : Invariant($"The sound is {Math.Abs(off):0.00} s ({Frames(Math.Abs(off) / frame)}) {(off < 0 ? "shorter" : "longer")} than the picture: {sound:0.00} s against {picture:0.00} s"),
+                Value = off,
+                Unit = "s",
+                Start = severity == Severity.Pass ? null : at(gap.From),
+                End = severity == Severity.Pass ? null : at(gap.To),
+                Track = Track(number),
+                CheckedAgainst = AvLengthFilter,
+            });
+        }
+
+        foreach (var (number, _) in tracks)
+        {
+            if (Offset(number) is not { } off)
+                continue;
+            var severity = Judge(off, frame);
+            into.Add(new Finding
+            {
+                Check = "av.start",
+                Severity = severity,
+                Message = severity == Severity.Pass
+                    ? Invariant($"The sound starts with the picture (within {Frames(SyncFrames)})")
+                    : Invariant($"The sound starts {Math.Abs(off):0.00} s ({Frames(Math.Abs(off) / frame)}) {(off > 0 ? "after" : "before")} the picture"),
+                Value = off,
+                Unit = "s",
+                Track = Track(number),
+                CheckedAgainst = AvStartFilter,
+            });
+        }
+    }
+
+    // Within SyncFrames frames passes (a hair over, from rounding, too); over SyncFailure seconds fails; between warns.
+    Severity Judge(double off, double frame) =>
+        Math.Abs(off) <= (SyncFrames * frame) + 1e-6 ? Severity.Pass
+        : Math.Abs(off) > SyncFailure ? Severity.Failure
+        : Severity.Warning;
+
+    static string Frames(double frames) =>
+        Math.Abs(frames - Math.Round(frames)) < 0.05
+            ? Invariant($"{Math.Round(frames):0} frame{(Math.Round(frames) == 1 ? "" : "s")}")
+            : Invariant($"{frames:0.0} frames");
 
     // The longest interval between two keyframes (a single keyframe's: the file's length).
     static void Keyframes(List<Finding> into, Measurements measured, Func<double, Position> at)

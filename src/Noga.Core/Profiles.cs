@@ -107,7 +107,8 @@ public static class Profiles
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
     /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>toneLevel</c>,
-    /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>, <c>syncFrames</c>,
+    /// <c>syncFailure</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
@@ -157,6 +158,8 @@ public static class Profiles
             HeadTone = file.HeadTone ?? start.HeadTone,
             HeadBlack = file.HeadBlack ?? start.HeadBlack,
             TailBlack = file.TailBlack ?? start.TailBlack,
+            SyncFrames = file.SyncFrames ?? start.SyncFrames,
+            SyncFailure = file.SyncFailure ?? start.SyncFailure,
             Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
@@ -171,6 +174,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: freezeNoise is 0 to 1, minFreeze positive.", nameof(json));
         if (profile.ToneLevel is > 0 || profile.ToneTolerance < 0 || profile.HeadBars is < 0 || profile.HeadTone is < 0 || profile.HeadBlack is < 0 || profile.TailBlack is < 0)
             throw new ArgumentException($"{source}: toneLevel is at most 0 dBFS; toneTolerance, headBars, headTone, headBlack and tailBlack at least 0.", nameof(json));
+        if (profile.SyncFrames < 0 || profile.SyncFailure <= 0)
+            throw new ArgumentException($"{source}: syncFrames is at least 0, syncFailure positive.", nameof(json));
         if (profile.Format is { } format)
             Check(format, source);
         return profile;
@@ -202,6 +207,8 @@ internal sealed record ProfileFile(
     double? HeadTone,
     double? HeadBlack,
     double? TailBlack,
+    int? SyncFrames,
+    double? SyncFailure,
     FormatSpec? Format);
 
 [JsonSourceGenerationOptions(

@@ -258,3 +258,8 @@ Finished items from [backlog.md](backlog.md), oldest first.
     shots and the sound side by side: ProRes HQ 1.85x faster, H.264 1.2-1.4x, the reports the same;
     decisions/2026-11-05-faster-single-checks.md. The shots from the picture pass's frames can't take ProRes HQ, and
     stay in Maybe for the formats they can)
+
+- Audio and video lengths that differ, and a sound that starts before or after the picture
+  - Why: the 2026-11-03 review's delivery checks, the owner's first pick
+  - Status: Done (2026-11-05: `av.length` and `av.start`, within a frame passes, over 1 s fails, between warns;
+    decisions/2026-11-05-av-lengths.md)

@@ -25,6 +25,7 @@ public sealed class FilmTests
         var measured = FfmpegMeasurer.Measure(file, Profile.EbuR128);
 
         FfmpegCli.AssertStartTimecode(file, measured);
+        FfmpegCli.AssertStarts(file, measured);
         FfmpegCli.AssertLoudness(file, measured);
         FfmpegCli.AssertSilences(file, measured);
         if (measured.Tone.Count > 0)
