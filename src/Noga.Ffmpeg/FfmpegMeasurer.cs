@@ -130,7 +130,10 @@ public static class FfmpegMeasurer
         var options = new AudioReaderOptions { Stream = stream, CancellationToken = cancellationToken };
         var silences = FindSilences(path, profile, options, cancellationToken);
         var tone = FindTone(path, options, cancellationToken);
-        double from = LineUp.End(tone, silences, duration);
+
+        // A tone to the end of the track's own sound is no line-up, though the picture runs on.
+        var channels = MeasureChannels(path, profile, options, cancellationToken);
+        double from = LineUp.End(tone, silences, channels?.Duration > 0 ? channels.Duration : duration);
         var loudness = MeasureLoudness(path, from, options, cancellationToken);
         var blocks = MeasureBlocks(path, from, weights, options, cancellationToken);
         loudness = loudness with
@@ -140,7 +143,7 @@ public static class FfmpegMeasurer
             MaxShortTerm = blocks.ShortTerm,
             MaxShortTermAt = from + blocks.ShortTermAt,
         };
-        return new TrackMeasures(stream + 1, from, loudness, silences, tone, MeasureChannels(path, profile, options, cancellationToken));
+        return new TrackMeasures(stream + 1, from, loudness, silences, tone, channels);
     }
 
     // Each channel's weight in the loudness, as ebur128 weighs the track's layout (ffprobe's channel_layout); FFmpeg's

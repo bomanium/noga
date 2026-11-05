@@ -20,11 +20,24 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     check rests on its RGB conversion
   - Status: Open
 
+- The start timecode against the frame rate
+  - Why: a drop-frame timecode (";") on a rate that has none (25, 23.976), or a 29.97/59.94 file whose timecode
+    isn't drop-frame when the delivery asks for it, goes unremarked; Timecode and the timecode tag are already read,
+    checked against ffprobe's timecode tag
+  - Status: Open
+
 ## Waiting
 
 Nothing waiting.
 
 ## Maybe
+
+- Dropped frames filled by a repeat: single frames identical to the one before
+  - Why: capture cards and encoders often fill a dropped frame by repeating the last, which the timestamps don't
+    show and freeze (2 s at least) misses. FreezeMeter's arithmetic with a duration of one frame, checked against
+    mpdecimate or freezedetect with a short d; animation, slates and pulldown repeat frames on purpose, so it needs
+    care (a cadence, or only isolated repeats in moving picture) before it can be more than indicative
+  - Status: Maybe
 
 - A WAV cut short caught: its RIFF header's data size against the samples there are
   - Why: FFmpeg gives a WAV's duration from what is in the file, so decode.sound passes a stem cut short

@@ -275,3 +275,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
     bomanium/noga, checks noga.* domains and the trademark registers, then makes it public
   - Status: Done (2026-11-05: renamed to bomanium/noga, the default branch set to main, public; the domain and
     trademark checks not needed for a project rather than a product: decisions/2026-11-05-going-public.md)
+
+- Dropped frames: gaps in the video's timestamps
+  - Why: a frame missing from the file (a capture or encode that dropped it) isn't caught: decode.frames compares with
+    the file's own count, which leaves it out
+  - Status: Done (2026-11-05: `frames.dropped`, each gap a failure unless a profile's `maxDroppedFrames` allows it;
+    `frames.variable-rate`, a warning, its gaps not judged; each packet's time ffprobe -show_packets' on both paths;
+    decisions/2026-11-05-dropped-frames.md)

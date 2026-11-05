@@ -64,7 +64,7 @@ internal static partial class FfmpegCli
         Assert.Equal(string.Concat(types.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(line => line[0])), measured.PictureTypes);
     }
 
-    /// <summary>The keyframes and the bytes in all and each second are ffprobe -show_packets', exactly.</summary>
+    /// <summary>The keyframes, the bytes in all and each second, and each packet's time are ffprobe -show_packets', exactly.</summary>
     public static void AssertPackets(string file, Measurements measured)
     {
         using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-select_streams", "v:0", "-show_entries", "stream=time_base:packet=pts,dts,size,flags", "-of", "json"));
@@ -82,6 +82,7 @@ internal static partial class FfmpegCli
         Assert.Equal(expected.BytesPerSecond, got.BytesPerSecond);
         Assert.Equal(expected.Keyframes, got.Keyframes);
         Assert.Equal(expected.Count, got.Count);
+        Assert.Equal(expected.Times, got.Times);
     }
 
     /// <summary>

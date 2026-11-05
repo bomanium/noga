@@ -78,7 +78,8 @@ public static class ManagedMeasurer
         using (var demuxer = Open(path))
             (video, audio) = (demuxer.Video!, demuxer.Audio);
 
-        var (numerator, denominator) = Rate(video.FramesPerSecond);
+        var (packets, timestamps) = ReadPackets(path, cancellationToken);
+        var (numerator, denominator) = Rate(FramesPerSecond(video, timestamps));
         double videoDuration = video.FrameCount * (double)denominator / numerator;
         var measured = new Measurements
         {
@@ -87,7 +88,6 @@ public static class ManagedMeasurer
             RateDenominator = denominator,
         };
         measured = StartTimecode.Add(measured, path, cancellationToken);
-        var (packets, timestamps) = ReadPackets(path, cancellationToken);
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
 
@@ -125,7 +125,9 @@ public static class ManagedMeasurer
         var silenceSpans = silences.Finish().Select(s => new TimeRange((double)s.StartSample / audio.SampleRate, (double)s.EndSample / audio.SampleRate)).ToList();
         var toneSpans = tone.Finish().Select(s => new ToneSpan(s.Start.TotalSeconds, s.End.TotalSeconds, ToneFrequency, s.Level)).ToList();
         double duration = Math.Max(measured.Duration, (double)samples / audio.SampleRate);
-        double from = LineUp.End(toneSpans, silenceSpans, duration);
+
+        // A tone to the end of the sound is no line-up, though the picture runs on.
+        double from = LineUp.End(toneSpans, silenceSpans, (double)samples / audio.SampleRate);
 
         // As ffmpeg -ss FROM: the first sample at or after it.
         long first = (long)Math.Ceiling(from * audio.SampleRate);
@@ -336,6 +338,17 @@ public static class ManagedMeasurer
     }
 
     // The container gives frames per second as a double: 25, or 29.97... for 30000/1001.
+    // The frame rate from the most common step between the frames' timestamps, as FFmpeg guesses r_frame_rate: frames
+    // over the duration would be lower for a picture with frames missing (docs/decisions/2026-11-05-dropped-frames.md).
+    static double FramesPerSecond(VideoStreamInfo video, IReadOnlyList<long> timestamps)
+    {
+        var steps = timestamps.Zip(timestamps.Skip(1), (a, b) => b - a).Where(step => step > 0).ToList();
+        if (steps.Count == 0)
+            return video.FramesPerSecond;
+        long step = steps.GroupBy(s => s).MaxBy(g => g.Count())!.Key;
+        return (double)video.TimeBase.Denominator / (video.TimeBase.Numerator * (double)step);
+    }
+
     static (long Numerator, long Denominator) Rate(double fps)
     {
         double whole = Math.Round(fps);
