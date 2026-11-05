@@ -27,12 +27,10 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     (decisions/2026-11-04-odd-files.md)
   - Status: Maybe
 
-- Faster single checks: measure the picture pass while the next frame is decoded; take the shots from the picture
-  pass's frames on the FFmpeg path too, rather than from a second decode
-  - Why: docs/notes/performance.md: a check keeps about 2 of 4 cores busy. PictureMeter runs on one thread (40% of the
-    time), and the shots decode the video again (20%). A 1-hour ProRes HQ master takes about 17-25 minutes on a
-    4-core machine. Two checks at a time is done (decisions/2026-11-04-checks-side-by-side.md), but it doesn't help
-    one long file
+- The shots from the picture pass's frames on the FFmpeg path, for the formats ShotDetector's frame source takes
+  (yuv420p, yuv422p and their full-range forms, yuv420p10le: DNxHR SQ, H.264 in MOV or with several audio tracks)
+  - Why: the shots decode the video a second time, the largest piece of work left in a check now that the meters run
+    side by side (docs/notes/performance.md); ProRes HQ (yuv422p10le) can't, so it would not speed up the main case
   - Status: Maybe
 
 - More from the 2026-11-03 review: short-term and momentary loudness limits and a loudness-range window,

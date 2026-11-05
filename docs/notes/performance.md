@@ -66,6 +66,42 @@ A 3-minute ProRes programme (the 20 s one looped) on the FFmpeg path, each stage
 The picture pass is serial: each frame is decoded, then measured, before the next one is decoded. The shots come from
 a second pass over the file. Audio costs almost nothing.
 
+## Faster single checks (2026-11-05)
+
+What the table above showed, done (decisions/2026-11-05-faster-single-checks.md):
+
+- The meters each take the frames on a thread of their own while the next frames are decoded (`FrameMeters`).
+  PictureMeter runs on two threads, each frame measured on its own and the measures joined.
+- On the FFmpeg path the shot list (on its own decode) and the sound run at the same time as the picture pass
+  (`SideBySide`). On the managed path, which already detects the shots on the picture pass's frames, the sound does.
+
+The same container, each file checked by the build before (main, 3c480a9) and after, one after the other.
+The reports are the same:
+
+| File | Before | After | Faster |
+| --- | ---: | ---: | ---: |
+| programme_prores.mov looped to 3 min (ProRes HQ) | 75.3 s | 40.4 s | 1.86x |
+| programme_10min_prores.mov (ProRes HQ, two runs each) | 246 s, 234 s | 132 s, 131 s | 1.83x |
+| programme_dnxhr.mxf looped to 3 min (DNxHR SQ) | 33.4 s | 23.4 s | 1.43x |
+| programme_h264.mp4 looped to 3 min (the managed path) | 35.3 s | 27.0 s | 1.31x |
+| Big Buck Bunny (FFmpeg path) | 138.0 s | 101.2 s | 1.36x |
+| Tears of Steel (FFmpeg path) | 57.7 s | 49.0 s | 1.18x |
+
+- 1080p25 ProRes HQ now takes about 13 s a minute on 4 cores, so a 1-hour master takes about 13 minutes rather than
+  23. 1080p H.264 takes about 9-10 s a minute.
+- A check now keeps 3 to 3.6 of the 4 cores busy. The ProRes uses about 140 s of CPU for 3 minutes (the picture pass
+  92, the shots 47), so 35 s is the floor on 4 cores, against 40 s. A further gain has to do less work, not more at
+  once: the shots' own decode is the largest piece left.
+- Peak memory rose by about 50-100 MB (frames waiting for the meters): 310 MB for 10 minutes of ProRes, 358 MB for
+  Big Buck Bunny.
+- So two checks at a time gain less than before: 8 checks of the 20 s ProRes took 47.2 s one at a time and 38.5 s
+  two at a time (1.23x, from 1.73x). Two at a time stays: it still finishes a queue sooner, and a check that
+  can't use the cores (short files, their start-up) leaves them to the other.
+
+The same benchmark run measured the 10-minute ProRes at 220 s, an outlier: checked again straight after, it took
+132 s. In a shared cloud container a single run can be off by that much, which is why the table above compares
+the two builds one after the other.
+
 ## A queue of files
 
 8 checks of programme_prores.mov (20 s each), N at a time in separate processes (`xargs -P`), as `Jobs` would run

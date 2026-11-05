@@ -7,7 +7,6 @@ using ChromaSubsampling = FrameReader.ChromaSubsampling;
 using LoudnessMeter = FrameReader.LoudnessMeter;
 using PictureFormat = FrameReader.PictureFormat;
 using PictureMeasures = FrameReader.PictureMeasures;
-using PictureMeter = FrameReader.PictureMeter;
 using ReferenceToneFinder = FrameReader.ReferenceToneFinder;
 using ReferenceToneOptions = FrameReader.ReferenceToneOptions;
 using ShotDetection = ShotDetector.ShotDetection;
@@ -93,15 +92,26 @@ public static class ManagedMeasurer
         var interlace = new InterlaceMeter();
 
         // The picture pass is nearly all of the time (it measures and detects the shots on the same frames); the sound
-        // passes almost none (docs/notes/performance.md).
-        var stages = new CheckProgress(progress);
-        stages.Begin(audio is null ? 1 : 0.97);
-        var (pictures, shots) = MeasurePictures(path, timestamps, freezes, interlace, cancellationToken, new ReportNow<double>(stages.At));
-        stages.Begin(audio is null ? 0 : 0.03);
-        measured = Shots.Add(Pictures.Add(measured, pictures, profile) with { Packets = packets, Freezes = freezes.Finish(), Interlace = interlace.Finish() }, shots);
-        if (audio is null)
-            return measured;
+        // passes almost none, side by side with it (docs/notes/performance.md).
+        var parts = new CheckProgress(progress).Together(audio is null ? 1 : 0.97, audio is null ? 0 : 0.03);
+        PictureMeasures? pictures = null;
+        ShotDetector.DetectionResult? shots = null;
+        var sound = measured;
+        SideBySide.Run(
+            cancellationToken,
+            token => (pictures, shots) = MeasurePictures(path, timestamps, freezes, interlace, token, parts[0]),
+            token =>
+            {
+                if (audio is not null)
+                    sound = MeasureSound(path, profile, audio, measured, token);
+            });
+        foreach (var part in parts)
+            part.Report(1);
+        return Shots.Add(Pictures.Add(sound, pictures, profile) with { Packets = packets, Freezes = freezes.Finish(), Interlace = interlace.Finish() }, shots!);
+    }
 
+    static Measurements MeasureSound(string path, Profile profile, AudioStreamInfo audio, Measurements measured, CancellationToken cancellationToken)
+    {
         // First the tone and the silences, which say where the line-up ends; then the loudness from there.
         var silences = new SilenceFinder(audio.SampleRate, audio.Channels, profile.SilenceNoise, TimeSpan.FromSeconds(profile.MinSilence));
         var tone = new ReferenceToneFinder(audio.SampleRate, audio.Channels, new ReferenceToneOptions { Frequency = ToneFrequency });
@@ -126,7 +136,6 @@ public static class ManagedMeasurer
             meter.Add(chunk[(int)(skip * audio.Channels)..]);
         });
         var loudness = meter.Finish().Loudness;
-        stages.At(1);
 
         return measured with
         {
@@ -139,8 +148,9 @@ public static class ManagedMeasurer
         };
     }
 
-    // Every frame of the video through ManagedCodecs' H.264 decoder, in display order, into FrameReader's PictureMeter
-    // and ShotDetector (which pulls the frames one at a time, so each is measured and then detected on).
+    // Every frame of the video through ManagedCodecs' H.264 decoder, in display order, into the picture's meters (on
+    // threads of their own: FrameMeters) and ShotDetector, which pulls the frames one at a time on this thread. A frame
+    // is released once the meters are done with it and ShotDetector has pulled the next.
     static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, FreezeMeter freezes, InterlaceMeter interlace, CancellationToken cancellationToken, IProgress<double> progress)
     {
         var tags = Tags.Read(path, cancellationToken);
@@ -167,10 +177,17 @@ public static class ManagedMeasurer
             Codec = "h264",
             Container = tags.Container,
         };
-        PictureMeter? meter = null;
-        var options = Shots.Options with { Yuv420Converter = new SwscaleYuv420(), Progress = Shots.Fractions(progress) };
-        var shots = ShotDetection.Detect(shotVideo, Frames(), options, cancellationToken);
-        return (meter?.Measures, shots);
+        FrameMeters? meters = null;
+        try
+        {
+            var options = Shots.Options with { Yuv420Converter = new SwscaleYuv420(), Progress = Shots.Fractions(progress) };
+            var shots = ShotDetection.Detect(shotVideo, Frames(), options, cancellationToken);
+            return (meters?.Finish(), shots);
+        }
+        finally
+        {
+            meters?.Dispose();
+        }
 
         IEnumerable<YuvFrame> Frames()
         {
@@ -181,62 +198,38 @@ public static class ManagedMeasurer
                     continue;
                 foreach (var frame in decoder.Decode(packet))
                 {
-                    using (frame)
-                        yield return Measured(frame);
+                    using (Measure(frame))
+                        yield return Shot(frame);
                 }
             }
 
             foreach (var frame in decoder.Flush())
             {
-                using (frame)
-                    yield return Measured(frame);
+                using (Measure(frame))
+                    yield return Shot(frame);
             }
         }
 
-        // The frame measured, and handed on as ShotDetector's: its planes stay the decoder's until the next is pulled.
-        YuvFrame Measured(VideoFrame frame)
+        // The frame given to the meters, which own it from here; the handle keeps it for ShotDetector.
+        IDisposable Measure(VideoFrame frame)
         {
             var format = frame.Format;
             if (format.PlaneCount() != 3)
+            {
+                frame.Dispose();
                 throw new InvalidDataException($"{path}: monochrome H.264 isn't measured.");
-            meter ??= new PictureMeter(new PictureFormat(frame.Width, frame.Height, tags.FullRange, timeBase, tags.Rotation, format.BitDepth(), Chroma(format)));
-            meter.Add(
-                Plane(frame, 0).Span,
-                frame.Strides[0],
-                Plane(frame, 1).Span,
-                frame.Strides[1],
-                Plane(frame, 2).Span,
-                frame.Strides[2],
-                frame.Pts,
-                (FrameReader.PictureType)(int)frame.PictureType);
-            freezes.Add(
-                Plane(frame, 0).Span,
-                frame.Strides[0],
-                Plane(frame, 1).Span,
-                frame.Strides[1],
-                Plane(frame, 2).Span,
-                frame.Strides[2],
-                frame.Width,
-                frame.Height,
-                Chroma(format),
-                format.BitDepth(),
-                frame.Pts * ((double)timeBase.Num / timeBase.Den));
-            interlace.Add(
-                Plane(frame, 0).Span,
-                frame.Strides[0],
-                Plane(frame, 1).Span,
-                frame.Strides[1],
-                Plane(frame, 2).Span,
-                frame.Strides[2],
-                frame.Width,
-                frame.Height,
-                Chroma(format),
-                format.BitDepth());
-            return new YuvFrame(Plane(frame, 0), frame.Strides[0], Plane(frame, 1), frame.Strides[1], Plane(frame, 2), frame.Strides[2])
+            }
+
+            meters ??= new FrameMeters(new PictureFormat(frame.Width, frame.Height, tags.FullRange, timeBase, tags.Rotation, format.BitDepth(), Chroma(format)), freezes, interlace, cancellationToken: cancellationToken);
+            return meters.PostHeld(new Decoded(frame));
+        }
+
+        // The frame as ShotDetector's: its planes stay valid until the next is pulled.
+        static YuvFrame Shot(VideoFrame frame) =>
+            new(Plane(frame, 0), frame.Strides[0], Plane(frame, 1), frame.Strides[1], Plane(frame, 2), frame.Strides[2])
             {
                 Pts = frame.Pts,
             };
-        }
 
         static ReadOnlyMemory<byte> Plane(VideoFrame frame, int i) => frame.Planes[i].AsMemory(frame.Offsets[i]);
 
@@ -246,6 +239,26 @@ public static class ManagedMeasurer
             var name when name.StartsWith("Yuv422", StringComparison.Ordinal) => ChromaSubsampling.Yuv422,
             _ => ChromaSubsampling.Yuv444,
         };
+    }
+
+    // ManagedCodecs' frame, as the meters read it.
+    sealed class Decoded(VideoFrame frame) : IMeteredFrame
+    {
+        public int Width => frame.Width;
+
+        public int Height => frame.Height;
+
+        public long Pts => frame.Pts;
+
+        public FrameReader.PictureType Type => (FrameReader.PictureType)(int)frame.PictureType;
+
+        public ReadOnlySpan<byte> Plane(int index, out int stride)
+        {
+            stride = frame.Strides[index];
+            return frame.Planes[index].AsSpan(frame.Offsets[index]);
+        }
+
+        public void Dispose() => frame.Dispose();
     }
 
     // The video packets as the demuxer gives them, as FFmpeg's (ffprobe -show_packets'): pts, size and key flag; and
