@@ -91,5 +91,5 @@ public sealed class ProfilesTests : IDisposable
 
     [Fact]
     public void AnUnknownProfileNamesTheKnownOnes() =>
-        Assert.Contains("ebu-r128, atsc-a85, op-59, arib-tr-b32", Assert.Throws<ArgumentException>(() => Profiles.Get("netflix")).Message, StringComparison.Ordinal);
+        Assert.Contains("ebu-r128, ebu-r128-s1, atsc-a85, op-59, arib-tr-b32", Assert.Throws<ArgumentException>(() => Profiles.Get("netflix")).Message, StringComparison.Ordinal);
 }

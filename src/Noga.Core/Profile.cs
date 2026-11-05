@@ -117,6 +117,21 @@ public sealed record Profile
     /// <summary>How far (seconds) the sound's length or start may differ from the picture's before it fails.</summary>
     public double SyncFailure { get; init; } = 1;
 
+    /// <summary>
+    /// The loudest momentary loudness allowed (LUFS, ebur128's M); null: reported, not judged. Louder fails
+    /// (docs/decisions/2026-11-05-short-term-loudness.md).
+    /// </summary>
+    public double? MaxMomentary { get; init; }
+
+    /// <summary>The loudest short-term loudness allowed (LUFS, ebur128's S); null: reported, not judged. EBU R 128 s1's -18 for ebu-r128-s1.</summary>
+    public double? MaxShortTerm { get; init; }
+
+    /// <summary>The loudness range's least (LU); null: no least. Outside the window fails.</summary>
+    public double? MinRange { get; init; }
+
+    /// <summary>The loudness range's most (LU); null: no most.</summary>
+    public double? MaxRange { get; init; }
+
     /// <summary>What the sound's length is checked against, as the picture's.</summary>
     public static string AvLengthFilter => "ffprobe -select_streams v:0 -count_frames (nb_read_frames times the frame's duration) against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
 
@@ -155,6 +170,12 @@ public sealed record Profile
 
     /// <summary>The FFmpeg filter the loudness figures are checked against (exact: FrameReader runs ebur128 itself on the FFmpeg path).</summary>
     public static string LoudnessFilter => "-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)";
+
+    /// <summary>What the loudest momentary loudness is checked against.</summary>
+    public static string MomentaryFilter => "-map 0:a:0 -af ebur128=framelog=verbose: the highest M of its 100 ms readings (within 0.1 LU)";
+
+    /// <summary>What the loudest short-term loudness is checked against.</summary>
+    public static string ShortTermFilter => "-map 0:a:0 -af ebur128=framelog=verbose: the highest S of its 100 ms readings (within 0.1 LU)";
 
     /// <summary>The FFmpeg filter black spans are checked against.</summary>
     public string BlackFilter => Invariant($"blackdetect=d={MinBlack}:pix_th={BlackPixelThreshold:0.00}:pic_th={BlackPictureThreshold:0.00} (each end within one frame)");
@@ -306,7 +327,7 @@ public sealed record Profile
             });
         }
 
-        Loudness(findings, measured.Loudness);
+        Loudness(findings, measured.Loudness, At);
 
         // Every track's findings say which track (docs/decisions/2026-11-01-every-audio-track.md): the first's above,
         // then each other's in turn, each compared with its own -map 0:a:N.
@@ -325,7 +346,7 @@ public sealed record Profile
                 Spans(own, "silence", "Silence", other.Silences, MinSilence, SilenceFilter);
                 Channels(own, other.Channels, other.Silences, At);
                 From(own, other.LoudnessFrom, other.Loudness);
-                Loudness(own, other.Loudness);
+                Loudness(own, other.Loudness, At);
                 findings.AddRange(own.Select(f => OnTrack(f, other.Number)));
             }
         }
@@ -416,7 +437,7 @@ public sealed record Profile
         }
     }
 
-    void Loudness(List<Finding> into, LoudnessMeasure? loudness)
+    void Loudness(List<Finding> into, LoudnessMeasure? loudness, Func<double, Position> at)
     {
         if (loudness is not { } l)
         {
@@ -450,15 +471,29 @@ public sealed record Profile
             });
         }
 
+        // The range judged at the report's precision when the profile sets a window (docs/decisions/2026-11-05-short-term-loudness.md).
+        double range = Math.Round(l.Range, 1);
+        bool windowed = MinRange is not null || MaxRange is not null;
+        bool outside = range < MinRange || range > MaxRange;
+        string window = (MinRange, MaxRange) switch
+        {
+            ({ } low, { } high) => Invariant($" ({low:0.#} to {high:0.#} LU)"),
+            ({ } low, null) => Invariant($" (at least {low:0.#} LU)"),
+            (null, { } high) => Invariant($" (at most {high:0.#} LU)"),
+            _ => "",
+        };
         into.Add(new Finding
         {
             Check = "loudness.range",
-            Severity = Severity.Info,
-            Message = Invariant($"Loudness range {l.Range:0.0} LU"),
+            Severity = !windowed ? Severity.Info : outside ? Severity.Failure : Severity.Pass,
+            Message = Invariant($"Loudness range {l.Range:0.0} LU{window}"),
             Value = l.Range,
             Unit = "LU",
             CheckedAgainst = LoudnessFilter,
         });
+
+        Loudest(into, "loudness.momentary", "momentary", l.MaxMomentary, l.MaxMomentaryAt, 0.4, MaxMomentary, at);
+        Loudest(into, "loudness.short-term", "short-term", l.MaxShortTerm, l.MaxShortTermAt, 3, MaxShortTerm, at);
 
         double peak = Math.Round(l.TruePeak, 1);
         into.Add(new Finding
@@ -472,6 +507,28 @@ public sealed record Profile
             Value = l.TruePeak,
             Unit = "dBTP",
             CheckedAgainst = LoudnessFilter,
+        });
+    }
+
+    // The loudest momentary or short-term window: reported, and judged at the report's precision when the profile sets
+    // a maximum; its timecodes the window's.
+    static void Loudest(List<Finding> into, string check, string name, double? loudest, double end, double window, double? max, Func<double, Position> at)
+    {
+        if (loudest is not { } value)
+            return;
+        bool over = Math.Round(value, 1) > max;
+        into.Add(new Finding
+        {
+            Check = check,
+            Severity = max is null ? Severity.Info : over ? Severity.Failure : Severity.Pass,
+            Message = max is { } limit
+                ? Invariant($"Loudest {name} loudness {value:0.0} LUFS (at most {limit:0.0} LUFS)")
+                : Invariant($"Loudest {name} loudness {value:0.0} LUFS"),
+            Value = value,
+            Unit = "LUFS",
+            Start = at(Math.Max(0, end - window)),
+            End = at(end),
+            CheckedAgainst = check == "loudness.momentary" ? MomentaryFilter : ShortTermFilter,
         });
     }
 

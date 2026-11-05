@@ -107,7 +107,7 @@ public static class FfmpegMeasurer
         var all = new List<TrackMeasures>();
         for (int stream = 0; stream < tracks; stream++)
         {
-            all.Add(MeasureTrack(path, profile, stream, measured.Duration, cancellationToken));
+            all.Add(MeasureTrack(path, profile, stream, measured.Duration, Weights(measured, stream), cancellationToken));
             progress.Report((stream + 1.0) / tracks);
         }
 
@@ -125,13 +125,56 @@ public static class FfmpegMeasurer
 
     // One audio track (ffmpeg's 0:a:STREAM): its silences and tone, which say where its line-up ends, then its loudness
     // from there.
-    static TrackMeasures MeasureTrack(string path, Profile profile, int stream, double duration, CancellationToken cancellationToken)
+    static TrackMeasures MeasureTrack(string path, Profile profile, int stream, double duration, ChannelWeights? weights, CancellationToken cancellationToken)
     {
         var options = new AudioReaderOptions { Stream = stream, CancellationToken = cancellationToken };
         var silences = FindSilences(path, profile, options, cancellationToken);
         var tone = FindTone(path, options, cancellationToken);
         double from = LineUp.End(tone, silences, duration);
-        return new TrackMeasures(stream + 1, from, MeasureLoudness(path, from, options, cancellationToken), silences, tone, MeasureChannels(path, profile, options, cancellationToken));
+        var loudness = MeasureLoudness(path, from, options, cancellationToken);
+        var blocks = MeasureBlocks(path, from, weights, options, cancellationToken);
+        loudness = loudness with
+        {
+            MaxMomentary = blocks.Momentary,
+            MaxMomentaryAt = from + blocks.MomentaryAt,
+            MaxShortTerm = blocks.ShortTerm,
+            MaxShortTermAt = from + blocks.ShortTermAt,
+        };
+        return new TrackMeasures(stream + 1, from, loudness, silences, tone, MeasureChannels(path, profile, options, cancellationToken));
+    }
+
+    // Each channel's weight in the loudness, as ebur128 weighs the track's layout (ffprobe's channel_layout); FFmpeg's
+    // default layout for the count when it names none.
+    static ChannelWeights? Weights(Measurements measured, int stream)
+    {
+        if (measured.Format?.Audio.FirstOrDefault(a => a.Number == stream + 1)?.Layout is not { } layout)
+            return null;
+        try
+        {
+            return ChannelWeights.ForLayout(layout);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    // The loudest momentary and short-term loudness from the end of the line-up, as ffmpeg -ss FROM's ebur128 M and S.
+    static (double? Momentary, double MomentaryAt, double? ShortTerm, double ShortTermAt) MeasureBlocks(string path, double from, ChannelWeights? weights, AudioReaderOptions options, CancellationToken cancellationToken)
+    {
+        using var audio = new AudioReader(path, options);
+        if (from > 0)
+            audio.Seek(TimeSpan.FromSeconds(from));
+        if (weights is not null && weights.Weights.Count != audio.Channels)
+            weights = null;
+        var meter = new LoudnessBlocks(audio.SampleRate, audio.Channels, weights);
+        while (audio.TryRead(out var chunk))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            meter.Add(chunk.Samples);
+        }
+
+        return meter.Finish();
     }
 
     // Each channel on its own (ChannelMeter), from the decoded samples.

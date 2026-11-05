@@ -10,7 +10,7 @@
   "path": "/home/user/media-qc/samples/programme_prores.mov",
   "size": 94201579,
   "modified": "2026-11-04T21:31:20.6329254+00:00",
-  "checked": "2026-11-05T06:15:48.2783772+00:00",
+  "checked": "2026-11-05T07:47:15.4731501+00:00",
   "findings": [
     {
       "check": "format",
@@ -468,6 +468,50 @@
         "url": "https://qc.ebu.io/items/0010B"
       },
       "checkedAgainst": "-map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB)"
+    },
+    {
+      "check": "loudness.momentary",
+      "severity": "Info",
+      "message": "Loudest momentary loudness -34.4 LUFS",
+      "value": -34.40333035651588,
+      "unit": "LUFS",
+      "start": {
+        "seconds": 12.7,
+        "timecode": "10:00:12:18"
+      },
+      "end": {
+        "seconds": 13.1,
+        "timecode": "10:00:13:03"
+      },
+      "ebuQc": {
+        "id": "0010B",
+        "name": "Loudness",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0010B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af ebur128=framelog=verbose: the highest M of its 100 ms readings (within 0.1 LU)"
+    },
+    {
+      "check": "loudness.short-term",
+      "severity": "Info",
+      "message": "Loudest short-term loudness -34.6 LUFS",
+      "value": -34.59424433151125,
+      "unit": "LUFS",
+      "start": {
+        "seconds": 12.6,
+        "timecode": "10:00:12:15"
+      },
+      "end": {
+        "seconds": 15.6,
+        "timecode": "10:00:15:15"
+      },
+      "ebuQc": {
+        "id": "0010B",
+        "name": "Loudness",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0010B"
+      },
+      "checkedAgainst": "-map 0:a:0 -af ebur128=framelog=verbose: the highest S of its 100 ms readings (within 0.1 LU)"
     },
     {
       "check": "loudness.true-peak",

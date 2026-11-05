@@ -83,7 +83,7 @@ What is next, in order: docs/backlog.md.
 - `src/Noga.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
-  v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (atsc-a85, op-59, arib-tr-b32, and profile files:
+  v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (ebu-r128-s1, atsc-a85, op-59, arib-tr-b32, and profile files:
   `Profiles.Get(nameOrFile)`, decisions/2026-11-01-profiles.md; templates by name: `Profiles.Templates`, the release's `profiles/`
   from `packaging/profiles/`), `MediaFormat` (the file's format, ffprobe's values: container, video, every audio
   track, duration; reported always; `VideoFormat.Colour` says the colour tags in words, untagged ones as such: decisions/2026-11-04-raw-values.md; `FormatWords`: the HTML report's header rows, Video, Audio, Container and Duration in words a client reads, from `QcReport.Format`: decisions/2026-11-04-format-words.md) and `FormatSpec` (a profile's `Format`: what the delivery asks for, each value a
@@ -108,7 +108,10 @@ What is next, in order: docs/backlog.md.
   `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md).
   `av.length`, `av.start`: each track's decoded length and start (`StartTime`, ffprobe's start_time) against the
   picture's, within `Profile.SyncFrames` frames passing, over `Profile.SyncFailure` seconds failing, between warning
-  (decisions/2026-11-05-av-lengths.md).
+  (decisions/2026-11-05-av-lengths.md). `LoudnessMeasure.MaxMomentary`, `MaxShortTerm` (and when): ebur128's highest M
+  and S from the line-up's end, Noga.Ffmpeg's `LoudnessBlocks` on both paths; `loudness.momentary`, `loudness.short-term`
+  and `loudness.range` judged by `Profile.MaxMomentary`, `MaxShortTerm`, `MinRange`, `MaxRange` (a failure past them;
+  `Profiles.EbuR128S1`, ebu-r128-s1, sets -18 short-term: decisions/2026-11-05-short-term-loudness.md).
   `Measurements.HasPicture`: false for sound only (WAV, AIFF, an M4A whose cover art isn't a picture), measured on
   the FFmpeg path's `MeasureSound`, reported as `picture` (its checks not made; timecodes at 25 fps), the head's bars
   and black not judged.
