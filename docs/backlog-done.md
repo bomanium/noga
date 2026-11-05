@@ -247,3 +247,14 @@ Finished items from [backlog.md](backlog.md), oldest first.
     and nothing there needed fixing. The worst problem found, memory that grew with a QuickTime PCM file's length, was
     fixed first. The figures are in the README and docs/notes/performance.md. Also two checks at a time in `Jobs`,
     1.76x sooner: decisions/2026-11-04-checks-side-by-side.md)
+
+- Faster single checks: measure the picture pass while the next frame is decoded; take the shots from the picture
+  pass's frames on the FFmpeg path too, rather than from a second decode
+  - Why: docs/notes/performance.md: a check keeps about 2 of 4 cores busy. PictureMeter runs on one thread (40% of the
+    time), and the shots decode the video again (20%). A 1-hour ProRes HQ master takes about 17-25 minutes on a
+    4-core machine. Two checks at a time is done (decisions/2026-11-04-checks-side-by-side.md), but it doesn't help
+    one long file
+  - Status: Done (2026-11-05: the meters on threads of their own, PictureMeter on two, and the picture pass, the
+    shots and the sound side by side: ProRes HQ 1.85x faster, H.264 1.2-1.4x, the reports the same;
+    decisions/2026-11-05-faster-single-checks.md. The shots from the picture pass's frames can't take ProRes HQ, and
+    stay in Maybe for the formats they can)
