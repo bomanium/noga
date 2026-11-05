@@ -69,10 +69,10 @@ summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
 <body>
 <header>
 <h1>programme_prores.mov</h1>
-<p class="meta">Checked 2026-11-05 06:15 +00:00 · Profile ebu-r128 · starts at 10:00:00:00 · Noga 0.1.0-alpha.2</p>
+<p class="meta">Checked 2026-11-05 07:47 +00:00 · Profile ebu-r128 · starts at 10:00:00:00 · Noga 0.1.0-alpha.2</p>
 <p class="meta">/home/user/media-qc/samples/programme_prores.mov · 94.2 MB (94,201,579 bytes) · modified 2026-11-04 21:31 +00:00</p>
 <dl class="format" title="ffprobe -show_format -show_streams"><dt>Video</dt><dd>Apple ProRes 422 HQ, 1920&#215;1080, 25 fps progressive, 4:2:2 10-bit, BT.709 matrix, primaries and transfer not tagged, limited range, 16:9</dd><dt>Audio</dt><dd>PCM 24-bit, 48 kHz, stereo</dd><dt>Container</dt><dd>QuickTime (MOV)</dd><dt>Duration</dt><dd>00:00:20:00 (20.00 s)</dd></dl>
-<div class="verdict failure"><strong>Failed</strong><span>1 failure · 2 warnings · 10 passed · 14 for information</span></div>
+<div class="verdict failure"><strong>Failed</strong><span>1 failure · 2 warnings · 10 passed · 16 for information</span></div>
 </header>
 <h2>Failures and warnings</h2>
 <table>
@@ -110,6 +110,8 @@ summary .against { display: inline; margin-left: .4rem; font-weight: normal; }
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">loudness.from</td><td>Loudness is measured after the line-up tone<span class="against">Checked against ffmpeg -ss 5 -i FILE -map 0:a:0 -af ebur128=peak=true (the same figures) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc" data-label="From">10:00:05:00</td><td class="tc" data-label="To">10:00:20:00</td></tr>
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">audio</td><td>Audio measured: track 1 of 1: pcm_s24le, 2 channels (stereo)<span class="against">Checked against ffprobe -show_streams (the first audio stream: ffmpeg&#39;s 0:a:0) · EBU QC <a href="https://qc.ebu.io/items/0004F" title="EBU QC 0004F v2.0">0004F Audio Channel Count</a></span></td><td class="tc"></td><td class="tc"></td></tr>
 <tr><td class="sev"><span class="sev info">Info</span></td><td class="check">loudness.range</td><td>Loudness range 6.9 LU<span class="against">Checked against -map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc"></td><td class="tc"></td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">loudness.momentary</td><td>Loudest momentary loudness -34.4 LUFS<span class="against">Checked against -map 0:a:0 -af ebur128=framelog=verbose: the highest M of its 100 ms readings (within 0.1 LU) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc" data-label="From">10:00:12:18</td><td class="tc" data-label="To">10:00:13:03</td></tr>
+<tr><td class="sev"><span class="sev info">Info</span></td><td class="check">loudness.short-term</td><td>Loudest short-term loudness -34.6 LUFS<span class="against">Checked against -map 0:a:0 -af ebur128=framelog=verbose: the highest S of its 100 ms readings (within 0.1 LU) · EBU QC <a href="https://qc.ebu.io/items/0010B" title="EBU QC 0010B v2.0">0010B Loudness</a></span></td><td class="tc" data-label="From">10:00:12:15</td><td class="tc" data-label="To">10:00:15:15</td></tr>
 <tr><td class="sev"><span class="sev pass">Pass</span></td><td class="check">loudness.true-peak</td><td>True peak -24.6 dBTP (at most -1.0 dBTP)<span class="against">Checked against -map 0:a:0 -af ebur128=peak=true (integrated and range within 0.1 LU, true peak within 0.1 dB) · EBU QC <a href="https://qc.ebu.io/items/0084B" title="EBU QC 0084B v1.0">0084B Audio Peaks (TP)</a></span></td><td class="tc"></td><td class="tc"></td></tr>
 </tbody>
 </table>
