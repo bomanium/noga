@@ -187,7 +187,35 @@ internal static partial class FfmpegCli
         Assert.Equal(Number(ffmpeg, @"I:\s+(-?[\d.]+) LUFS"), Assert.NotNull(loudness.Integrated), 0.1);
         Assert.Equal(Number(ffmpeg, @"LRA:\s+([\d.]+) LU"), loudness.Range, 0.1);
         Assert.Equal(Number(ffmpeg, @"True peak:\s+Peak:\s+(-?[\d.]+) dBFS"), loudness.TruePeak, 0.1);
+
+        // The loudest momentary and short-term loudness (Profile.MomentaryFilter, ShortTermFilter): the highest M and S
+        // of ebur128's 100 ms readings within 0.1 LU (they print to 0.1), and its reading at the time given as high.
+        string log = Run(file, Invariant($"-map 0:a:{track - 1} -af ebur128=framelog=verbose -v verbose"), from > 0 ? Invariant($"-ss {from}") : "");
+        var readings = Readings().Matches(log).Select(m => (
+            Time: double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture),
+            M: double.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture),
+            S: double.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture))).ToList();
+        Assert.NotEmpty(readings);
+        void Loudest(double? measured, double at, Func<(double Time, double M, double S), double> value)
+        {
+            double highest = readings.Max(value);
+            if (measured is not { } loudest)
+            {
+                Assert.True(highest < -120, "ebur128 has a reading where none was measured");
+                return;
+            }
+
+            Assert.Equal(highest, loudest, 0.1);
+            var there = readings.MinBy(r => Math.Abs(r.Time - (at - from)));
+            Assert.Equal(highest, value(there), 0.1);
+        }
+
+        Loudest(loudness.MaxMomentary, loudness.MaxMomentaryAt, r => r.M);
+        Loudest(loudness.MaxShortTerm, loudness.MaxShortTermAt, r => r.S);
     }
+
+    [GeneratedRegex(@"t:\s*([\d.]+)\s+TARGET:\S+ LUFS\s+M:\s*(-?[\d.]+)\s+S:\s*(-?[\d.]+)")]
+    private static partial Regex Readings();
 
     /// <summary>The silences are silencedetect's with the profile's options, each end within 10 ms.</summary>
     public static void AssertSilences(string file, Measurements measured) => AssertSilences(file, measured.Silences, 1);

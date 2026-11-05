@@ -21,7 +21,7 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 
 | Check | What it reports | Checked against |
 | --- | --- | --- |
-| Loudness | integrated (fails outside the profile's target), loudness range, true peak; measured after the line-up tone | `ebur128=peak=true`: within 0.1 LU, true peak within 0.1 dB |
+| Loudness | integrated (fails outside the profile's target), loudness range, true peak, the loudest momentary and short-term loudness (a profile can limit them and the range); measured after the line-up tone | `ebur128=peak=true`: within 0.1 LU, true peak within 0.1 dB; its 100 ms M and S readings within 0.1 LU |
 | Black | spans of black: a warning mid-programme, reported at the head and tail | `blackdetect=d=2:pix_th=0.10:pic_th=0.98`: each end within one frame |
 | Frozen pictures | a picture frozen for 2 s or more (black and bars left out) | `freezedetect=n=0.001:d=2`: each end within one frame |
 | Colour bars | SMPTE bars and where they are | `signalstats` on each bar |
@@ -92,12 +92,14 @@ most of the cores busy. The web UI and the app run two checks at a time on 4 cor
 `--profile` picks what the file is judged by:
 
 - `ebu-r128` (the default): -23 LUFS within 0.5 LU, true peak -1 dBTP
+- `ebu-r128-s1` (ads, promos, trailers: EBU R 128 s1): as `ebu-r128`, and short-term loudness at most -18 LUFS
 - `atsc-a85` (US): -24 LKFS within 2 LU, -2 dBTP
 - `op-59` (Australia): -24 LKFS within 1 LU, -2 dBTP
 - `arib-tr-b32` (Japan): -24 LKFS within 1 LU, -1 dBTP
 - delivery templates: `hd-1080i25-prores-hq`, `hd-1080p25-prores-hq`, `web-1080p-h264-aac`
-- your own `.json` file: a name, the profile it is `basedOn`, the thresholds it changes, and in `format` what the
-  delivery asks for. Each value given fails the file when it differs.
+- your own `.json` file: a name, the profile it is `basedOn`, the thresholds it changes (`maxShortTerm`,
+  `maxMomentary`, `minRange` and `maxRange` set loudness limits the named profiles leave open), and in `format` what
+  the delivery asks for. Each value given fails the file when it differs.
 
 ```json
 {

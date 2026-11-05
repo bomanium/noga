@@ -9,6 +9,16 @@ namespace Noga;
 /// </summary>
 public static class Profiles
 {
+    /// <summary>
+    /// EBU R 128 s1, for short-form content (advertisements, promos, trailers): R 128's -23 LUFS and -1 dBTP, and the
+    /// loudest short-term loudness at most -18 LUFS, the target plus 5 LU (docs/decisions/2026-11-05-short-term-loudness.md).
+    /// </summary>
+    public static Profile EbuR128S1 { get; } = Profile.EbuR128 with
+    {
+        Name = "ebu-r128-s1",
+        MaxShortTerm = -18,
+    };
+
     /// <summary>ATSC A/85 (US): -24 LKFS within ±2 LU, true peak at most -2 dBTP (A/85's own document).</summary>
     public static Profile AtscA85 { get; } = Profile.EbuR128 with
     {
@@ -52,7 +62,7 @@ public static class Profiles
     };
 
     /// <summary>Every profile noga ships, the default first.</summary>
-    public static IReadOnlyList<Profile> All { get; } = [Profile.EbuR128, AtscA85, Op59, AribTrB32];
+    public static IReadOnlyList<Profile> All { get; } = [Profile.EbuR128, EbuR128S1, AtscA85, Op59, AribTrB32];
 
     /// <summary>
     /// The folder of delivery templates shipped beside the program (profiles/: profile files with a format to copy and
@@ -108,7 +118,7 @@ public static class Profiles
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
     /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>toneLevel</c>,
     /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>, <c>syncFrames</c>,
-    /// <c>syncFailure</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>syncFailure</c>, <c>maxMomentary</c>, <c>maxShortTerm</c>, <c>minRange</c>, <c>maxRange</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
@@ -160,6 +170,10 @@ public static class Profiles
             TailBlack = file.TailBlack ?? start.TailBlack,
             SyncFrames = file.SyncFrames ?? start.SyncFrames,
             SyncFailure = file.SyncFailure ?? start.SyncFailure,
+            MaxMomentary = file.MaxMomentary ?? start.MaxMomentary,
+            MaxShortTerm = file.MaxShortTerm ?? start.MaxShortTerm,
+            MinRange = file.MinRange ?? start.MinRange,
+            MaxRange = file.MaxRange ?? start.MaxRange,
             Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
@@ -174,6 +188,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: freezeNoise is 0 to 1, minFreeze positive.", nameof(json));
         if (profile.ToneLevel is > 0 || profile.ToneTolerance < 0 || profile.HeadBars is < 0 || profile.HeadTone is < 0 || profile.HeadBlack is < 0 || profile.TailBlack is < 0)
             throw new ArgumentException($"{source}: toneLevel is at most 0 dBFS; toneTolerance, headBars, headTone, headBlack and tailBlack at least 0.", nameof(json));
+        if (profile.MaxMomentary is > 0 || profile.MaxShortTerm is > 0 || profile.MinRange is < 0 || profile.MaxRange is < 0 || profile.MinRange > profile.MaxRange)
+            throw new ArgumentException($"{source}: maxMomentary and maxShortTerm are at most 0 LUFS; minRange and maxRange at least 0, the first no more than the second.", nameof(json));
         if (profile.SyncFrames < 0 || profile.SyncFailure <= 0)
             throw new ArgumentException($"{source}: syncFrames is at least 0, syncFailure positive.", nameof(json));
         if (profile.Format is { } format)
@@ -209,6 +225,10 @@ internal sealed record ProfileFile(
     double? TailBlack,
     int? SyncFrames,
     double? SyncFailure,
+    double? MaxMomentary,
+    double? MaxShortTerm,
+    double? MinRange,
+    double? MaxRange,
     FormatSpec? Format);
 
 [JsonSourceGenerationOptions(

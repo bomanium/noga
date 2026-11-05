@@ -17,7 +17,7 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
     /// </summary>
     public static EbuQcItem? For(string check) => check switch
     {
-        "loudness.integrated" or "loudness.range" or "loudness.from" => new("0010B", "Loudness", "2.0"),
+        "loudness.integrated" or "loudness.range" or "loudness.from" or "loudness.momentary" or "loudness.short-term" => new("0010B", "Loudness", "2.0"),
         "loudness.true-peak" => new("0084B", "Audio Peaks (TP)", "1.0"),
         "silence" => new("0078B", "Audio Silence", "3.0"),
         "tone" => new("0014B", "Audio Test Tones", "2.0"),

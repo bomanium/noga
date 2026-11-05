@@ -16,7 +16,7 @@ it when the fingerprint they show is the one noga printed. --http shares it as p
 trust.
 noga --help says the same.
 
-Profiles: ebu-r128 (the default), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
+Profiles: ebu-r128 (the default), ebu-r128-s1 (ads and promos), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one
 of those, and the thresholds it changes, e.g. "maxTruePeak": -3); noga --help lists them with their figures.
 
 The line-up tone's level is judged by the profile: -18 dBFS for ebu-r128, -20 dBFS for atsc-a85, within 0.5 dB (a

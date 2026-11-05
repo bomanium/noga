@@ -29,6 +29,7 @@ public sealed class OddFiles : IDisposable
         ["one_frame.mp4"] = $"-f lavfi -i testsrc2=s=320x180:r=25:d=0.04 -f lavfi -i sine=duration=0.04 {H264} -c:a aac",
         ["short_audio.mp4"] = $"-f lavfi -i {Picture} -f lavfi -i sine=duration=0.5 {H264} -c:a aac",
         ["sound_short.mov"] = $"-f lavfi -i {Picture} -f lavfi -i sine=frequency=1000:duration=1.88:sample_rate=48000 {ProRes} -c:a pcm_s24le",
+        ["loud.mov"] = $"-f lavfi -i testsrc2=s=320x180:r=25:d=4 -f lavfi -i anoisesrc=c=pink:a=1:d=4:r=48000 {ProRes} -c:a pcm_s24le",
         ["sound_late.mov"] = $"-f lavfi -i {Picture} -itsoffset 0.2 -f lavfi -i sine=frequency=1000:duration=1.8:sample_rate=48000 {ProRes} -c:a pcm_s24le",
         ["drop_frame.mov"] = $"-f lavfi -i testsrc2=s=320x180:r=30000/1001:d=2 -f lavfi -i {Tone} {ProRes} -c:a pcm_s24le -timecode 01:00:00;00",
 

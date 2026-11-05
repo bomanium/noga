@@ -263,3 +263,9 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: the 2026-11-03 review's delivery checks, the owner's first pick
   - Status: Done (2026-11-05: `av.length` and `av.start`, within a frame passes, over 1 s fails, between warns;
     decisions/2026-11-05-av-lengths.md)
+
+- Short-term and momentary loudness limits and a loudness-range window
+  - Why: the 2026-11-03 review's delivery checks, the owner's second pick (decisions/2026-11-05-av-lengths.md): EBU
+    R 128 s1's short-term maximum and the like, checked against ebur128's readings every 100 ms
+  - Status: Done (2026-11-05: the loudest momentary and short-term loudness on every report, profile files' limits
+    and a range window, a failure past them; ebu-r128-s1 for short-form content; decisions/2026-11-05-short-term-loudness.md)

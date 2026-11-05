@@ -137,7 +137,20 @@ public sealed record ChannelMeasures(int Channels, double Duration, IReadOnlyLis
 public readonly record struct ToneSpan(double Start, double End, double Frequency, double Level);
 
 /// <summary>EBU R128 / ITU-R BS.1770 loudness: integrated (LUFS; null below the absolute gate), range (LU) and true peak (dBTP).</summary>
-public readonly record struct LoudnessMeasure(double? Integrated, double Range, double TruePeak);
+public readonly record struct LoudnessMeasure(double? Integrated, double Range, double TruePeak)
+{
+    /// <summary>The loudest momentary loudness (LUFS, ebur128's M: 400 ms); null when not measured or shorter than that.</summary>
+    public double? MaxMomentary { get; init; }
+
+    /// <summary>When the loudest momentary window ends (seconds from the first frame).</summary>
+    public double MaxMomentaryAt { get; init; }
+
+    /// <summary>The loudest short-term loudness (LUFS, ebur128's S: 3 s); null when not measured or shorter than that.</summary>
+    public double? MaxShortTerm { get; init; }
+
+    /// <summary>When the loudest short-term window ends (seconds from the first frame).</summary>
+    public double MaxShortTermAt { get; init; }
+}
 
 /// <summary>A span (seconds) where frames have too many pixels outside broadcast range, and the worst frame's share (0 to 1).</summary>
 public readonly record struct RangeSpan(double Start, double End, double WorstShare)

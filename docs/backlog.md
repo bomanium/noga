@@ -10,11 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Short-term and momentary loudness limits and a loudness-range window
-  - Why: the 2026-11-03 review's delivery checks, the owner's second pick (decisions/2026-11-05-av-lengths.md): EBU
-    R 128 s1's short-term maximum and the like, checked against ebur128's readings every 100 ms
-  - Status: Open
-
 - Constant-colour frames (EBU 0016B)
   - Why: the owner's third pick: runs of frames of one flat colour other than black (a slate or test colour left in),
     checked against signalstats
