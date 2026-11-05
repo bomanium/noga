@@ -9,8 +9,8 @@
   "dropFrame": false,
   "path": "/home/user/media-qc/samples/programme_prores.mov",
   "size": 94201579,
-  "modified": "2026-11-03T21:14:59.650531+00:00",
-  "checked": "2026-11-04T16:44:22.1102543+00:00",
+  "modified": "2026-11-04T21:31:20.6329254+00:00",
+  "checked": "2026-11-05T06:15:48.2783772+00:00",
   "findings": [
     {
       "check": "format",
@@ -203,6 +203,28 @@
         "url": "https://qc.ebu.io/items/0009X"
       },
       "checkedAgainst": "ffprobe -show_entries stream=duration, against -map 0:a:N -af astats\u0027s Number of samples (within one AAC frame, 1024 samples)"
+    },
+    {
+      "check": "av.length",
+      "severity": "Pass",
+      "message": "The sound is as long as the picture: 20.00 s against 20.00 s (within 1 frame)",
+      "value": 0,
+      "unit": "s",
+      "ebuQc": {
+        "id": "0082W",
+        "name": "Audio / Video Duration Match",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0082W"
+      },
+      "checkedAgainst": "ffprobe -select_streams v:0 -count_frames (nb_read_frames times the frame\u0027s duration) against -map 0:a:N -af astats\u0027s Number of samples (within one AAC frame, 1024 samples)"
+    },
+    {
+      "check": "av.start",
+      "severity": "Pass",
+      "message": "The sound starts with the picture (within 1 frame)",
+      "value": 0,
+      "unit": "s",
+      "checkedAgainst": "ffprobe -show_entries stream=start_time (each stream\u0027s, exact)"
     },
     {
       "check": "keyframes",
@@ -423,7 +445,7 @@
       "check": "loudness.integrated",
       "severity": "Failure",
       "message": "Integrated loudness -34.8 LUFS (-11.8 LU from -23 LUFS)",
-      "value": -34.76476778967177,
+      "value": -34.77030762441834,
       "unit": "LUFS",
       "ebuQc": {
         "id": "0010B",
@@ -436,8 +458,8 @@
     {
       "check": "loudness.range",
       "severity": "Info",
-      "message": "Loudness range 7.0 LU",
-      "value": 7.009999999999998,
+      "message": "Loudness range 6.9 LU",
+      "value": 6.909999999999997,
       "unit": "LU",
       "ebuQc": {
         "id": "0010B",
@@ -450,8 +472,8 @@
     {
       "check": "loudness.true-peak",
       "severity": "Pass",
-      "message": "True peak -24.9 dBTP (at most -1.0 dBTP)",
-      "value": -24.861931736128064,
+      "message": "True peak -24.6 dBTP (at most -1.0 dBTP)",
+      "value": -24.57372875324653,
       "unit": "dBTP",
       "ebuQc": {
         "id": "0084B",

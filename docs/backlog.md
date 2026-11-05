@@ -10,7 +10,20 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Nothing yet: the next item comes from the owner, or from Maybe
+- Short-term and momentary loudness limits and a loudness-range window
+  - Why: the 2026-11-03 review's delivery checks, the owner's second pick (decisions/2026-11-05-av-lengths.md): EBU
+    R 128 s1's short-term maximum and the like, checked against ebur128's readings every 100 ms
+  - Status: Open
+
+- Constant-colour frames (EBU 0016B)
+  - Why: the owner's third pick: runs of frames of one flat colour other than black (a slate or test colour left in),
+    checked against signalstats
+  - Status: Open
+
+- RGB gamut (EBU R 103)
+  - Why: the owner's fourth pick: pixels whose RGB falls outside -5% to 105%; FFmpeg has no filter for it, so the
+    check rests on its RGB conversion
+  - Status: Open
 
 ## Waiting
 
@@ -33,11 +46,10 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     side by side (docs/notes/performance.md); ProRes HQ (yuv422p10le) can't, so it would not speed up the main case
   - Status: Maybe
 
-- More from the 2026-11-03 review: short-term and momentary loudness limits and a loudness-range window,
-  constant-colour frames (EBU 0016B), RGB gamut (EBU R 103),
-  audio and video durations that differ, AS-11 UK metadata in MXF (ffprobe's tags); flashing (PSE) only as an
-  indicative warning, as FFmpeg has nothing to check it against
-  - Why: each is a common delivery check; most can be checked against an FFmpeg filter, the review's notes say how
+- AS-11 UK metadata in MXF (ffprobe's tags); flashing (PSE) only as an indicative warning, as FFmpeg has nothing to
+  check it against
+  - Why: the rest of the 2026-11-03 review's delivery checks; the owner took the others first
+    (decisions/2026-11-05-av-lengths.md)
   - Status: Maybe
 
 - The desktop app's next steps: macOS (osx-arm64, signed and notarised), code signing on Windows

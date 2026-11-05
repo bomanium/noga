@@ -130,6 +130,9 @@ public sealed record VideoFormat(
     /// <summary>The stream's duration as the container gives it (seconds; the stream's duration); null when none.</summary>
     public double? StreamDuration { get; init; }
 
+    /// <summary>When the stream starts (seconds; ffprobe's start_time); null when none.</summary>
+    public double? StartTime { get; init; }
+
     /// <summary>"prores (HQ) 1920x1080 25 fps progressive, yuv422p10le 10-bit, bt709/bt709/bt709 tv, 16:9".</summary>
     public override string ToString()
     {
@@ -206,6 +209,7 @@ public sealed record VideoFormat(
         {
             ListedFrames = MediaFormat.Integer(stream, "nb_frames"),
             StreamDuration = MediaFormat.Number(stream, "duration"),
+            StartTime = MediaFormat.Number(stream, "start_time"),
         };
     }
 
@@ -232,6 +236,9 @@ public sealed record AudioFormat(int Number, string Codec, int? SampleRate, int 
     /// <summary>The stream's duration as the container gives it (seconds; the stream's duration); null when none.</summary>
     public double? StreamDuration { get; init; }
 
+    /// <summary>When the stream starts (seconds; ffprobe's start_time); null when none.</summary>
+    public double? StartTime { get; init; }
+
     /// <summary>"pcm_s24le 48000 Hz 2 ch (stereo) 24-bit".</summary>
     public override string ToString()
     {
@@ -255,6 +262,7 @@ public sealed record AudioFormat(int Number, string Codec, int? SampleRate, int 
             depth)
         {
             StreamDuration = MediaFormat.Number(stream, "duration"),
+            StartTime = MediaFormat.Number(stream, "start_time"),
         };
     }
 }
