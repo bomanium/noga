@@ -28,11 +28,12 @@ Nothing waiting.
     side by side (docs/notes/performance.md); ProRes HQ (yuv422p10le) can't, so it would not speed up the main case
   - Status: Maybe
 
-- AS-11 UK metadata in MXF (ffprobe's tags); flashing (PSE) only as an indicative warning, as FFmpeg has nothing to
-  check it against
+- AS-11 UK metadata in MXF; flashing (PSE) only as an indicative warning, as FFmpeg has nothing to check it against
   - Why: the rest of the 2026-11-03 review's delivery checks; the owner took the others first
-    (decisions/2026-11-05-av-lengths.md)
-  - Status: Maybe
+    (decisions/2026-11-05-av-lengths.md). FFmpeg's MXF reader skips descriptive metadata, so ffprobe gives none of
+    AS-11's fields: it would be read by Noga and checked against MediaInfo, on files made with BBC's bmx
+    (decisions/2026-11-06-as-11-parked.md)
+  - Status: Maybe (parked 2026-11-06)
 
 - The desktop app's next steps: macOS (osx-arm64, signed and notarised), code signing on Windows
   - Why: decisions/2026-11-01-desktop-app.md shipped noga-app in the release folders, unsigned; the icon, a Linux
