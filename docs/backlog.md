@@ -12,15 +12,17 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Waiting
 
-Nothing waiting.
+- Noga switched to FrameReader's meters (2.25.0): Noga.Ffmpeg's FreezeMeter, InterlaceMeter, ChannelMeter,
+  LoudnessBlocks, ColourMeter, GamutMeter, the timestamp gaps and Packets.Read (FFmpeg.AutoGen directly) replaced by
+  FreezeDetector, InterlaceDetector, ChannelMeter, LoudnessMeter's MaxMomentary(At)/MaxShortTerm(At),
+  ConstantColourDetector, GamutMeter, FrameSteps and MediaInfo's packet keyframes and sizes; every figure the same
+  against FFmpeg, FFmpeg.AutoGen dropped if nothing else uses it
+  - Why: 2026-10-31-where-the-measures-live.md puts the measures in the public packages; FrameReader 2.24.0 and
+    2.25.0 published Noga's (decisions/2026-11-05-meters-upstream.md, 2026-11-06-next-meters-upstream.md). Noga keeps
+    the verdicts, the profiles and the reports
+  - Status: Waiting (on FrameReader 2.25.0's release, held for the owner's approval in shotdetector's release.yml)
 
 ## Maybe
-
-- Noga's meters and a packet reader published into FrameReader, in one release, and Noga switched over
-  - Why: 2026-10-31-where-the-measures-live.md puts the measures in the public packages; FreezeMeter, InterlaceMeter,
-    ChannelMeter, LoudnessBlocks, the timestamp gaps and Packets.Read (FFmpeg.AutoGen directly) were written here.
-    One release, not one per meter; the verdicts stay (decisions/2026-11-05-meters-upstream.md)
-  - Status: Maybe
 
 - The shots from the picture pass's frames on the FFmpeg path, for the formats ShotDetector's frame source takes
   (yuv420p, yuv422p and their full-range forms, yuv420p10le: DNxHR SQ, H.264 in MOV or with several audio tracks)
