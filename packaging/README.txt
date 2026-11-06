@@ -32,6 +32,11 @@ A picture frozen for 2 s or more (freezedetect's measure; black, colour bars and
 warning mid-programme and reported at the head or tail; a profile file's "freezeNoise" and "minFreeze" change what
 counts.
 
+A single frame identical to the one before in moving picture (as a capture or encode fills a dropped frame) is
+reported with its timecode, as information; when over 10% of the moving frames repeat (pulldown, animation on twos)
+one line says so instead. A profile file's "repeatNoise" (0.0001), "repeatCadence" (0.1) and "repeatsWarn" (true
+for warnings) change that.
+
 Runs of 2 s or more of one flat colour other than black (a slate or a test colour left in: signalstats' Y, U and V
 10th to 90th percentiles within 4 codes) are a warning mid-programme and reported at the head or tail, with the colour
 (#RRGGBB); a profile file's "colourSpread" and "minConstantColour" change what counts.

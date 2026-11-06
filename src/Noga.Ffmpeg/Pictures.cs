@@ -11,11 +11,11 @@ public static class Pictures
 {
     /// <summary>
     /// Decodes <paramref name="path"/>'s video with FFmpeg's libraries and measures every frame, into
-    /// <paramref name="freezes"/>, <paramref name="interlace"/>, <paramref name="colours"/> and <paramref name="gamut"/> too when given, telling <paramref name="at"/> each
+    /// <paramref name="freezes"/>, <paramref name="interlace"/>, <paramref name="colours"/>, <paramref name="gamut"/> and <paramref name="repeats"/> too when given, telling <paramref name="at"/> each
     /// frame's time (seconds); the meters take the frames on threads of their own (<see cref="FrameMeters"/>).
     /// </summary>
     /// <exception cref="InvalidDataException">The video isn't planar YUV of 8 to 16 bits.</exception>
-    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null, ColourMeter? colours = null, GamutMeter? gamut = null)
+    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null, ColourMeter? colours = null, GamutMeter? gamut = null, FreezeMeter? repeats = null)
     {
         Libraries.Load();
         using var decoder = new FrameDecoder(path, new FrameDecoderOptions { CancellationToken = cancellationToken });
@@ -35,7 +35,7 @@ public static class Pictures
                         throw new InvalidDataException($"{path}: {frame.PixelFormat} isn't planar YUV of 8 to 16 bits.");
                     }
 
-                    meters = new FrameMeters(format, freezes, interlace, at, cancellationToken, colours, gamut);
+                    meters = new FrameMeters(format, freezes, interlace, at, cancellationToken, colours, gamut, repeats);
                 }
 
                 meters.Post(new Decoded(frame));

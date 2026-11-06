@@ -97,7 +97,7 @@ What is next, in order: docs/backlog.md.
   `channel.*` (dead fails; silent, out of phase below `Profile.MinPhase`, clipping from `Profile.ClipRun` warn; dual
   mono reported: decisions/2026-11-03-channel-faults.md), measured by Noga.Ffmpeg's `ChannelMeter` on both paths.
   `Measurements.Freezes`: frozen pictures (Noga.Ffmpeg's `FreezeMeter`, freezedetect's arithmetic on both paths'
-  frames), judged as `freeze` like black, black, bars and constant colour left out (decisions/2026-11-03-freeze-frames.md).
+  frames), judged as `freeze` like black, black, bars and constant colour left out (decisions/2026-11-03-freeze-frames.md). `Measurements.Repeats`: single repeated frames (Noga.Ffmpeg's `RepeatedFrames`, a second FreezeMeter at `Profile.RepeatNoise`, -80 dB, d 1.5 frames: its two-frame freezes), judged as `repeat`, information (`RepeatsWarn` a warning), over `Profile.RepeatCadence` of the moving frames one cadence line (decisions/2026-11-06-repeated-frames.md).
   `Measurements.ConstantColour`: runs of one flat colour (Noga.Ffmpeg's `ColourMeter`: signalstats' Y, U and V LOW to
   HIGH within `Profile.ColourSpread`, on both paths' frames; every fourth luma row first, which rules out moving
   pictures exactly), `ColourSpan` (its mean Y, Cb, Cr and #RRGGBB), judged as `colour` like black, black and bars left
@@ -134,7 +134,7 @@ What is next, in order: docs/backlog.md.
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
   the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths; when there is none at a rate without drop-frame, `TimecodeTrack` reads a drop-frame flag FFmpeg drops (the tmcd track, MXF's timecode component), judged in Core as `timecode.drop-frame`, a warning; a profile's `FormatSpec.DropFrame` as `format.drop-frame`. `FrameMeters`: the picture's meters (PictureMeter on `FrameMeters.PictureLanes` threads, each frame's measures
-  joined; `FreezeMeter`; `InterlaceMeter`; `ColourMeter`; `GamutMeter`) each on a thread of its own while the next frames decode, for both paths'
+  joined; `FreezeMeter`; `InterlaceMeter`; `ColourMeter`; `GamutMeter`; the repeats' FreezeMeter) each on a thread of its own while the next frames decode, for both paths'
   frames (`IMeteredFrame`), through `Lanes` (each item to every consumer, disposed once all are done);
   `SideBySide.Run`: the picture pass, the shots and the sound at the same time, failing with the first part's error
   in order (decisions/2026-11-05-faster-single-checks.md). `CheckProgress`: how far a check has got, its stages (or

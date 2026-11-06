@@ -312,3 +312,13 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-06: the WAV, RF64/BW64 and AIFF header's length against the sound that decodes, a
     `decode.sound` failure when it lists more, a warning when it was never finished; checked against astats' samples
     on whole files; decisions/2026-11-06-sound-headers.md)
+
+- Dropped frames filled by a repeat: single frames identical to the one before
+  - Why: capture cards and encoders often fill a dropped frame by repeating the last, which the timestamps don't
+    show and freeze (2 s at least) misses. FreezeMeter's arithmetic with a duration of one frame, checked against
+    mpdecimate or freezedetect with a short d; animation, slates and pulldown repeat frames on purpose, so it needs
+    care (a cadence, or only isolated repeats in moving picture) before it can be more than indicative
+  - Status: Done (2026-11-06: `repeat`, single frames identical to the one before at -80 dB in moving picture, each
+    information (a profile's `repeatsWarn` makes them warnings), over 10% of the moving frames summed up as a cadence;
+    a second FreezeMeter on both paths, checked against freezedetect with d a frame and a half;
+    decisions/2026-11-06-repeated-frames.md)
