@@ -123,7 +123,7 @@ public static class Profiles
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
-    /// <c>audioBitDepth</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>).
+    /// <c>audioBitDepth</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>, <c>dropFrame</c>).
     /// </summary>
     /// <exception cref="ArgumentException">Not such JSON, or a value out of its range.</exception>
     public static Profile Read(string json, string source = "the profile")

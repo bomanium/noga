@@ -82,6 +82,9 @@ public sealed record FormatSpec
     /// <summary>The start timecode ("10:00:00:00"; ";" before the frames for drop-frame).</summary>
     public string? StartTimecode { get; init; }
 
+    /// <summary>Whether the start timecode is drop-frame (";" before the frames) or non-drop.</summary>
+    public bool? DropFrame { get; init; }
+
     /// <summary>The scans <see cref="Scan"/> may name.</summary>
     public static IReadOnlyList<string> Scans { get; } = ["progressive", "interlaced"];
 
@@ -194,6 +197,13 @@ public sealed record FormatSpec
         {
             bool match = startTimecode is not null && string.Equals(startTimecode, timecode, StringComparison.Ordinal);
             Add("format.start-timecode", match, $"Start timecode {startTimecode ?? "none"}", timecode, $"the timecode tag ({TimecodeTag.CheckedAgainst})", raw: true);
+        }
+
+        if (DropFrame is { } drop)
+        {
+            bool? measured = startTimecode is null ? null : Timecode.IsDropFrame(startTimecode);
+            string said = measured == true ? "drop-frame" : "non-drop";
+            Add("format.drop-frame", measured == drop, startTimecode is null ? "No start timecode" : $"Start timecode {startTimecode}, {said}", drop ? "drop-frame" : "non-drop", $"the timecode tag's \";\" before the frames ({TimecodeTag.CheckedAgainst})", raw: true);
         }
 
         return into;

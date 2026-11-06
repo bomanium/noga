@@ -35,7 +35,7 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "range" or "gamut" => new("0051B", "Video Signal Levels", "2.0"),
         "crop" => new("0015B", "Black Bars", "3.0"),
         "frames" or "keyframes" => new("0046F", "GOP Length - Structure", "1.0"),
-        "timecode" => new("0026W", "Timecode", "3.0"),
+        "timecode" or "timecode.drop-frame" => new("0026W", "Timecode", "3.0"),
         "audio" => new("0004F", "Audio Channel Count", "2.0"),
         "channel.dead" or "channel.silence" => new("0078B", "Audio Silence", "3.0"),
         "channel.phase" => new("0012B", "Audio Phase Error", "2.0"),
@@ -76,7 +76,7 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "format.audio-channels" => new("0004F", "Audio Channel Count", "2.0"),
         "format.audio-bit-depth" => new("0003F", "Audio Bit Depth", "3.0"),
         "format.duration" => new("0213W", "Container Duration", "1.0"),
-        "format.start-timecode" => new("0026W", "Timecode", "3.0"),
+        "format.start-timecode" or "format.drop-frame" => new("0026W", "Timecode", "3.0"),
         _ => null,
     };
 }

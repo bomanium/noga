@@ -93,7 +93,7 @@ public static class ReportHtml
             <body>
             <header>
             <h1>{Encode(file)}</h1>
-            <p class="meta">{Checked(report.Source)}Profile {Encode(report.Profile)} · starts at {Encode(report.StartTimecode)}{(report.DropFrame ? " (drop-frame)" : "")} · {Encode(Product.Name)} {Encode(Product.Version)}</p>
+            <p class="meta">{Checked(report.Source)}Profile {Encode(report.Profile)} · starts at {Encode(report.StartTimecode)}{(report.DropFrame ? " (drop-frame)" : report.DropFrameRate ? " (non-drop)" : "")} · {Encode(Product.Name)} {Encode(Product.Version)}</p>
             {Identity(report.Source)}
 
             """);

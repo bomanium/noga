@@ -30,7 +30,8 @@ public static class TimecodeTag
             element.TryGetProperty("tags", out var tags) && tags.TryGetProperty("timecode", out var timecode) ? timecode.GetString() : null;
     }
 
-    static bool IsValid(string timecode, long rateNumerator, long rateDenominator)
+    /// <summary>Whether <paramref name="timecode"/> is a timecode at the rate.</summary>
+    public static bool IsValid(string timecode, long rateNumerator, long rateDenominator)
     {
         try
         {
