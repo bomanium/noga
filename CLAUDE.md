@@ -113,7 +113,7 @@ What is next, in order: docs/backlog.md.
   as `interlace.flag` (a warning when they disagree: decisions/2026-11-03-interlacing.md). `Profile.Decode`: what was
   decoded against what the file lists, in MOV/MP4/MXF (`VideoFormat.ListedFrames`, `StreamDuration`,
   `VideoPackets.Count`, `PictureTypes`, each track's `ChannelMeasures.Duration`): `decode.frames` (cut short),
-  `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md).
+  `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md); a sound-only WAV, RF64/BW64 or AIFF's header (`Measurements.SoundHeader`, Noga.Ffmpeg's `SoundHeaders.Read`) against the sound that decodes, which FFmpeg's WAV duration doesn't see, a header never finished a warning (decisions/2026-11-06-sound-headers.md).
   `av.length`, `av.start`: each track's decoded length and start (`StartTime`, ffprobe's start_time) against the
   picture's, within `Profile.SyncFrames` frames passing, over `Profile.SyncFailure` seconds failing, between warning
   (decisions/2026-11-05-av-lengths.md). `frames.dropped`: gaps in the picture's timestamps (`VideoPackets.Times`,

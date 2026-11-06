@@ -37,7 +37,7 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | Frames, keyframes, bitrate | picture types, keyframe positions, bytes a second | `ffprobe -show_frames`, `-show_packets`, exact |
 | Head and tail | a profile can require bars, tone and black at the head and black at the tail | as above |
 | Sound against picture | each track's length and start against the picture's: within a frame passes, over 1 s fails, between warns | `ffprobe -count_frames` and `start_time`, exact; the sound against `astats`' samples |
-| Decoding | a picture that ends before the frames the file lists, frames that don't decode, a track whose sound ends early: each fails (MOV, MP4, MXF) | `ffprobe -count_packets -count_frames` (`nb_frames`, `nb_read_packets`, `nb_read_frames`), exact; the sound against `astats`' samples |
+| Decoding | a picture that ends before the frames the file lists, frames that don't decode, a track whose sound ends early, a WAV, RF64 or AIFF holding less than its header lists: each fails (MOV, MP4, MXF, WAV, AIFF) | `ffprobe -count_packets -count_frames` (`nb_frames`, `nb_read_packets`, `nb_read_frames`), exact; the sound against `astats`' samples; a header's length against `astats`' samples on whole files |
 | Shot list | the cuts | PySceneDetect's `detect-adaptive`, through [ShotDetector](https://github.com/bisforboman/shotdetector) |
 
 Each finding also names its [EBU QC](https://qc.ebu.io) item. Timecodes run from the file's start timecode; at 29.97

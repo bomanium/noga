@@ -106,6 +106,12 @@ public sealed record Measurements
     /// <summary>The video packets' keyframes and sizes (ffprobe -show_packets'); null when not read.</summary>
     public VideoPackets? Packets { get; init; }
 
+    /// <summary>
+    /// What a WAV, RF64, BW64 or AIFF header lists (the FFmpeg path's sound-only files): checked against the sound that
+    /// decodes (docs/decisions/2026-11-06-sound-headers.md); null for other files.
+    /// </summary>
+    public SoundHeader? SoundHeader { get; init; }
+
     /// <summary>Whether the file has a picture; false for sound only (a WAV, an M4A), whose picture checks aren't made.</summary>
     public bool HasPicture { get; init; } = true;
 

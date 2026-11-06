@@ -305,3 +305,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
     non-drop; a profile's `dropFrame` judged as `format.drop-frame`; a drop-frame flag at a rate without it, which
     FFmpeg drops, read from the tmcd track or MXF timecode component, counted non-drop and warned as
     `timecode.drop-frame`; decisions/2026-11-06-drop-frame.md)
+
+- A WAV cut short caught: its RIFF header's data size against the samples there are
+  - Why: FFmpeg gives a WAV's duration from what is in the file, so decode.sound passes a stem cut short
+    (decisions/2026-11-04-odd-files.md)
+  - Status: Done (2026-11-06: the WAV, RF64/BW64 and AIFF header's length against the sound that decodes, a
+    `decode.sound` failure when it lists more, a warning when it was never finished; checked against astats' samples
+    on whole files; decisions/2026-11-06-sound-headers.md)
