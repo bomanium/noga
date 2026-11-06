@@ -65,6 +65,7 @@ public static class FfmpegMeasurer
 
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
+        var colours = new ColourMeter(profile.ColourSpread, profile.MinConstantColour);
         double duration = measured.Duration;
         var parts = stages.Together(PictureShare, ShotsShare, SoundShare);
 
@@ -78,7 +79,7 @@ public static class FfmpegMeasurer
             cancellationToken,
             token =>
             {
-                pictures = Pictures.Measure(path, token, freezes, interlace, seconds => parts[0].Report(duration > 0 ? seconds / duration : 0));
+                pictures = Pictures.Measure(path, token, freezes, interlace, seconds => parts[0].Report(duration > 0 ? seconds / duration : 0), colours);
                 packets = Packets.Read(path, token);
             },
             token => shots = Shots.Detect(path, token, parts[1]),
@@ -93,6 +94,7 @@ public static class FfmpegMeasurer
         measured = Pictures.Add(sound, pictures, profile) with
         {
             Freezes = freezes.Finish(),
+            ConstantColour = colours.Finish(),
             Interlace = interlace.Finish(),
             Packets = packets,
         };

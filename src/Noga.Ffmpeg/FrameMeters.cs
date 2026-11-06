@@ -23,7 +23,8 @@ public interface IMeteredFrame : IDisposable
 
 /// <summary>
 /// The picture's meters over every frame of a video, for both decoding paths: FrameReader's PictureMeter (black, bars,
-/// BRNG, crop, picture types), and the <see cref="FreezeMeter"/> and <see cref="InterlaceMeter"/> when given. Each
+/// BRNG, crop, picture types), and the <see cref="FreezeMeter"/>, <see cref="InterlaceMeter"/> and
+/// <see cref="ColourMeter"/> when given. Each
 /// meter takes the frames on a thread of its own (<see cref="Lanes{T}"/>) while the next ones are decoded, PictureMeter,
 /// the slowest, on <see cref="PictureLanes"/> threads: each frame measured on its own, and the frames' measures joined,
 /// which gives the whole run's byte for byte (docs/notes/performance.md).
@@ -44,7 +45,7 @@ public sealed class FrameMeters : IDisposable
     /// Meters of frames in <paramref name="format"/>, telling <paramref name="at"/> each frame's time (seconds) as it
     /// is measured.
     /// </summary>
-    public FrameMeters(PictureFormat format, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null, CancellationToken cancellationToken = default)
+    public FrameMeters(PictureFormat format, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null, CancellationToken cancellationToken = default, ColourMeter? colours = null)
     {
         ArgumentNullException.ThrowIfNull(format);
         double unit = (double)format.TimeBase.Num / format.TimeBase.Den;
@@ -92,6 +93,18 @@ public sealed class FrameMeters : IDisposable
                 var u = frame.Plane(1, out int uStride);
                 var v = frame.Plane(2, out int vStride);
                 interlace.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth);
+            });
+        }
+
+        if (colours is not null)
+        {
+            consumers.Add(numbered =>
+            {
+                var frame = numbered.Frame;
+                var y = frame.Plane(0, out int yStride);
+                var u = frame.Plane(1, out int uStride);
+                var v = frame.Plane(2, out int vStride);
+                colours.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, format.FullRange, frame.Pts * unit);
             });
         }
 

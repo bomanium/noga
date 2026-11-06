@@ -357,6 +357,106 @@ internal static partial class FfmpegCli
         }
     }
 
+    /// <summary>Each frame's signalstats YLOW, YHIGH, YAVG, ULOW, UHIGH, UAVG, VLOW, VHIGH and VAVG, in order.</summary>
+    public static List<ColourStats> Signalstats(string file)
+    {
+        string log = Run(file, "-an -vf signalstats,metadata=print");
+        var frames = new List<ColourStats>();
+        var values = new Dictionary<string, double>();
+        void Flush()
+        {
+            if (values.Count == 0)
+                return;
+            ushort At(string key) => (ushort)values[key];
+            frames.Add(new ColourStats(At("YLOW"), At("YHIGH"), (float)values["YAVG"], At("ULOW"), At("UHIGH"), (float)values["UAVG"], At("VLOW"), At("VHIGH"), (float)values["VAVG"]));
+            values.Clear();
+        }
+
+        foreach (Match m in SignalstatsLine().Matches(log))
+        {
+            if (m.Groups[1].Success)
+                Flush();
+            else
+                values[m.Groups[2].Value] = Parse(m.Groups[3].Value);
+        }
+
+        Flush();
+        return frames;
+    }
+
+    /// <summary>
+    /// Each frame's figures are signalstats': LOW and HIGH exactly, AVG within its printing (3 decimals); a frame left
+    /// out (null) is one whose YHIGH less YLOW is over the spread.
+    /// </summary>
+    public static void AssertSignalstats(string file, IReadOnlyList<ColourStats?> measured, double spread)
+    {
+        var frames = Signalstats(file);
+        Assert.Equal(frames.Count, measured.Count);
+        for (int i = 0; i < frames.Count; i++)
+        {
+            if (measured[i] is not { } m)
+            {
+                Assert.True(frames[i].YHigh - frames[i].YLow > spread, $"Frame {i} was left out, but its YHIGH less YLOW is {frames[i].YHigh - frames[i].YLow}.");
+                continue;
+            }
+
+            var e = frames[i];
+            Assert.Equal((e.YLow, e.YHigh, e.ULow, e.UHigh, e.VLow, e.VHigh), (m.YLow, m.YHigh, m.ULow, m.UHigh, m.VLow, m.VHigh));
+            Assert.Equal(e.YAvg, m.YAvg, 0.0006);
+            Assert.Equal(e.UAvg, m.UAvg, 0.0006);
+            Assert.Equal(e.VAvg, m.VAvg, 0.0006);
+        }
+    }
+
+    /// <summary>
+    /// The runs of one flat colour are those signalstats' figures give by the profile's rule (Profile.ColourFilter):
+    /// each start and end exact, each colour within 0.01 of the run's mean averages.
+    /// </summary>
+    public static void AssertConstantColour(string file, Measurements measured, Profile profile)
+    {
+        var frames = Signalstats(file);
+        var times = Regex.Matches(Run(file, "-an -vf showinfo"), @"pts_time:(-?[\d.]+)").Select(m => Parse(m.Groups[1].Value)).ToList();
+        Assert.Equal(frames.Count, times.Count);
+        int depth = Ffprobe(file, "-select_streams", "v:0", "-show_entries", "stream=pix_fmt", "-of", "csv=p=0").Contains("p10", StringComparison.Ordinal) ? 10 : 8;
+        double spread = profile.ColourSpread * (1 << (depth - 8));
+        double frame = (double)measured.RateDenominator / measured.RateNumerator;
+        var expected = new List<(double Start, double End, double Y, double Cb, double Cr)>();
+        int? first = null;
+        void End(int i)
+        {
+            if (first is not { } f)
+                return;
+            double end = i < times.Count ? times[i] : times[^1] + frame;
+            var run = frames.Skip(f).Take(i - f).ToList();
+            double scale = 1.0 / (1 << (depth - 8));
+            if (end - times[f] >= profile.MinConstantColour - 1e-9)
+                expected.Add((times[f], end, run.Average(r => r.YAvg) * scale, run.Average(r => r.UAvg) * scale, run.Average(r => r.VAvg) * scale));
+            first = null;
+        }
+
+        for (int i = 0; i < frames.Count; i++)
+        {
+            var s = frames[i];
+            bool flat = s.YHigh - s.YLow <= spread && s.UHigh - s.ULow <= spread && s.VHigh - s.VLow <= spread;
+            if (first is { } f && !(flat && Math.Abs(s.YAvg - frames[f].YAvg) <= spread && Math.Abs(s.UAvg - frames[f].UAvg) <= spread && Math.Abs(s.VAvg - frames[f].VAvg) <= spread))
+                End(i);
+            if (flat)
+                first ??= i;
+        }
+
+        End(frames.Count);
+        Assert.Equal(expected.Count, measured.ConstantColour.Count);
+        for (int i = 0; i < expected.Count; i++)
+        {
+            var (e, m) = (expected[i], measured.ConstantColour[i]);
+            Assert.Equal(e.Start, m.Start, 1e-6);
+            Assert.Equal(e.End, m.End, 1e-6);
+            Assert.Equal(e.Y, m.Y, 0.01);
+            Assert.Equal(e.Cb, m.Cb, 0.01);
+            Assert.Equal(e.Cr, m.Cr, 0.01);
+        }
+    }
+
     /// <summary>idet's totals are the command line's idet's (with its defaults), exactly; the last it prints, as a graph made again prints its own.</summary>
     public static void AssertInterlace(string file, Measurements measured)
     {
@@ -397,6 +497,10 @@ internal static partial class FfmpegCli
 
     [GeneratedRegex(@"freeze_start: (-?[\d.]+)")]
     private static partial Regex FreezeStart();
+
+    // metadata=print's lines: a frame's header, or one of signalstats' YUV figures.
+    [GeneratedRegex(@"(frame:\d+\s+pts:)|lavfi\.signalstats\.([YUV](?:LOW|HIGH|AVG))=(-?[\d.]+)")]
+    private static partial Regex SignalstatsLine();
 
     [GeneratedRegex(@"freeze_end: (-?[\d.]+)")]
     private static partial Regex FreezeEnd();
