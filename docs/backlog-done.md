@@ -282,3 +282,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-05: `frames.dropped`, each gap a failure unless a profile's `maxDroppedFrames` allows it;
     `frames.variable-rate`, a warning, its gaps not judged; each packet's time ffprobe -show_packets' on both paths;
     decisions/2026-11-05-dropped-frames.md)
+
+- Constant-colour frames (EBU 0016B)
+  - Why: the owner's third pick: runs of frames of one flat colour other than black (a slate or test colour left in),
+    checked against signalstats
+  - Status: Done (2026-11-06: `colour`, runs of 2 s or more whose signalstats Y, U and V 10th-90th percentile spreads
+    are at most 4 codes, black and bars left out, warning mid-programme and information at the head or tail, with the
+    colour as #RRGGBB; `ColourMeter` on both paths; decisions/2026-11-06-constant-colour.md)

@@ -28,8 +28,13 @@ bars and tone, 10 s of black before and 5 s after.
 Interlacing is read from the picture too (FFmpeg's idet): the report says whether the picture looks interlaced, and
 which field first, and warns when the stream's flag says otherwise.
 
-A picture frozen for 2 s or more (freezedetect's measure; black and colour bars left out) is a warning mid-programme
-and reported at the head or tail; a profile file's "freezeNoise" and "minFreeze" change what counts.
+A picture frozen for 2 s or more (freezedetect's measure; black, colour bars and constant colour left out) is a
+warning mid-programme and reported at the head or tail; a profile file's "freezeNoise" and "minFreeze" change what
+counts.
+
+Runs of 2 s or more of one flat colour other than black (a slate or a test colour left in: signalstats' Y, U and V
+10th to 90th percentiles within 4 codes) are a warning mid-programme and reported at the head or tail, with the colour
+(#RRGGBB); a profile file's "colourSpread" and "minConstantColour" change what counts.
 
 Each audio track's channels are checked one by one: a channel silent throughout while another has sound fails the
 file; a channel silent for 2 s or more while the others have sound, a stereo pair out of phase (its phase correlation

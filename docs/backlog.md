@@ -10,11 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- Constant-colour frames (EBU 0016B)
-  - Why: the owner's third pick: runs of frames of one flat colour other than black (a slate or test colour left in),
-    checked against signalstats
-  - Status: Open
-
 - RGB gamut (EBU R 103)
   - Why: the owner's fourth pick: pixels whose RGB falls outside -5% to 105%; FFmpeg has no filter for it, so the
     check rests on its RGB conversion

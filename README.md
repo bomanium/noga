@@ -23,7 +23,8 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | --- | --- | --- |
 | Loudness | integrated (fails outside the profile's target), loudness range, true peak, the loudest momentary and short-term loudness (a profile can limit them and the range); measured after the line-up tone | `ebur128=peak=true`: within 0.1 LU, true peak within 0.1 dB; its 100 ms M and S readings within 0.1 LU |
 | Black | spans of black: a warning mid-programme, reported at the head and tail | `blackdetect=d=2:pix_th=0.10:pic_th=0.98`: each end within one frame |
-| Frozen pictures | a picture frozen for 2 s or more (black and bars left out) | `freezedetect=n=0.001:d=2`: each end within one frame |
+| Constant colour | runs of 2 s or more of one flat colour other than black (a slate, a test colour), with the colour: a warning mid-programme, reported at the head and tail | `signalstats`: each frame's YLOW to YHIGH, ULOW to UHIGH, VLOW to VHIGH within 4 codes, exact |
+| Frozen pictures | a picture frozen for 2 s or more (black, bars and constant colour left out) | `freezedetect=n=0.001:d=2`: each end within one frame |
 | Colour bars | SMPTE bars and where they are | `signalstats` on each bar |
 | Line-up tone | 1 kHz tone, its level judged (-18 dBFS EBU, -20 dBFS ATSC) | `astats` and a 1 kHz bandpass |
 | Silence | spans of silence: a warning mid-programme | `silencedetect=n=-60dB:d=2`: each end within 10 ms |

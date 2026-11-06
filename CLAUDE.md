@@ -97,7 +97,11 @@ What is next, in order: docs/backlog.md.
   `channel.*` (dead fails; silent, out of phase below `Profile.MinPhase`, clipping from `Profile.ClipRun` warn; dual
   mono reported: decisions/2026-11-03-channel-faults.md), measured by Noga.Ffmpeg's `ChannelMeter` on both paths.
   `Measurements.Freezes`: frozen pictures (Noga.Ffmpeg's `FreezeMeter`, freezedetect's arithmetic on both paths'
-  frames), judged as `freeze` like black, black and bars left out (decisions/2026-11-03-freeze-frames.md).
+  frames), judged as `freeze` like black, black, bars and constant colour left out (decisions/2026-11-03-freeze-frames.md).
+  `Measurements.ConstantColour`: runs of one flat colour (Noga.Ffmpeg's `ColourMeter`: signalstats' Y, U and V LOW to
+  HIGH within `Profile.ColourSpread`, on both paths' frames; every fourth luma row first, which rules out moving
+  pictures exactly), `ColourSpan` (its mean Y, Cb, Cr and #RRGGBB), judged as `colour` like black, black and bars left
+  out, from `Profile.MinConstantColour` (decisions/2026-11-06-constant-colour.md).
   `Profile.ToneLevel` (the tone's level judged: -18 ebu-r128, -20 atsc-a85) and `HeadBars`, `HeadTone`, `HeadBlack`,
   `TailBlack` (`head.*`, `tail.*`: what the head and tail must have, a failure when short;
   decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (Noga.Ffmpeg's
@@ -126,7 +130,7 @@ What is next, in order: docs/backlog.md.
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
   the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths. `FrameMeters`: the picture's meters (PictureMeter on `FrameMeters.PictureLanes` threads, each frame's measures
-  joined; `FreezeMeter`; `InterlaceMeter`) each on a thread of its own while the next frames decode, for both paths'
+  joined; `FreezeMeter`; `InterlaceMeter`; `ColourMeter`) each on a thread of its own while the next frames decode, for both paths'
   frames (`IMeteredFrame`), through `Lanes` (each item to every consumer, disposed once all are done);
   `SideBySide.Run`: the picture pass, the shots and the sound at the same time, failing with the first part's error
   in order (decisions/2026-11-05-faster-single-checks.md). `CheckProgress`: how far a check has got, its stages (or
