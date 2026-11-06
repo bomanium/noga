@@ -289,3 +289,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-06: `colour`, runs of 2 s or more whose signalstats Y, U and V 10th-90th percentile spreads
     are at most 4 codes, black and bars left out, warning mid-programme and information at the head or tail, with the
     colour as #RRGGBB; `ColourMeter` on both paths; decisions/2026-11-06-constant-colour.md)
+
+- RGB gamut (EBU R 103)
+  - Why: the owner's fourth pick: pixels whose RGB falls outside -5% to 105%; FFmpeg has no filter for it, so the
+    check rests on its RGB conversion
+  - Status: Done (2026-11-06: `gamut`, judged like broadcast range: frames with over 1% of their pixels out of gamut
+    warn, spans joined, bars left out; `GamutMeter` on both paths, checked against geq's arithmetic per pixel;
+    make-samples.sh's testsrc2 now BT.709; decisions/2026-11-06-rgb-gamut.md)

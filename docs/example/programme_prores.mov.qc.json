@@ -7,10 +7,10 @@
   "exitCode": 1,
   "startTimecode": "10:00:00:00",
   "dropFrame": false,
-  "path": "/home/user/media-qc/samples/programme_prores.mov",
-  "size": 94201579,
-  "modified": "2026-11-04T21:31:20.6329254+00:00",
-  "checked": "2026-11-05T07:47:15.4731501+00:00",
+  "path": "/home/user/noga/samples/programme_prores.mov",
+  "size": 97857653,
+  "modified": "2026-11-06T08:13:08.7658843+00:00",
+  "checked": "2026-11-06T08:19:38.4894193+00:00",
   "findings": [
     {
       "check": "format",
@@ -135,12 +135,12 @@
     {
       "check": "range",
       "severity": "Pass",
-      "message": "Pixels outside broadcast range: at most 0.67% of the picture (at most 1%)",
-      "value": 0.6695601851851852,
+      "message": "Pixels outside broadcast range: at most 0.15% of the picture (at most 1%)",
+      "value": 0.15282600308641975,
       "unit": "%",
       "start": {
-        "seconds": 12.4,
-        "timecode": "10:00:12:10"
+        "seconds": 8.52,
+        "timecode": "10:00:08:13"
       },
       "ebuQc": {
         "id": "0051B",
@@ -149,6 +149,24 @@
         "url": "https://qc.ebu.io/items/0051B"
       },
       "checkedAgainst": "signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under 1 s apart joined"
+    },
+    {
+      "check": "gamut",
+      "severity": "Pass",
+      "message": "Pixels outside RGB gamut (-5% to 105%): at most 0.34% of the picture (at most 1%)",
+      "value": 0.33641975308641975,
+      "unit": "%",
+      "start": {
+        "seconds": 13.16,
+        "timecode": "10:00:13:04"
+      },
+      "ebuQc": {
+        "id": "0051B",
+        "name": "Video Signal Levels",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0051B"
+      },
+      "checkedAgainst": "geq per pixel: R, G and B from Y, Cb and Cr (the samples it is sited on) by the matrix tag\u0027s Kr and Kb (else BT.709, BT.601 under 720 lines), each within -5% to 105%; signalstats YAVG of that mask of 0 and the depth\u0027s maximum (each frame\u0027s share exact), colour bars left out, spans under 1 s apart joined"
     },
     {
       "check": "crop",
@@ -205,6 +223,20 @@
       "checkedAgainst": "ffprobe -show_entries stream=duration, against -map 0:a:N -af astats\u0027s Number of samples (within one AAC frame, 1024 samples)"
     },
     {
+      "check": "frames.dropped",
+      "severity": "Pass",
+      "message": "No frames missing: each of the 500 frames one frame after the last",
+      "value": 0,
+      "unit": "frames",
+      "ebuQc": {
+        "id": "0108F",
+        "name": "Timestamp Discontinuity",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0108F"
+      },
+      "checkedAgainst": "ffprobe -select_streams v:0 -show_packets -show_entries packet=pts,dts (each packet\u0027s, exact): a step over 1.5 frames is a gap of its frames less one"
+    },
+    {
       "check": "av.length",
       "severity": "Pass",
       "message": "The sound is as long as the picture: 20.00 s against 20.00 s (within 1 frame)",
@@ -216,7 +248,7 @@
         "version": "2.0",
         "url": "https://qc.ebu.io/items/0082W"
       },
-      "checkedAgainst": "ffprobe -select_streams v:0 -count_frames (nb_read_frames times the frame\u0027s duration) against -map 0:a:N -af astats\u0027s Number of samples (within one AAC frame, 1024 samples)"
+      "checkedAgainst": "ffprobe -select_streams v:0 -count_frames (nb_read_frames, and the frames missing in its gaps, times the frame\u0027s duration) against -map 0:a:N -af astats\u0027s Number of samples (within one AAC frame, 1024 samples)"
     },
     {
       "check": "av.start",
@@ -241,8 +273,8 @@
     {
       "check": "bitrate",
       "severity": "Info",
-      "message": "Video bitrate 35.4 Mb/s on average, at most 70.6 Mb/s in a second",
-      "value": 35.3728544,
+      "message": "Video bitrate 36.8 Mb/s on average, at most 74.8 Mb/s in a second",
+      "value": 36.835284,
       "unit": "Mb/s",
       "start": {
         "seconds": 15,
@@ -445,7 +477,7 @@
       "check": "loudness.integrated",
       "severity": "Failure",
       "message": "Integrated loudness -34.8 LUFS (-11.8 LU from -23 LUFS)",
-      "value": -34.77030762441834,
+      "value": -34.75844621678131,
       "unit": "LUFS",
       "ebuQc": {
         "id": "0010B",
@@ -459,7 +491,7 @@
       "check": "loudness.range",
       "severity": "Info",
       "message": "Loudness range 6.9 LU",
-      "value": 6.909999999999997,
+      "value": 6.899999999999999,
       "unit": "LU",
       "ebuQc": {
         "id": "0010B",
@@ -472,16 +504,16 @@
     {
       "check": "loudness.momentary",
       "severity": "Info",
-      "message": "Loudest momentary loudness -34.4 LUFS",
-      "value": -34.40333035651588,
+      "message": "Loudest momentary loudness -34.3 LUFS",
+      "value": -34.34591654108188,
       "unit": "LUFS",
       "start": {
-        "seconds": 12.7,
-        "timecode": "10:00:12:18"
+        "seconds": 8.4,
+        "timecode": "10:00:08:10"
       },
       "end": {
-        "seconds": 13.1,
-        "timecode": "10:00:13:03"
+        "seconds": 8.8,
+        "timecode": "10:00:08:20"
       },
       "ebuQc": {
         "id": "0010B",
@@ -495,15 +527,15 @@
       "check": "loudness.short-term",
       "severity": "Info",
       "message": "Loudest short-term loudness -34.6 LUFS",
-      "value": -34.59424433151125,
+      "value": -34.57564294547784,
       "unit": "LUFS",
       "start": {
-        "seconds": 12.6,
-        "timecode": "10:00:12:15"
+        "seconds": 8,
+        "timecode": "10:00:08:00"
       },
       "end": {
-        "seconds": 15.6,
-        "timecode": "10:00:15:15"
+        "seconds": 11,
+        "timecode": "10:00:11:00"
       },
       "ebuQc": {
         "id": "0010B",
@@ -516,8 +548,8 @@
     {
       "check": "loudness.true-peak",
       "severity": "Pass",
-      "message": "True peak -24.6 dBTP (at most -1.0 dBTP)",
-      "value": -24.57372875324653,
+      "message": "True peak -24.1 dBTP (at most -1.0 dBTP)",
+      "value": -24.137621125641875,
       "unit": "dBTP",
       "ebuQc": {
         "id": "0084B",

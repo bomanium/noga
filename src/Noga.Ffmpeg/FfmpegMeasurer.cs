@@ -66,6 +66,7 @@ public static class FfmpegMeasurer
         var freezes = new FreezeMeter(profile.FreezeNoise, profile.MinFreeze);
         var interlace = new InterlaceMeter();
         var colours = new ColourMeter(profile.ColourSpread, profile.MinConstantColour);
+        var gamut = new GamutMeter(profile.GamutLow, profile.GamutHigh, measured.Format?.Video?.Matrix);
         double duration = measured.Duration;
         var parts = stages.Together(PictureShare, ShotsShare, SoundShare);
 
@@ -79,7 +80,7 @@ public static class FfmpegMeasurer
             cancellationToken,
             token =>
             {
-                pictures = Pictures.Measure(path, token, freezes, interlace, seconds => parts[0].Report(duration > 0 ? seconds / duration : 0), colours);
+                pictures = Pictures.Measure(path, token, freezes, interlace, seconds => parts[0].Report(duration > 0 ? seconds / duration : 0), colours, gamut);
                 packets = Packets.Read(path, token);
             },
             token => shots = Shots.Detect(path, token, parts[1]),
@@ -98,7 +99,7 @@ public static class FfmpegMeasurer
             Interlace = interlace.Finish(),
             Packets = packets,
         };
-        return Shots.Add(measured, shots!);
+        return Shots.Add(Pictures.AddGamut(measured, gamut, profile), shots!);
     }
 
     static Measurements MeasureSound(string path, Profile profile, Measurements measured, CancellationToken cancellationToken, IProgress<double> progress)

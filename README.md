@@ -30,6 +30,7 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | Silence | spans of silence: a warning mid-programme | `silencedetect=n=-60dB:d=2`: each end within 10 ms |
 | Audio channels | dead (fails), silent, out of phase, clipping (warnings), dual mono, on every track | `astats`, `aphasemeter` |
 | Broadcast range | pixels outside 16-235 (chroma 16-240), scaled to the bit depth | `signalstats` BRNG, exact |
+| RGB gamut | pixels whose R, G or B is outside -5% to 105% (EBU R 103), by the file's matrix: over 1% of the picture warns | `geq` per pixel and `signalstats`, exact |
 | Crop | letterbox and pillarbox | `cropdetect`, exact |
 | Interlacing | whether the picture looks interlaced, against the stream's field order | `idet`'s totals, exact |
 | Format | container, codec and profile, size, rate, scan, colour, bit depth, every audio track, duration; a profile can require each | `ffprobe`, exact |

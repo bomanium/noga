@@ -78,6 +78,16 @@ public sealed record Measurements
     /// <summary>The frame with the most pixels outside broadcast range, bars left out; null without video measures.</summary>
     public FrameShare? WorstOutOfRange { get; init; }
 
+    /// <summary>
+    /// The spans where more than the profile's share of a frame's pixels are outside RGB gamut (EBU R 103: R, G or B
+    /// below <see cref="Profile.GamutLow"/> or above <see cref="Profile.GamutHigh"/>), colour bars left out, each with
+    /// its worst frame's share (docs/decisions/2026-11-06-rgb-gamut.md).
+    /// </summary>
+    public IReadOnlyList<RangeSpan> OutOfGamut { get; init; } = [];
+
+    /// <summary>The frame with the most pixels outside RGB gamut, bars left out; null when not measured.</summary>
+    public FrameShare? WorstOutOfGamut { get; init; }
+
     /// <summary>The active picture as cropdetect finds it over the whole file; null when not measured (or 3 frames or fewer).</summary>
     public ActivePicture? Crop { get; init; }
 

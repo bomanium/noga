@@ -36,6 +36,10 @@ Runs of 2 s or more of one flat colour other than black (a slate or a test colou
 10th to 90th percentiles within 4 codes) are a warning mid-programme and reported at the head or tail, with the colour
 (#RRGGBB); a profile file's "colourSpread" and "minConstantColour" change what counts.
 
+Pixels outside RGB gamut (EBU R 103: R, G or B below -5% or above 105%, by the file's matrix, else BT.709, or BT.601
+under 720 lines) on over 1% of a frame are a warning, as pixels outside broadcast range are; a profile file's
+"maxOutOfGamut", "gamutLow" and "gamutHigh" change what counts.
+
 Each audio track's channels are checked one by one: a channel silent throughout while another has sound fails the
 file; a channel silent for 2 s or more while the others have sound, a stereo pair out of phase (its phase correlation
 below -0.3) and clipping (3 or more samples in a row at full scale) are warnings; dual mono is reported. A profile
