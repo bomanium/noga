@@ -51,7 +51,7 @@ names what the delivery asks for, and each value given fails the file when it di
 "videoProfile", "width", "height", "frameRate" ("25", "30000/1001"), "scan" ("progressive" or "interlaced"),
 "fieldOrder" (ffprobe's field_order), "pixelFormat", "bitDepth", "colourPrimaries", "transfer", "matrix",
 "colourRange", "displayAspect", "audioTracks", "audioCodec", "sampleRate", "audioChannels", "audioBitDepth",
-"minDuration", "maxDuration" (seconds) and "startTimecode". The profiles folder here has templates to start from
+"minDuration", "maxDuration" (seconds), "startTimecode" and "dropFrame" (true or false). The profiles folder here has templates to start from
 (hd-1080i25-prores-hq, hd-1080p25-prores-hq, web-1080p-h264-aac): --profile takes their names, or copy one, rename it
 and change what your delivery spec says.
 

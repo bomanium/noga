@@ -249,6 +249,9 @@ public sealed record Profile
     /// <summary>What the sound decoded is checked against: the stream's duration and the samples ffmpeg decodes.</summary>
     public static string SoundDecodeFilter => "ffprobe -show_entries stream=duration, against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
 
+    /// <summary>What a start timecode flagged drop-frame at a rate without it is checked against.</summary>
+    public static string TimecodeDropFrameFilter => "ffprobe, which gives no timecode tag for it and warns \"Drop frame is only allowed with multiples of 30000/1001 FPS\"; the flag and start read from the MOV/MP4 tmcd track or the MXF timecode component";
+
     /// <summary>What the shot list is checked against: not FFmpeg, which has no detector that gives these shots.</summary>
     public static string ShotsFilter => "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)";
 
@@ -289,6 +292,18 @@ public sealed record Profile
                     "format" => MediaFormat.CheckedAgainst,
                     _ => "nothing yet",
                 },
+            });
+        }
+
+        // A start timecode flagged drop-frame at a rate that has none: counted non-drop (docs/decisions/2026-11-06-drop-frame.md).
+        if (measured.StartTimecode is { } start && Timecode.IsDropFrame(start) && !Timecode.HasDropFrame(measured.RateNumerator, measured.RateDenominator))
+        {
+            findings.Add(new Finding
+            {
+                Check = "timecode.drop-frame",
+                Severity = Severity.Warning,
+                Message = Invariant($"Start timecode {start} is drop-frame, which {(double)measured.RateNumerator / measured.RateDenominator:0.###} fps doesn't have: counted non-drop"),
+                CheckedAgainst = TimecodeDropFrameFilter,
             });
         }
 
@@ -408,7 +423,15 @@ public sealed record Profile
             }
         }
 
-        return new QcReport { Profile = Name, StartTimecode = timecode.At(0), DropFrame = timecode.DropFrame, Findings = findings, Format = measured.Format };
+        return new QcReport
+        {
+            Profile = Name,
+            StartTimecode = timecode.At(0),
+            DropFrame = timecode.DropFrame,
+            DropFrameRate = Timecode.HasDropFrame(measured.RateNumerator, measured.RateDenominator),
+            Findings = findings,
+            Format = measured.Format,
+        };
 
         void Tone(List<Finding> into, IReadOnlyList<ToneSpan> tones)
         {

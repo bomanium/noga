@@ -80,6 +80,9 @@ public sealed record QcReport
     /// <summary>Whether timecodes are drop-frame.</summary>
     public required bool DropFrame { get; init; }
 
+    /// <summary>Whether the frame rate has drop-frame timecode (29.97, 59.94): the report then says drop-frame or non-drop.</summary>
+    public bool DropFrameRate { get; init; }
+
     /// <summary>The file's format as ffprobe read it, for the HTML report's header in words (<see cref="FormatWords"/>); null when not read.</summary>
     public MediaFormat? Format { get; init; }
 

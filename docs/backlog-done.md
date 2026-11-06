@@ -296,3 +296,12 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-06: `gamut`, judged like broadcast range: frames with over 1% of their pixels out of gamut
     warn, spans joined, bars left out; `GamutMeter` on both paths, checked against geq's arithmetic per pixel;
     make-samples.sh's testsrc2 now BT.709; decisions/2026-11-06-rgb-gamut.md)
+
+- The start timecode against the frame rate
+  - Why: a drop-frame timecode (";") on a rate that has none (25, 23.976), or a 29.97/59.94 file whose timecode
+    isn't drop-frame when the delivery asks for it, goes unremarked; Timecode and the timecode tag are already read,
+    checked against ffprobe's timecode tag
+  - Status: Done (2026-11-06: at 29.97/59.94 timecodes follow the tag's ";" or ":", the header saying drop-frame or
+    non-drop; a profile's `dropFrame` judged as `format.drop-frame`; a drop-frame flag at a rate without it, which
+    FFmpeg drops, read from the tmcd track or MXF timecode component, counted non-drop and warned as
+    `timecode.drop-frame`; decisions/2026-11-06-drop-frame.md)

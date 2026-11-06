@@ -10,12 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- The start timecode against the frame rate
-  - Why: a drop-frame timecode (";") on a rate that has none (25, 23.976), or a 29.97/59.94 file whose timecode
-    isn't drop-frame when the delivery asks for it, goes unremarked; Timecode and the timecode tag are already read,
-    checked against ffprobe's timecode tag
-  - Status: Open
-
 ## Waiting
 
 Nothing waiting.

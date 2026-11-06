@@ -40,8 +40,10 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | Decoding | a picture that ends before the frames the file lists, frames that don't decode, a track whose sound ends early: each fails (MOV, MP4, MXF) | `ffprobe -count_packets -count_frames` (`nb_frames`, `nb_read_packets`, `nb_read_frames`), exact; the sound against `astats`' samples |
 | Shot list | the cuts | PySceneDetect's `detect-adaptive`, through [ShotDetector](https://github.com/bisforboman/shotdetector) |
 
-Each finding also names its [EBU QC](https://qc.ebu.io) item. Timecodes run from the file's start timecode,
-drop-frame at 29.97 and 59.94.
+Each finding also names its [EBU QC](https://qc.ebu.io) item. Timecodes run from the file's start timecode; at 29.97
+and 59.94 they are drop-frame or non-drop as the file's timecode is (drop-frame when it has none). A timecode flagged
+drop-frame at a rate that has none (25, 23.976), which FFmpeg drops, is read from the file, counted non-drop and warned
+about.
 
 It reads ProRes and DNxHR in MOV and MXF, H.264 in MP4, and whatever else FFmpeg reads. A file with sound only (a
 WAV or AIFF stem, an M4A) gets its sound's checks; the report says which picture checks weren't made. H.264 and AAC in MP4 are

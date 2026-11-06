@@ -4,7 +4,9 @@ namespace Noga;
 
 /// <summary>
 /// SMPTE timecode (ST 12-1) at a frame rate, counted from a start timecode: HH:MM:SS:FF, or HH:MM:SS;FF drop-frame at
-/// 29.97 and 59.94 (docs/decisions/2026-10-31-exit-codes-head-tail-timecode.md).
+/// 29.97 and 59.94 (docs/decisions/2026-10-31-exit-codes-head-tail-timecode.md). At those rates labels are drop-frame
+/// when the start timecode is (";" before the frames) or there is none, else non-drop; at any other rate non-drop, a
+/// start timecode's ";" counted as ":" (docs/decisions/2026-11-06-drop-frame.md).
 /// </summary>
 public sealed class Timecode
 {
@@ -14,7 +16,11 @@ public sealed class Timecode
     readonly int _drop;
     readonly long _startFrame;
 
-    /// <summary>A timecode at <paramref name="rateNumerator"/>/<paramref name="rateDenominator"/> frames a second, starting at <paramref name="start"/> (e.g. "10:00:00:00"; null for 00:00:00:00).</summary>
+    /// <summary>
+    /// A timecode at <paramref name="rateNumerator"/>/<paramref name="rateDenominator"/> frames a second, starting at
+    /// <paramref name="start"/> (e.g. "10:00:00:00", or "10:00:00;00" drop-frame; null for 00:00:00:00, drop-frame where
+    /// the rate has it).
+    /// </summary>
     /// <exception cref="ArgumentException">The rate isn't positive, or <paramref name="start"/> isn't a timecode at this rate.</exception>
     public Timecode(long rateNumerator, long rateDenominator, string? start = null)
     {
@@ -25,12 +31,25 @@ public sealed class Timecode
         _nominal = (int)Math.Round((double)rateNumerator / rateDenominator, MidpointRounding.AwayFromZero);
 
         // Drop-frame only at the NTSC rates 30000/1001 and 60000/1001: 2 or 4 labels dropped a minute, but not every tenth.
-        _drop = rateDenominator == 1001 && rateNumerator % 30000 == 0 ? (int)(rateNumerator / 15000) : 0;
+        bool drop = HasDropFrame(rateNumerator, rateDenominator) && (start is null || IsDropFrame(start));
+        _drop = drop ? (int)(rateNumerator / 15000) : 0;
         _startFrame = start is null ? 0 : Parse(start);
     }
 
     /// <summary>Whether labels are drop-frame.</summary>
     public bool DropFrame => _drop > 0;
+
+    /// <summary>Whether the rate has drop-frame labels: multiples of 30000/1001 (29.97, 59.94), as FFmpeg allows them.</summary>
+    public static bool HasDropFrame(long rateNumerator, long rateDenominator) =>
+        rateDenominator == 1001 && rateNumerator > 0 && rateNumerator % 30000 == 0;
+
+    /// <summary>Whether <paramref name="timecode"/> is written drop-frame: ";" before its frames, as FFmpeg writes it.</summary>
+    public static bool IsDropFrame(string timecode)
+    {
+        ArgumentNullException.ThrowIfNull(timecode);
+        int at = timecode.LastIndexOfAny([':', ';', '.', ',']);
+        return at >= 0 && timecode[at] == ';';
+    }
 
     /// <summary>The frame number at <paramref name="seconds"/> from the first frame (to the nearest frame).</summary>
     public long FrameAt(double seconds) => (long)Math.Round(seconds * _rateNumerator / _rateDenominator, MidpointRounding.AwayFromZero);
