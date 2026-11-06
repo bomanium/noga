@@ -27,6 +27,8 @@ public sealed record Profile
         ClipRun = 3,
         FreezeNoise = 0.001,
         MinFreeze = 2,
+        ColourSpread = 4,
+        MinConstantColour = 2,
         ToneLevel = -18,
     };
 
@@ -86,6 +88,16 @@ public sealed record Profile
 
     /// <summary>The shortest freeze reported (seconds; freezedetect's d).</summary>
     public double MinFreeze { get; init; } = 2;
+
+    /// <summary>
+    /// How flat a frame of one colour is: each of Y, U and V's signalstats HIGH less LOW (90th less 10th percentile) at
+    /// most this many 8-bit codes (scaled to the depth), and the run's averages within it
+    /// (docs/decisions/2026-11-06-constant-colour.md).
+    /// </summary>
+    public double ColourSpread { get; init; } = 4;
+
+    /// <summary>The shortest run of one flat colour reported (seconds), black and bars left out.</summary>
+    public double MinConstantColour { get; init; } = 2;
 
     /// <summary>
     /// The line-up tone's level (dBFS, a sine's peak as AES17 has it): EBU R 68's -18 for ebu-r128; null, not judged
@@ -152,6 +164,9 @@ public sealed record Profile
 
     /// <summary>What the picture's interlacing is checked against.</summary>
     public static string InterlaceFilter => "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact)";
+
+    /// <summary>What constant-colour frames are checked against.</summary>
+    public string ColourFilter => Invariant($"signalstats per frame: YHIGH-YLOW, UHIGH-ULOW and VHIGH-VLOW at most {ColourSpread} 8-bit codes, YAVG, UAVG and VAVG within that of the run's first frame (exact; each end exact), runs of {MinConstantColour} s or more, black and bars left out");
 
     /// <summary>What freezes are checked against.</summary>
     public string FreezeFilter => Invariant($"freezedetect=n={FreezeNoise}:d={MinFreeze} (each end within one frame), black and bars left out");
@@ -265,7 +280,7 @@ public sealed record Profile
             {
                 Check = "picture",
                 Severity = Severity.Info,
-                Message = "Sound only: the picture's checks (black, bars, freezes, interlacing, range, crop, frames, keyframes, bitrate, shots, the head's bars and black) aren't made; timecodes count at 25 fps",
+                Message = "Sound only: the picture's checks (black, bars, constant colour, freezes, interlacing, range, crop, frames, keyframes, bitrate, shots, the head's bars and black) aren't made; timecodes count at 25 fps",
                 CheckedAgainst = "ffprobe -show_streams (no video stream but cover art)",
             });
         }
@@ -293,8 +308,18 @@ public sealed record Profile
         HeadAndTail(findings, measured, frame, At);
         Interlace(findings, measured);
 
-        // A black picture or bars are still by nature (black and bars report them): a freeze counts outside them.
-        var still = measured.Black.Concat(measured.Bars).OrderBy(s => s.Start).ToList();
+        // One flat colour other than black, outside the bars (docs/decisions/2026-11-06-constant-colour.md): each part
+        // of a run outside them, from MinConstantColour on.
+        var blackAndBars = measured.Black.Concat(measured.Bars).OrderBy(s => s.Start).ToList();
+        foreach (var run in measured.ConstantColour)
+        {
+            foreach (var piece in Without(run.Range, blackAndBars))
+                Spans(findings, "colour", Invariant($"One colour, {run.Rgb} (Y {run.Y:0}, Cb {run.Cb:0}, Cr {run.Cr:0}),"), [piece], MinConstantColour, ColourFilter);
+        }
+
+        // A black picture, bars or one flat colour are still by nature (they are reported as such): a freeze counts
+        // outside them.
+        var still = blackAndBars.Concat(measured.ConstantColour.Select(c => c.Range)).OrderBy(s => s.Start).ToList();
         Spans(findings, "freeze", "Picture frozen", [.. measured.Freezes.SelectMany(f => Without(f, still))], MinFreeze, FreezeFilter);
         Range(findings, measured, At);
         Crop(findings, measured.Crop);

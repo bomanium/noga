@@ -24,6 +24,10 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "bars" => new("0052B", "Video Test Pattern Expected", "3.0"),
         "black" => new("0272B", "Black Frames Report", "1.0"),
         "freeze" => new("0044B", "Video Freeze", "2.0"),
+
+        // One flat colour other than black (docs/decisions/2026-11-06-constant-colour.md), read from the API on
+        // 2026-11-06: 0016B, which reports each segment's colour as #RRGGBB.
+        "colour" => new("0016B", "Constant Colour Frames", "3.0"),
         "interlace" or "interlace.flag" => new("0048B", "Video Scanning", "1.0"),
         "head.bars" => new("0052B", "Video Test Pattern Expected", "3.0"),
         "head.tone" => new("0014B", "Audio Test Tones", "2.0"),

@@ -116,7 +116,8 @@ public static class Profiles
     /// any of its thresholds and settings to change (camelCase: <c>targetLoudness</c>, <c>loudnessPass</c>,
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
-    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>toneLevel</c>,
+    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>colourSpread</c>,
+    /// <c>minConstantColour</c>, <c>toneLevel</c>,
     /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>, <c>syncFrames</c>,
     /// <c>syncFailure</c>, <c>maxMomentary</c>, <c>maxShortTerm</c>, <c>minRange</c>, <c>maxRange</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
@@ -162,6 +163,8 @@ public static class Profiles
             ClipRun = file.ClipRun ?? start.ClipRun,
             FreezeNoise = file.FreezeNoise ?? start.FreezeNoise,
             MinFreeze = file.MinFreeze ?? start.MinFreeze,
+            ColourSpread = file.ColourSpread ?? start.ColourSpread,
+            MinConstantColour = file.MinConstantColour ?? start.MinConstantColour,
             ToneLevel = file.ToneLevel ?? start.ToneLevel,
             ToneTolerance = file.ToneTolerance ?? start.ToneTolerance,
             HeadBars = file.HeadBars ?? start.HeadBars,
@@ -187,6 +190,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: minPhase is -1 to 1, clipRun at least 1.", nameof(json));
         if (profile.FreezeNoise is < 0 or > 1 || profile.MinFreeze <= 0)
             throw new ArgumentException($"{source}: freezeNoise is 0 to 1, minFreeze positive.", nameof(json));
+        if (profile.ColourSpread is < 0 or > 255 || profile.MinConstantColour <= 0)
+            throw new ArgumentException($"{source}: colourSpread is 0 to 255, minConstantColour positive.", nameof(json));
         if (profile.ToneLevel is > 0 || profile.ToneTolerance < 0 || profile.HeadBars is < 0 || profile.HeadTone is < 0 || profile.HeadBlack is < 0 || profile.TailBlack is < 0)
             throw new ArgumentException($"{source}: toneLevel is at most 0 dBFS; toneTolerance, headBars, headTone, headBlack and tailBlack at least 0.", nameof(json));
         if (profile.MaxMomentary is > 0 || profile.MaxShortTerm is > 0 || profile.MinRange is < 0 || profile.MaxRange is < 0 || profile.MinRange > profile.MaxRange)
@@ -218,6 +223,8 @@ internal sealed record ProfileFile(
     int? ClipRun,
     double? FreezeNoise,
     double? MinFreeze,
+    double? ColourSpread,
+    double? MinConstantColour,
     double? ToneLevel,
     double? ToneTolerance,
     double? HeadBars,

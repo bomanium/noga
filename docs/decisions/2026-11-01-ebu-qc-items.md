@@ -51,3 +51,6 @@ Where they differ, the item names the kind of check, not the same method:
 
 With the code: every finding carries its item (`Finding.EbuQc`: id, name, version, url), in the JSON report
 (`ebuQc`) and as a column linking to its page in the HTML report.
+
+Since 2026-11-06 ([2026-11-06-constant-colour.md](2026-11-06-constant-colour.md)) Noga finds any single colour too:
+`colour` is 0016B (Constant Colour Frames, 3.0), black stays 0272B.

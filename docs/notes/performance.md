@@ -142,6 +142,16 @@ its check started.
 track only when FFmpeg's libraries don't load). That takes 1 MB for the same file. A test keeps it under 4 MB on
 make-samples.sh's ProRes (`SampleTests.AskingTheManagedPathDoesNotReadAPcmTrack`).
 
+## Constant colour (2026-11-06)
+
+`ColourMeter` (decisions/2026-11-06-constant-colour.md) counts a histogram of every plane's samples, on a thread of its
+own, like the freeze and interlace meters. On every frame that came to 30-55% more time for a check of make-samples.sh's
+10-bit programmes. So it first counts every fourth row of the luma only. When those rows prove the frame's YHIGH and
+YLOW are further apart than the spread, which is exact, the rest isn't counted. A moving picture stops there; a flat
+one, black included, gets the full count, in four interleaved histograms so that runs of one value don't wait on each
+other. On the 20 s programmes (14 s of bars and black), Release, 4 cores: DNxHR 3.1 to 3.5 s, H.264 4.2 to 4.7 s,
+ProRes 4.4 to 4.6 s.
+
 ## Not measured yet
 
 - Real masters, 30-60 minutes, and UHD files: these figures are lavfi programmes, looped, and the open films

@@ -66,6 +66,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.NotNull(measured.Channels);
         FfmpegCli.AssertChannels(file, measured.Channels, Profile.EbuR128);
         FfmpegCli.AssertFreezes(file, measured, Profile.EbuR128);
+        FfmpegCli.AssertConstantColour(file, measured, Profile.EbuR128);
         FfmpegCli.AssertInterlace(file, measured);
         FfmpegCli.AssertLoudness(file, measured);
         FfmpegCli.AssertSilences(file, measured);
@@ -197,6 +198,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.NotNull(managed.Channels);
         FfmpegCli.AssertChannels(file, managed.Channels, Profile.EbuR128);
         FfmpegCli.AssertFreezes(file, managed, Profile.EbuR128);
+        FfmpegCli.AssertConstantColour(file, managed, Profile.EbuR128);
         FfmpegCli.AssertInterlace(file, managed);
         Assert.Equal(ffmpeg.AudioTrack, managed.AudioTrack);
         Assert.Equal(ffmpeg.LoudnessFrom, managed.LoudnessFrom, 0.02);

@@ -51,6 +51,12 @@ public sealed record Measurements
     /// <summary>The frozen pictures (freezedetect's), in order (docs/decisions/2026-11-03-freeze-frames.md).</summary>
     public IReadOnlyList<TimeRange> Freezes { get; init; } = [];
 
+    /// <summary>
+    /// The runs of frames of one flat colour (signalstats' YLOW to YHIGH, ULOW to UHIGH, VLOW to VHIGH within
+    /// <see cref="Profile.ColourSpread"/>), in order, black and bars among them (docs/decisions/2026-11-06-constant-colour.md).
+    /// </summary>
+    public IReadOnlyList<ColourSpan> ConstantColour { get; init; } = [];
+
     /// <summary>Whether the picture looks interlaced, idet's totals (docs/decisions/2026-11-03-interlacing.md); null when not measured.</summary>
     public InterlaceMeasures? Interlace { get; init; }
 
@@ -132,6 +138,34 @@ public sealed record InterlaceMeasures(long SingleTff, long SingleBff, long Sing
 }
 
 public sealed record ChannelMeasures(int Channels, double Duration, IReadOnlyList<IReadOnlyList<TimeRange>> Silences, IReadOnlyList<double> RmsLevels, IReadOnlyList<int> ClippedRuns, IReadOnlyList<long> FullScaleSamples, double? Phase);
+
+/// <summary>
+/// A run of frames of one flat colour (docs/decisions/2026-11-06-constant-colour.md): its span and its mean Y, Cb and
+/// Cr in 8-bit codes, with the colour as RGB (#RRGGBB) for the report's words.
+/// </summary>
+public readonly record struct ColourSpan(double Start, double End, double Y, double Cb, double Cr, string Rgb)
+{
+    /// <summary>The span as a <see cref="TimeRange"/>.</summary>
+    public TimeRange Range => new(Start, End);
+
+    /// <summary>
+    /// A run whose colour is <paramref name="y"/>, <paramref name="cb"/>, <paramref name="cr"/> (8-bit codes), its RGB
+    /// through BT.709 (BT.601 when <paramref name="sd"/>), limited range unless <paramref name="fullRange"/>.
+    /// </summary>
+    public static ColourSpan Of(double start, double end, double y, double cb, double cr, bool fullRange, bool sd)
+    {
+        var (kr, kb) = sd ? (0.299, 0.114) : (0.2126, 0.0722);
+        double kg = 1 - kr - kb;
+        double luma = fullRange ? y / 255 : (y - 16) / 219;
+        double pb = (cb - 128) / (fullRange ? 255 : 224);
+        double pr = (cr - 128) / (fullRange ? 255 : 224);
+        double r = luma + (2 * (1 - kr) * pr);
+        double b = luma + (2 * (1 - kb) * pb);
+        double g = (luma - (kr * r) - (kb * b)) / kg;
+        static int Byte(double x) => (int)Math.Round(Math.Clamp(x, 0, 1) * 255);
+        return new ColourSpan(start, end, y, cb, cr, $"#{Byte(r):X2}{Byte(g):X2}{Byte(b):X2}");
+    }
+}
 
 /// <summary>A span of line-up tone: its frequency in Hz and its level in dBFS (the loudest channel's RMS as a sine's peak).</summary>
 public readonly record struct ToneSpan(double Start, double End, double Frequency, double Level);
