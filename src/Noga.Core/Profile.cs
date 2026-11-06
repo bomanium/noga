@@ -28,6 +28,9 @@ public sealed record Profile
         FreezeNoise = 0.001,
         MinFreeze = 2,
         ColourSpread = 4,
+        MaxOutOfGamut = 0.01,
+        GamutLow = -0.05,
+        GamutHigh = 1.05,
         MinConstantColour = 2,
         ToneLevel = -18,
     };
@@ -100,6 +103,18 @@ public sealed record Profile
     public double MinConstantColour { get; init; } = 2;
 
     /// <summary>
+    /// The share of a frame's pixels (0 to 1) that may be outside RGB gamut: EBU R 103's 1% of the picture
+    /// (docs/decisions/2026-11-06-rgb-gamut.md).
+    /// </summary>
+    public double MaxOutOfGamut { get; init; } = 0.01;
+
+    /// <summary>The lowest R, G or B in gamut, black 0 and white 1 (R 103's -5%).</summary>
+    public double GamutLow { get; init; } = -0.05;
+
+    /// <summary>The highest R, G or B in gamut (R 103's 105%).</summary>
+    public double GamutHigh { get; init; } = 1.05;
+
+    /// <summary>
     /// The line-up tone's level (dBFS, a sine's peak as AES17 has it): EBU R 68's -18 for ebu-r128; null, not judged
     /// (docs/decisions/2026-11-03-line-up-and-head-tail.md). A tone further from it than <see cref="ToneTolerance"/> warns.
     /// </summary>
@@ -164,6 +179,9 @@ public sealed record Profile
 
     /// <summary>What the picture's interlacing is checked against.</summary>
     public static string InterlaceFilter => "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact)";
+
+    /// <summary>What the pixels outside RGB gamut are checked against.</summary>
+    public string GamutFilter => Invariant($"geq per pixel: R, G and B from Y, Cb and Cr (the samples it is sited on) by the matrix tag's Kr and Kb (else BT.709, BT.601 under 720 lines), each within {GamutLow * 100:0.#}% to {GamutHigh * 100:0.#}%; signalstats YAVG of that mask of 0 and the depth's maximum (each frame's share exact), colour bars left out, spans under {RangeMergeGap:0.#} s apart joined");
 
     /// <summary>What constant-colour frames are checked against.</summary>
     public string ColourFilter => Invariant($"signalstats per frame: YHIGH-YLOW, UHIGH-ULOW and VHIGH-VLOW at most {ColourSpread} 8-bit codes, YAVG, UAVG and VAVG within that of the run's first frame (exact; each end exact), runs of {MinConstantColour} s or more, black and bars left out");
@@ -280,7 +298,7 @@ public sealed record Profile
             {
                 Check = "picture",
                 Severity = Severity.Info,
-                Message = "Sound only: the picture's checks (black, bars, constant colour, freezes, interlacing, range, crop, frames, keyframes, bitrate, shots, the head's bars and black) aren't made; timecodes count at 25 fps",
+                Message = "Sound only: the picture's checks (black, bars, constant colour, freezes, interlacing, range, gamut, crop, frames, keyframes, bitrate, shots, the head's bars and black) aren't made; timecodes count at 25 fps",
                 CheckedAgainst = "ffprobe -show_streams (no video stream but cover art)",
             });
         }
@@ -322,6 +340,7 @@ public sealed record Profile
         var still = blackAndBars.Concat(measured.ConstantColour.Select(c => c.Range)).OrderBy(s => s.Start).ToList();
         Spans(findings, "freeze", "Picture frozen", [.. measured.Freezes.SelectMany(f => Without(f, still))], MinFreeze, FreezeFilter);
         Range(findings, measured, At);
+        Gamut(findings, measured, At);
         Crop(findings, measured.Crop);
         PictureTypes(findings, measured.PictureTypes);
         Decode(findings, measured, frame, At);
@@ -598,6 +617,41 @@ public sealed record Profile
                 Unit = "%",
                 Start = at(worst.Seconds),
                 CheckedAgainst = RangeFilter,
+            });
+        }
+    }
+
+    // R 103's gamut, as broadcast range (docs/decisions/2026-11-06-rgb-gamut.md): each span over the share a warning,
+    // else a pass with the worst frame.
+    void Gamut(List<Finding> into, Measurements measured, Func<double, Position> at)
+    {
+        string limits = Invariant($"{GamutLow * 100:0.#}% to {GamutHigh * 100:0.#}%");
+        foreach (var span in measured.OutOfGamut)
+        {
+            into.Add(new Finding
+            {
+                Check = "gamut",
+                Severity = Severity.Warning,
+                Message = Invariant($"Pixels outside RGB gamut ({limits}): up to {span.WorstShare * 100:0.0}% of the picture (over {MaxOutOfGamut * 100:0.#}%) for {span.End - span.Start:0.00} s"),
+                Value = span.WorstShare * 100,
+                Unit = "%",
+                Start = at(span.Start),
+                End = at(span.End),
+                CheckedAgainst = GamutFilter,
+            });
+        }
+
+        if (measured.OutOfGamut.Count == 0 && measured.WorstOutOfGamut is { } worst)
+        {
+            into.Add(new Finding
+            {
+                Check = "gamut",
+                Severity = Severity.Pass,
+                Message = Invariant($"Pixels outside RGB gamut ({limits}): at most {worst.Share * 100:0.00}% of the picture (at most {MaxOutOfGamut * 100:0.#}%)"),
+                Value = worst.Share * 100,
+                Unit = "%",
+                Start = at(worst.Seconds),
+                CheckedAgainst = GamutFilter,
             });
         }
     }

@@ -73,6 +73,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         FfmpegCli.AssertTone(file, measured.Tone[0]);
         FfmpegCli.AssertBlack(file, measured);
         FfmpegCli.AssertWorstOutOfRange(file, measured);
+        FfmpegCli.AssertGamutFrames(file, Profile.EbuR128, 0.2126, 0.0722, every: 25);
         FfmpegCli.AssertCrop(file, measured);
         FfmpegCli.AssertPictureTypes(file, measured);
         FfmpegCli.AssertPackets(file, measured);
@@ -108,6 +109,7 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal((0, 5), Rounded(span.Start, span.End));
         Assert.Equal(Assert.NotNull(measured.WorstOutOfRange).Share, span.WorstShare);
         FfmpegCli.AssertWorstOutOfRange(_samples["out_of_range.mov"], measured);
+        FfmpegCli.AssertGamutFrames(_samples["out_of_range.mov"], Profile.EbuR128, 0.2126, 0.0722, every: 25);
         Assert.Equal(Severity.Warning, Assert.Single(Profile.EbuR128.Evaluate(measured).Findings, f => f.Check == "range").Severity);
     }
 
@@ -225,6 +227,8 @@ public sealed class SampleTests : IClassFixture<Samples>
         Assert.Equal(ffmpeg.Bars, managed.Bars);
         Assert.Equal(ffmpeg.OutOfRange, managed.OutOfRange);
         Assert.Equal(ffmpeg.WorstOutOfRange, managed.WorstOutOfRange);
+        Assert.Equal(ffmpeg.OutOfGamut, managed.OutOfGamut);
+        Assert.Equal(ffmpeg.WorstOutOfGamut, managed.WorstOutOfGamut);
         Assert.Equal(ffmpeg.Crop, managed.Crop);
         Assert.Equal(ffmpeg.PictureTypes, managed.PictureTypes);
         Assert.NotNull(ffmpeg.Shots);

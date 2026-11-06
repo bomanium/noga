@@ -32,7 +32,7 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
         "head.bars" => new("0052B", "Video Test Pattern Expected", "3.0"),
         "head.tone" => new("0014B", "Audio Test Tones", "2.0"),
         "head.black" or "tail.black" => new("0272B", "Black Frames Report", "1.0"),
-        "range" => new("0051B", "Video Signal Levels", "2.0"),
+        "range" or "gamut" => new("0051B", "Video Signal Levels", "2.0"),
         "crop" => new("0015B", "Black Bars", "3.0"),
         "frames" or "keyframes" => new("0046F", "GOP Length - Structure", "1.0"),
         "timecode" => new("0026W", "Timecode", "3.0"),

@@ -11,11 +11,11 @@ public static class Pictures
 {
     /// <summary>
     /// Decodes <paramref name="path"/>'s video with FFmpeg's libraries and measures every frame, into
-    /// <paramref name="freezes"/>, <paramref name="interlace"/> and <paramref name="colours"/> too when given, telling <paramref name="at"/> each
+    /// <paramref name="freezes"/>, <paramref name="interlace"/>, <paramref name="colours"/> and <paramref name="gamut"/> too when given, telling <paramref name="at"/> each
     /// frame's time (seconds); the meters take the frames on threads of their own (<see cref="FrameMeters"/>).
     /// </summary>
     /// <exception cref="InvalidDataException">The video isn't planar YUV of 8 to 16 bits.</exception>
-    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null, ColourMeter? colours = null)
+    public static PictureMeasures? Measure(string path, CancellationToken cancellationToken = default, FreezeMeter? freezes = null, InterlaceMeter? interlace = null, Action<double>? at = null, ColourMeter? colours = null, GamutMeter? gamut = null)
     {
         Libraries.Load();
         using var decoder = new FrameDecoder(path, new FrameDecoderOptions { CancellationToken = cancellationToken });
@@ -35,7 +35,7 @@ public static class Pictures
                         throw new InvalidDataException($"{path}: {frame.PixelFormat} isn't planar YUV of 8 to 16 bits.");
                     }
 
-                    meters = new FrameMeters(format, freezes, interlace, at, cancellationToken, colours);
+                    meters = new FrameMeters(format, freezes, interlace, at, cancellationToken, colours, gamut);
                 }
 
                 meters.Post(new Decoded(frame));
@@ -47,6 +47,21 @@ public static class Pictures
         {
             meters?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// <paramref name="measured"/> with the pixels outside RGB gamut from <paramref name="gamut"/>, the bars (measured
+    /// already) left out (docs/decisions/2026-11-06-rgb-gamut.md).
+    /// </summary>
+    public static Measurements AddGamut(Measurements measured, GamutMeter gamut, Profile profile)
+    {
+        ArgumentNullException.ThrowIfNull(measured);
+        ArgumentNullException.ThrowIfNull(gamut);
+        ArgumentNullException.ThrowIfNull(profile);
+        if (gamut.Shares.Count == 0)
+            return measured;
+        var (spans, worst) = gamut.Finish(measured.Bars, profile.MaxOutOfGamut, profile.RangeMergeGap, (double)measured.RateDenominator / measured.RateNumerator);
+        return measured with { OutOfGamut = spans, WorstOutOfGamut = worst };
     }
 
     // FFmpeg's frame, as the meters read it.

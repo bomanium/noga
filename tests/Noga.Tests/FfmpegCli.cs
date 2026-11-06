@@ -457,6 +457,91 @@ internal static partial class FfmpegCli
         }
     }
 
+    /// <summary>
+    /// Each frame's share of pixels outside RGB gamut, by FFmpeg's geq (Profile.GamutFilter): R, G and B from each
+    /// pixel's Y and the Cb and Cr samples it is sited on, by Kr and Kb, marked 0 or the depth's maximum when any is
+    /// outside the limits; signalstats' YAVG of that mask over the maximum. Every <paramref name="every"/>th frame only
+    /// when given (geq takes some 3 minutes for 20 s of 1080p).
+    /// </summary>
+    public static List<double> GamutShares(string file, double low, double high, double kr, double kb, int every = 1)
+    {
+        string[] stream = Ffprobe(file, "-select_streams", "v:0", "-show_entries", "stream=pix_fmt,color_range", "-of", "csv=p=0").Trim().Split(',');
+        string pixelFormat = stream[0];
+        bool full = (stream.Length > 1 && stream[1] == "pc") || pixelFormat.StartsWith("yuvj", StringComparison.Ordinal);
+        int depth = pixelFormat.Contains("p10", StringComparison.Ordinal) ? 10 : pixelFormat.Contains("p12", StringComparison.Ordinal) ? 12 : 8;
+        string cx = pixelFormat.Contains("444", StringComparison.Ordinal) ? "X" : "floor(X/2)";
+        string cy = pixelFormat.Contains("420", StringComparison.Ordinal) ? "floor(Y/2)" : "Y";
+        int max = (1 << depth) - 1, mid = 1 << (depth - 1), s = 1 << (depth - 8);
+        string yn = full ? Invariant($"lum(X,Y)/{max}") : Invariant($"(lum(X,Y)-16*{s})/(219*{s})");
+        string pb = full ? Invariant($"(cb({cx},{cy})-{mid})/{max}") : Invariant($"(cb({cx},{cy})-128*{s})/(224*{s})");
+        string pr = full ? Invariant($"(cr({cx},{cy})-{mid})/{max}") : Invariant($"(cr({cx},{cy})-128*{s})/(224*{s})");
+        string Outside(int i) => Invariant($"lt(ld({i}),{low})+gt(ld({i}),{high})");
+        string expression = Invariant($"st(0,{yn});st(1,{pb});st(2,{pr});st(3,ld(0)+2*(1-{kr})*ld(2));st(4,ld(0)+2*(1-{kb})*ld(1));st(5,(ld(0)-{kr}*ld(3)-{kb}*ld(4))/(1-{kr}-{kb}));if({Outside(3)}+{Outside(5)}+{Outside(4)},{max},0)");
+        string select = every > 1 ? Invariant($"select=not(mod(n\\,{every})),") : "";
+        string log = Run(file, $"-an -vf {select}geq=lum='{expression}':cb={mid}:cr={mid},signalstats,metadata=print");
+        return [.. GamutAverage().Matches(log).Select(m => Parse(m.Groups[1].Value) / max)];
+    }
+
+    /// <summary>
+    /// Every <paramref name="every"/>th frame's share of pixels outside RGB gamut, as GamutMeter measures FFmpeg's
+    /// frames, is geq's (<see cref="GamutShares"/>), within signalstats' printing.
+    /// </summary>
+    public static void AssertGamutFrames(string file, Profile profile, double kr, double kb, int every)
+    {
+        var meter = new GamutMeter(profile.GamutLow, profile.GamutHigh);
+        Pictures.Measure(file, gamut: meter);
+        Assert.Equal((kr, kb), meter.Matrix);
+        var shares = GamutShares(file, profile.GamutLow, profile.GamutHigh, kr, kb, every);
+        Assert.Equal((meter.Shares.Count + every - 1) / every, shares.Count);
+        for (int i = 0; i < shares.Count; i++)
+            Assert.Equal(shares[i], meter.Shares[i * every], 0.00001);
+    }
+
+    /// <summary>
+    /// The pixels outside RGB gamut are geq's (<see cref="GamutShares"/>): the worst frame's share within signalstats'
+    /// printing, and the spans the same rule gives from geq's shares (bars left out, spans under RangeMergeGap joined),
+    /// each end exact.
+    /// </summary>
+    public static void AssertGamut(string file, Measurements measured, Profile profile, double kr, double kb)
+    {
+        var shares = GamutShares(file, profile.GamutLow, profile.GamutHigh, kr, kb);
+        var times = Regex.Matches(Run(file, "-an -vf showinfo"), @"pts_time:(-?[\d.]+)").Select(m => Parse(m.Groups[1].Value)).ToList();
+        Assert.Equal(shares.Count, times.Count);
+        double frame = (double)measured.RateDenominator / measured.RateNumerator;
+        bool InBars(double t) => measured.Bars.Any(b => t >= b.Start - 1e-9 && t < b.End - 1e-9);
+        var spans = new List<RangeSpan>();
+        double worst = 0;
+        int? start = null;
+        double spanWorst = 0;
+        for (int i = 0; i < shares.Count; i++)
+        {
+            double share = InBars(times[i]) ? 0 : shares[i];
+            worst = Math.Max(worst, share);
+            if (share > profile.MaxOutOfGamut)
+            {
+                start ??= i;
+                spanWorst = Math.Max(spanWorst, share);
+            }
+            else if (start is { } s)
+            {
+                spans.Add(new RangeSpan(times[s], times[i], spanWorst));
+                (start, spanWorst) = (null, 0);
+            }
+        }
+
+        if (start is { } open)
+            spans.Add(new RangeSpan(times[open], times[^1] + frame, spanWorst));
+        var expected = RangeSpan.Merge(spans, profile.RangeMergeGap);
+        Assert.Equal(worst, measured.WorstOutOfGamut?.Share ?? 0, 0.00001);
+        Assert.Equal(expected.Count, measured.OutOfGamut.Count);
+        for (int i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Start, measured.OutOfGamut[i].Start, 1e-6);
+            Assert.Equal(expected[i].End, measured.OutOfGamut[i].End, 1e-6);
+            Assert.Equal(expected[i].WorstShare, measured.OutOfGamut[i].WorstShare, 0.00001);
+        }
+    }
+
     /// <summary>idet's totals are the command line's idet's (with its defaults), exactly; the last it prints, as a graph made again prints its own.</summary>
     public static void AssertInterlace(string file, Measurements measured)
     {
@@ -501,6 +586,9 @@ internal static partial class FfmpegCli
     // metadata=print's lines: a frame's header, or one of signalstats' YUV figures.
     [GeneratedRegex(@"(frame:\d+\s+pts:)|lavfi\.signalstats\.([YUV](?:LOW|HIGH|AVG))=(-?[\d.]+)")]
     private static partial Regex SignalstatsLine();
+
+    [GeneratedRegex(@"lavfi\.signalstats\.YAVG=(-?[\d.]+)")]
+    private static partial Regex GamutAverage();
 
     [GeneratedRegex(@"freeze_end: (-?[\d.]+)")]
     private static partial Regex FreezeEnd();
