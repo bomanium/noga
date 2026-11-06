@@ -152,6 +152,15 @@ one, black included, gets the full count, in four interleaved histograms so that
 other. On the 20 s programmes (14 s of bars and black), Release, 4 cores: DNxHR 3.1 to 3.5 s, H.264 4.2 to 4.7 s,
 ProRes 4.4 to 4.6 s.
 
+## RGB gamut (2026-11-06)
+
+`GamutMeter` (decisions/2026-11-06-rgb-gamut.md) counts every pixel, so it can't stop early as the colour meter does.
+A table of each chroma pair's run of Y codes in gamut makes a pixel one lookup and a comparison, the pair looked up once
+for the two luma samples sited on it. The table is 1 M entries at 10 bits. Building it took 0.9 s while the search for
+a run's edges walked the whole estimate when it was empty; the estimate is off by one code at most, and now the build
+takes about 50 ms. With both of 2026-11-06's meters, a check of the 20 s programmes takes 2.9 to 3.5 s (DNxHR), 3.9 to
+4.4 s (H.264) and 3.9 to 4.6 s (ProRes), Release, 4 cores: some 15-20%.
+
 ## Not measured yet
 
 - Real masters, 30-60 minutes, and UHD files: these figures are lavfi programmes, looped, and the open films

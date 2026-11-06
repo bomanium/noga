@@ -101,7 +101,11 @@ What is next, in order: docs/backlog.md.
   `Measurements.ConstantColour`: runs of one flat colour (Noga.Ffmpeg's `ColourMeter`: signalstats' Y, U and V LOW to
   HIGH within `Profile.ColourSpread`, on both paths' frames; every fourth luma row first, which rules out moving
   pictures exactly), `ColourSpan` (its mean Y, Cb, Cr and #RRGGBB), judged as `colour` like black, black and bars left
-  out, from `Profile.MinConstantColour` (decisions/2026-11-06-constant-colour.md).
+  out, from `Profile.MinConstantColour` (decisions/2026-11-06-constant-colour.md). `Measurements.OutOfGamut`,
+  `WorstOutOfGamut`: pixels whose R, G or B is outside `Profile.GamutLow` to `GamutHigh` (EBU R 103's -5% to 105%;
+  Noga.Ffmpeg's `GamutMeter`, the matrix tag's Kr and Kb, else BT.709, BT.601 under 720 lines; a table of each chroma
+  pair's run of Y codes in gamut), judged as `gamut` like range, over `Profile.MaxOutOfGamut` (1%) a warning, checked
+  against geq's arithmetic (decisions/2026-11-06-rgb-gamut.md).
   `Profile.ToneLevel` (the tone's level judged: -18 ebu-r128, -20 atsc-a85) and `HeadBars`, `HeadTone`, `HeadBlack`,
   `TailBlack` (`head.*`, `tail.*`: what the head and tail must have, a failure when short;
   decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (Noga.Ffmpeg's
@@ -130,7 +134,7 @@ What is next, in order: docs/backlog.md.
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
   the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths. `FrameMeters`: the picture's meters (PictureMeter on `FrameMeters.PictureLanes` threads, each frame's measures
-  joined; `FreezeMeter`; `InterlaceMeter`; `ColourMeter`) each on a thread of its own while the next frames decode, for both paths'
+  joined; `FreezeMeter`; `InterlaceMeter`; `ColourMeter`; `GamutMeter`) each on a thread of its own while the next frames decode, for both paths'
   frames (`IMeteredFrame`), through `Lanes` (each item to every consumer, disposed once all are done);
   `SideBySide.Run`: the picture pass, the shots and the sound at the same time, failing with the first part's error
   in order (decisions/2026-11-05-faster-single-checks.md). `CheckProgress`: how far a check has got, its stages (or
@@ -177,7 +181,8 @@ What is next, in order: docs/backlog.md.
   from Noga.Tests). Runs only where NOGA_FILMS names the films' folder (`tools/get-films.sh [folder]`, default
   `films/`, ~650 MB, pinned by SHA-256); elsewhere `no.runsettings` filters every test out. ~30 min.
 - `tools/make-samples.sh [folder]`: generates the test files (default `samples/`): a 20 s programme (bars and tone,
-  black and silence, picture and noise, black and silence; timecode from 10:00:00:00) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
+  black and silence, picture and noise, black and silence; timecode from 10:00:00:00; testsrc2 through RGB and BT.709, in 4:2:2 10-bit, H.264's 4:2:0
+  bilinear, so the programmes pass range and gamut) as ProRes 422 HQ/MOV, DNxHR SQ/MXF and H.264+AAC/MP4 (when
   the ffmpeg has libx264), a ramp with pixels outside broadcast range, and a 2.39:1 letterbox. ~45 s, ~480 MB.
 - `tools/make-icons.sh`: the app's icons from `src/Noga.App/Assets/icon.svg` (rsvg-convert and ImageMagick); run
   after changing the SVG and commit what it writes.
