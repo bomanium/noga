@@ -341,6 +341,22 @@ internal static partial class FfmpegCli
     }
 
     /// <summary>
+    /// The repeated frames are freezedetect's with the profile's repeat noise and d a frame and a half: its freezes of
+    /// two frames exactly (within half a frame), the second frame of each, within half a frame.
+    /// </summary>
+    public static void AssertRepeats(string file, Measurements measured, Profile profile)
+    {
+        double frame = (double)measured.RateDenominator / measured.RateNumerator;
+        string log = Run(file, Invariant($"-an -vf freezedetect=n={profile.RepeatNoise}:d={1.5 * frame:0.000000}"));
+        var starts = FreezeStart().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+        var ends = FreezeEnd().Matches(log).Select(m => Parse(m.Groups[1].Value)).ToList();
+        var expected = starts.Zip(ends).Where(p => Math.Abs(p.Second - p.First - (2 * frame)) < frame / 2).Select(p => p.First + frame).ToList();
+        Assert.Equal(expected.Count, measured.Repeats.Count);
+        for (int i = 0; i < expected.Count; i++)
+            Assert.Equal(expected[i], measured.Repeats[i], frame / 2);
+    }
+
+    /// <summary>
     /// The freezes are freezedetect's with the profile's n and d, each end within one frame (one still frozen at the end,
     /// which freezedetect leaves open, ends with the video).
     /// </summary>

@@ -52,6 +52,12 @@ public sealed record Measurements
     public IReadOnlyList<TimeRange> Freezes { get; init; } = [];
 
     /// <summary>
+    /// When each single repeated frame is (seconds): a frame identical to the one before at <c>Profile.RepeatNoise</c>,
+    /// with the frames either side of the two moving (docs/decisions/2026-11-06-repeated-frames.md).
+    /// </summary>
+    public IReadOnlyList<double> Repeats { get; init; } = [];
+
+    /// <summary>
     /// The runs of frames of one flat colour (signalstats' YLOW to YHIGH, ULOW to UHIGH, VLOW to VHIGH within
     /// <see cref="Profile.ColourSpread"/>), in order, black and bars among them (docs/decisions/2026-11-06-constant-colour.md).
     /// </summary>

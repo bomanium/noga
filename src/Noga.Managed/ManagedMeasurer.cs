@@ -92,6 +92,7 @@ public static class ManagedMeasurer
         var interlace = new InterlaceMeter();
         var colours = new ColourMeter(profile.ColourSpread, profile.MinConstantColour);
         var gamut = new GamutMeter(profile.GamutLow, profile.GamutHigh, measured.Format?.Video?.Matrix);
+        var repeats = RepeatedFrames.Meter(profile, measured);
 
         // The picture pass is nearly all of the time (it measures and detects the shots on the same frames); the sound
         // passes almost none, side by side with it (docs/notes/performance.md).
@@ -101,7 +102,7 @@ public static class ManagedMeasurer
         var sound = measured;
         SideBySide.Run(
             cancellationToken,
-            token => (pictures, shots) = MeasurePictures(path, timestamps, freezes, interlace, colours, gamut, token, parts[0]),
+            token => (pictures, shots) = MeasurePictures(path, timestamps, freezes, interlace, colours, gamut, repeats, token, parts[0]),
             token =>
             {
                 if (audio is not null)
@@ -109,7 +110,7 @@ public static class ManagedMeasurer
             });
         foreach (var part in parts)
             part.Report(1);
-        var measuredPictures = Pictures.Add(sound, pictures, profile) with { Packets = packets, Freezes = freezes.Finish(), Interlace = interlace.Finish(), ConstantColour = colours.Finish() };
+        var measuredPictures = Pictures.Add(sound, pictures, profile) with { Packets = packets, Freezes = freezes.Finish(), Repeats = RepeatedFrames.From(repeats.Finish(), measured), Interlace = interlace.Finish(), ConstantColour = colours.Finish() };
         return Shots.Add(Pictures.AddGamut(measuredPictures, gamut, profile), shots!);
     }
 
@@ -166,7 +167,7 @@ public static class ManagedMeasurer
     // Every frame of the video through ManagedCodecs' H.264 decoder, in display order, into the picture's meters (on
     // threads of their own: FrameMeters) and ShotDetector, which pulls the frames one at a time on this thread. A frame
     // is released once the meters are done with it and ShotDetector has pulled the next.
-    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, FreezeMeter freezes, InterlaceMeter interlace, ColourMeter colours, GamutMeter gamut, CancellationToken cancellationToken, IProgress<double> progress)
+    static (PictureMeasures? Pictures, ShotDetector.DetectionResult Shots) MeasurePictures(string path, IReadOnlyList<long> timestamps, FreezeMeter freezes, InterlaceMeter interlace, ColourMeter colours, GamutMeter gamut, FreezeMeter repeats, CancellationToken cancellationToken, IProgress<double> progress)
     {
         var tags = Tags.Read(path, cancellationToken);
         using var demuxer = Open(path);
@@ -235,7 +236,7 @@ public static class ManagedMeasurer
                 throw new InvalidDataException($"{path}: monochrome H.264 isn't measured.");
             }
 
-            meters ??= new FrameMeters(new PictureFormat(frame.Width, frame.Height, tags.FullRange, timeBase, tags.Rotation, format.BitDepth(), Chroma(format)), freezes, interlace, cancellationToken: cancellationToken, colours: colours, gamut: gamut);
+            meters ??= new FrameMeters(new PictureFormat(frame.Width, frame.Height, tags.FullRange, timeBase, tags.Rotation, format.BitDepth(), Chroma(format)), freezes, interlace, cancellationToken: cancellationToken, colours: colours, gamut: gamut, repeats: repeats);
             return meters.PostHeld(new Decoded(frame));
         }
 

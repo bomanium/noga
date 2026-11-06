@@ -10,7 +10,7 @@
   "path": "/home/user/noga/samples/programme_prores.mov",
   "size": 97857653,
   "modified": "2026-11-06T08:13:08.7658843+00:00",
-  "checked": "2026-11-06T08:19:38.4894193+00:00",
+  "checked": "2026-11-06T14:31:58.6183567+00:00",
   "findings": [
     {
       "check": "format",
@@ -131,6 +131,20 @@
         "url": "https://qc.ebu.io/items/0048B"
       },
       "checkedAgainst": "idet with its defaults (intl_thres=1.04, prog_thres=1.5): its Single and Multi frame detection totals (exact), against ffprobe\u0027s field_order"
+    },
+    {
+      "check": "repeat",
+      "severity": "Info",
+      "message": "No repeated frames (a single frame identical to the one before, in moving picture)",
+      "value": 0,
+      "unit": "frames",
+      "ebuQc": {
+        "id": "0044B",
+        "name": "Video Freeze",
+        "version": "2.0",
+        "url": "https://qc.ebu.io/items/0044B"
+      },
+      "checkedAgainst": "freezedetect=n=0.0001:d=1.5 frames\u0027 seconds, its freezes of two frames exactly (one repeated frame), each within half a frame"
     },
     {
       "check": "range",

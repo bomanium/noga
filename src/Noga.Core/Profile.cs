@@ -27,6 +27,8 @@ public sealed record Profile
         ClipRun = 3,
         FreezeNoise = 0.001,
         MinFreeze = 2,
+        RepeatNoise = 0.0001,
+        RepeatCadence = 0.1,
         ColourSpread = 4,
         MaxOutOfGamut = 0.01,
         GamutLow = -0.05,
@@ -91,6 +93,18 @@ public sealed record Profile
 
     /// <summary>The shortest freeze reported (seconds; freezedetect's d).</summary>
     public double MinFreeze { get; init; } = 2;
+
+    /// <summary>
+    /// How little a frame may differ from the one before to be a repeat of it (freezedetect's n; -80 dB): tighter than
+    /// <see cref="FreezeNoise"/> (docs/decisions/2026-11-06-repeated-frames.md).
+    /// </summary>
+    public double RepeatNoise { get; init; } = 0.0001;
+
+    /// <summary>The share of the moving picture's frames above which repeats are a cadence (pulldown, animation), summed up.</summary>
+    public double RepeatCadence { get; init; } = 0.1;
+
+    /// <summary>Whether a repeated frame is a warning rather than information.</summary>
+    public bool RepeatsWarn { get; init; }
 
     /// <summary>
     /// How flat a frame of one colour is: each of Y, U and V's signalstats HIGH less LOW (90th less 10th percentile) at
@@ -185,6 +199,9 @@ public sealed record Profile
 
     /// <summary>What constant-colour frames are checked against.</summary>
     public string ColourFilter => Invariant($"signalstats per frame: YHIGH-YLOW, UHIGH-ULOW and VHIGH-VLOW at most {ColourSpread} 8-bit codes, YAVG, UAVG and VAVG within that of the run's first frame (exact; each end exact), runs of {MinConstantColour} s or more, black and bars left out");
+
+    /// <summary>What repeated frames are checked against.</summary>
+    public string RepeatFilter => Invariant($"freezedetect=n={RepeatNoise}:d=1.5 frames' seconds, its freezes of two frames exactly (one repeated frame), each within half a frame");
 
     /// <summary>What freezes are checked against.</summary>
     public string FreezeFilter => Invariant($"freezedetect=n={FreezeNoise}:d={MinFreeze} (each end within one frame), black and bars left out");
@@ -357,6 +374,8 @@ public sealed record Profile
         // outside them.
         var still = blackAndBars.Concat(measured.ConstantColour.Select(c => c.Range)).OrderBy(s => s.Start).ToList();
         Spans(findings, "freeze", "Picture frozen", [.. measured.Freezes.SelectMany(f => Without(f, still))], MinFreeze, FreezeFilter);
+        if (measured.HasPicture && !measured.NotMeasured.Contains("repeat"))
+            Repeats(findings, measured, still, frame, At);
         Range(findings, measured, At);
         Gamut(findings, measured, At);
         Crop(findings, measured.Crop);
@@ -712,6 +731,55 @@ public sealed record Profile
         }
 
         into.Add(new Finding { Check = "frames", Severity = Severity.Info, Message = message, Value = types.Length, Unit = "frames", CheckedAgainst = PictureTypesFilter });
+    }
+
+    // Single repeated frames (docs/decisions/2026-11-06-repeated-frames.md): each one information (a warning when the
+    // profile says so), or one line when there are more than RepeatCadence of the moving picture's frames, a cadence
+    // (pulldown, animation on twos). The moving picture is the frames decoded less those black, bars, one colour or
+    // frozen.
+    void Repeats(List<Finding> into, Measurements measured, List<TimeRange> still, double frame, Func<double, Position> at)
+    {
+        var stills = still.Concat(measured.Freezes).OrderBy(s => s.Start).ToList();
+        var repeats = measured.Repeats.Where(t => !stills.Any(s => t >= s.Start && t < s.End)).ToList();
+        double stillSeconds = 0, reach = 0;
+        foreach (var s in stills)
+        {
+            double from = Math.Max(s.Start, reach);
+            if (s.End > from)
+                stillSeconds += s.End - from;
+            reach = Math.Max(reach, s.End);
+        }
+
+        long frames = measured.PictureTypes.Length > 0 ? measured.PictureTypes.Length : (long)Math.Round(measured.Duration / frame);
+        long moving = Math.Max(0, frames - (long)Math.Round(stillSeconds / frame));
+        double share = moving > 0 ? (double)repeats.Count / moving : 0;
+        if (repeats.Count == 0 || share > RepeatCadence)
+        {
+            into.Add(new Finding
+            {
+                Check = "repeat",
+                Severity = Severity.Info,
+                Message = repeats.Count == 0
+                    ? "No repeated frames (a single frame identical to the one before, in moving picture)"
+                    : Invariant($"Frames repeat in a cadence: {repeats.Count} of {moving} moving frames ({share * 100:0.#}%), pulldown or animation; not listed"),
+                Value = repeats.Count,
+                Unit = "frames",
+                CheckedAgainst = RepeatFilter,
+            });
+            return;
+        }
+
+        foreach (double t in repeats)
+        {
+            into.Add(new Finding
+            {
+                Check = "repeat",
+                Severity = RepeatsWarn ? Severity.Warning : Severity.Info,
+                Message = "Frame repeated: identical to the one before, in moving picture (a dropped frame filled?)",
+                Start = at(t),
+                CheckedAgainst = RepeatFilter,
+            });
+        }
     }
 
     // What was decoded against what the file lists (docs/decisions/2026-11-04-odd-files.md): a picture that ends before

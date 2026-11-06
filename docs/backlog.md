@@ -22,13 +22,6 @@ Nothing waiting.
     One release, not one per meter; the verdicts stay (decisions/2026-11-05-meters-upstream.md)
   - Status: Maybe
 
-- Dropped frames filled by a repeat: single frames identical to the one before
-  - Why: capture cards and encoders often fill a dropped frame by repeating the last, which the timestamps don't
-    show and freeze (2 s at least) misses. FreezeMeter's arithmetic with a duration of one frame, checked against
-    mpdecimate or freezedetect with a short d; animation, slates and pulldown repeat frames on purpose, so it needs
-    care (a cadence, or only isolated repeats in moving picture) before it can be more than indicative
-  - Status: Maybe
-
 - The shots from the picture pass's frames on the FFmpeg path, for the formats ShotDetector's frame source takes
   (yuv420p, yuv422p and their full-range forms, yuv420p10le: DNxHR SQ, H.264 in MOV or with several audio tracks)
   - Why: the shots decode the video a second time, the largest piece of work left in a check now that the meters run

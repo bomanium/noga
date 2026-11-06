@@ -161,6 +161,11 @@ a run's edges walked the whole estimate when it was empty; the estimate is off b
 takes about 50 ms. With both of 2026-11-06's meters, a check of the 20 s programmes takes 2.9 to 3.5 s (DNxHR), 3.9 to
 4.4 s (H.264) and 3.9 to 4.6 s (ProRes), Release, 4 cores: some 15-20%.
 
+The repeated frames' meter (decisions/2026-11-06-repeated-frames.md) is a second FreezeMeter on a lane of its own.
+In moving picture it stops each frame's sum within a few rows, as the freeze meter does, and copies the frame as its
+next reference. On the 20 s programmes its cost is within the run-to-run noise: best of three, Release, 4 cores,
+ProRes 6.31 → 6.35 s, DNxHR 4.49 → 4.72 s, H.264 5.90 → 5.80 s.
+
 ## Not measured yet
 
 - Real masters, 30-60 minutes, and UHD files: these figures are lavfi programmes, looped, and the open films

@@ -80,7 +80,7 @@ public class ReportJsonTests
 
         Assert.Equal(["bitrate", "shot", "shots"], findings.Where(f => f.EbuQc is null).Select(f => f.Check).Distinct().Order());
         Assert.Equal(
-            ["0004F", "0010B", "0014B", "0015B", "0026W", "0046F", "0051B", "0052B", "0078B", "0084B", "0272B"],
+            ["0004F", "0010B", "0014B", "0015B", "0026W", "0044B", "0046F", "0051B", "0052B", "0078B", "0084B", "0272B"],
             findings.Where(f => f.EbuQc is not null).Select(f => f.EbuQc!.Id).Distinct().Order());
     }
 }

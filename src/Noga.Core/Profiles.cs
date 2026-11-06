@@ -116,7 +116,7 @@ public static class Profiles
     /// any of its thresholds and settings to change (camelCase: <c>targetLoudness</c>, <c>loudnessPass</c>,
     /// <c>loudnessWarning</c>, <c>maxTruePeak</c>, <c>minBlack</c>, <c>blackPixelThreshold</c>,
     /// <c>blackPictureThreshold</c>, <c>minSilence</c>, <c>silenceNoise</c>, <c>maxOutOfRange</c>,
-    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>colourSpread</c>,
+    /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>repeatNoise</c>, <c>repeatCadence</c>, <c>repeatsWarn</c>, <c>colourSpread</c>,
     /// <c>minConstantColour</c>, <c>maxOutOfGamut</c>, <c>gamutLow</c>, <c>gamutHigh</c>, <c>toneLevel</c>,
     /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>, <c>syncFrames</c>,
     /// <c>syncFailure</c>, <c>maxMomentary</c>, <c>maxShortTerm</c>, <c>minRange</c>, <c>maxRange</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
@@ -163,6 +163,9 @@ public static class Profiles
             ClipRun = file.ClipRun ?? start.ClipRun,
             FreezeNoise = file.FreezeNoise ?? start.FreezeNoise,
             MinFreeze = file.MinFreeze ?? start.MinFreeze,
+            RepeatNoise = file.RepeatNoise ?? start.RepeatNoise,
+            RepeatCadence = file.RepeatCadence ?? start.RepeatCadence,
+            RepeatsWarn = file.RepeatsWarn ?? start.RepeatsWarn,
             ColourSpread = file.ColourSpread ?? start.ColourSpread,
             MinConstantColour = file.MinConstantColour ?? start.MinConstantColour,
             MaxOutOfGamut = file.MaxOutOfGamut ?? start.MaxOutOfGamut,
@@ -193,6 +196,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: minPhase is -1 to 1, clipRun at least 1.", nameof(json));
         if (profile.FreezeNoise is < 0 or > 1 || profile.MinFreeze <= 0)
             throw new ArgumentException($"{source}: freezeNoise is 0 to 1, minFreeze positive.", nameof(json));
+        if (profile.RepeatNoise is < 0 or > 1 || profile.RepeatCadence is < 0 or > 1)
+            throw new ArgumentException($"{source}: repeatNoise and repeatCadence are 0 to 1.", nameof(json));
         if (profile.ColourSpread is < 0 or > 255 || profile.MinConstantColour <= 0)
             throw new ArgumentException($"{source}: colourSpread is 0 to 255, minConstantColour positive.", nameof(json));
         if (profile.MaxOutOfGamut is < 0 or > 1 || profile.GamutLow is < -0.5 or > 0 || profile.GamutHigh is < 1 or > 1.5)
@@ -228,6 +233,9 @@ internal sealed record ProfileFile(
     int? ClipRun,
     double? FreezeNoise,
     double? MinFreeze,
+    double? RepeatNoise,
+    double? RepeatCadence,
+    bool? RepeatsWarn,
     double? ColourSpread,
     double? MinConstantColour,
     double? MaxOutOfGamut,
