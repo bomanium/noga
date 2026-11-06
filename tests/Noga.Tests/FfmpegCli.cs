@@ -134,6 +134,10 @@ internal static partial class FfmpegCli
         Assert.Equal(audio.Select(Start), format.Audio.Select(a => a.StartTime));
     }
 
+    /// <summary>The sample frames that decode from audio track <paramref name="track"/>: astats' Number of samples.</summary>
+    public static long Samples(string file, int track = 1) =>
+        long.Parse(NumberOfSamples().Match(Run(file, $"-map 0:a:{track - 1} -af astats=measure_overall=Number_of_samples:measure_perchannel=none")).Groups[1].Value, CultureInfo.InvariantCulture);
+
     [GeneratedRegex(@"Number of samples: (\d+)")]
     private static partial Regex NumberOfSamples();
 

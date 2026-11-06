@@ -252,6 +252,9 @@ public sealed record Profile
     /// <summary>What a start timecode flagged drop-frame at a rate without it is checked against.</summary>
     public static string TimecodeDropFrameFilter => "ffprobe, which gives no timecode tag for it and warns \"Drop frame is only allowed with multiples of 30000/1001 FPS\"; the flag and start read from the MOV/MP4 tmcd track or the MXF timecode component";
 
+    /// <summary>What a WAV, RF64, BW64 or AIFF header's length is checked against.</summary>
+    public static string SoundHeaderFilter => "the header's length (WAV data size, RF64/BW64 ds64 data size, AIFF COMM frames: ffprobe -show_entries stream=duration on files ffmpeg wrote whole, and astats' Number of samples, exactly), against -map 0:a:0 -af astats's Number of samples";
+
     /// <summary>What the shot list is checked against: not FFmpeg, which has no detector that gives these shots.</summary>
     public static string ShotsFilter => "PySceneDetect detect-adaptive with its defaults, through ShotDetector (which matches it exactly in its own CI)";
 
@@ -731,7 +734,29 @@ public sealed record Profile
         tracks.AddRange(measured.OtherTracks.Select(t => (t.Number, t.Channels)));
         foreach (var (number, channels) in tracks)
         {
-            if (channels is not { } c || format.Audio.FirstOrDefault(a => a.Number == number)?.StreamDuration is not { } length)
+            if (channels is not { } c)
+                continue;
+            var header = number == 1 ? measured.SoundHeader : null;
+            if (header is { Frames: null })
+            {
+                into.Add(new Finding
+                {
+                    Check = "decode.sound",
+                    Severity = Severity.Warning,
+                    Message = Invariant($"The {header.Kind} header was never finished (it lists no length): {c.Duration:0.00} s decoded, whether that is all of it unknown"),
+                    Value = c.Duration,
+                    Unit = "s",
+                    CheckedAgainst = SoundHeaderFilter,
+                });
+                continue;
+            }
+
+            // A WAV's header can list more than FFmpeg's stream duration, which goes by the bytes there are.
+            double? listed = format.Audio.FirstOrDefault(a => a.Number == number)?.StreamDuration;
+            string lists = "the track lists";
+            if (header?.Seconds is { } seconds && (listed is null || seconds > listed + frame))
+                (listed, lists) = (seconds, $"the {header.Kind} header lists");
+            if (listed is not { } length)
                 continue;
             bool whole = c.Duration >= length - frame;
             into.Add(new Finding
@@ -739,14 +764,14 @@ public sealed record Profile
                 Check = "decode.sound",
                 Severity = whole ? Severity.Pass : Severity.Failure,
                 Message = whole
-                    ? Invariant($"The sound decoded to the end: {c.Duration:0.00} s of the {length:0.00} s the track lists")
-                    : Invariant($"The sound ends {length - c.Duration:0.00} s early: {c.Duration:0.00} s of the {length:0.00} s the track lists decoded"),
+                    ? Invariant($"The sound decoded to the end: {c.Duration:0.00} s of the {length:0.00} s {lists}")
+                    : Invariant($"The sound ends {length - c.Duration:0.00} s early: {c.Duration:0.00} s of the {length:0.00} s {lists} decoded"),
                 Value = c.Duration,
                 Unit = "s",
                 Start = whole ? null : at(c.Duration),
                 End = whole ? null : at(length),
                 Track = measured.OtherTracks.Count > 0 ? number : null,
-                CheckedAgainst = SoundDecodeFilter,
+                CheckedAgainst = header is null ? SoundDecodeFilter : SoundHeaderFilter,
             });
         }
     }

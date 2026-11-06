@@ -60,6 +60,8 @@ public static class FfmpegMeasurer
         if (video is null || measured.Format is { Video: null })
         {
             measured = StartTimecode.Add(measured with { RateNumerator = SoundOnlyRate, RateDenominator = 1, NotMeasured = [], HasPicture = false }, path, cancellationToken);
+            if (measured.Format?.Container is "wav" or "aiff")
+                measured = measured with { SoundHeader = SoundHeaders.Read(path) };
             return MeasureSound(path, profile, measured, cancellationToken, stages.Together(1)[0]);
         }
 

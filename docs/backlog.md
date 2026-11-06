@@ -29,11 +29,6 @@ Nothing waiting.
     care (a cadence, or only isolated repeats in moving picture) before it can be more than indicative
   - Status: Maybe
 
-- A WAV cut short caught: its RIFF header's data size against the samples there are
-  - Why: FFmpeg gives a WAV's duration from what is in the file, so decode.sound passes a stem cut short
-    (decisions/2026-11-04-odd-files.md)
-  - Status: Maybe
-
 - The shots from the picture pass's frames on the FFmpeg path, for the formats ShotDetector's frame source takes
   (yuv420p, yuv422p and their full-range forms, yuv420p10le: DNxHR SQ, H.264 in MOV or with several audio tracks)
   - Why: the shots decode the video a second time, the largest piece of work left in a check now that the meters run
