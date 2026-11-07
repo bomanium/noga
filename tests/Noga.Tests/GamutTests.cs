@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using FrameReader;
 using Noga.Ffmpeg;
+using GamutMeter = Noga.Ffmpeg.GamutMeter;
 
 namespace Noga.Tests;
 

@@ -10,8 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-## Waiting
-
 - Noga switched to FrameReader's meters (2.25.0): Noga.Ffmpeg's FreezeMeter, InterlaceMeter, ChannelMeter,
   LoudnessBlocks, ColourMeter, GamutMeter, the timestamp gaps and Packets.Read (FFmpeg.AutoGen directly) replaced by
   FreezeDetector, InterlaceDetector, ChannelMeter, LoudnessMeter's MaxMomentary(At)/MaxShortTerm(At),
@@ -20,7 +18,10 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
   - Why: 2026-10-31-where-the-measures-live.md puts the measures in the public packages; FrameReader 2.24.0 and
     2.25.0 published Noga's (decisions/2026-11-05-meters-upstream.md, 2026-11-06-next-meters-upstream.md). Noga keeps
     the verdicts, the profiles and the reports
-  - Status: Waiting (on FrameReader 2.25.0's release, held for the owner's approval in shotdetector's release.yml)
+  - Status: In progress (2.25.0 published 2026-11-07; a meter switches only when FrameReader's gives the same figures
+    exactly, else it is fixed upstream first: decisions/2026-11-07-switching-to-framereaders-meters.md)
+
+## Waiting
 
 ## Maybe
 
