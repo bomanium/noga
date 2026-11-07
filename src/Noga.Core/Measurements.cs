@@ -264,17 +264,16 @@ public sealed record VideoPackets
     public long Count { get; init; }
 
     /// <summary>
-    /// Every packet's time (seconds, its pts; its dts when it has none), sorted: each frame's place in display order,
-    /// for the gaps between them (docs/decisions/2026-11-05-dropped-frames.md).
+    /// The steps between the picture's frames in display order (each packet's pts, its dts when it has none), for the
+    /// gaps between them (docs/decisions/2026-11-05-dropped-frames.md); null when they weren't counted.
     /// </summary>
-    public IReadOnlyList<double> Times { get; init; } = [];
+    public FrameStepCount? Steps { get; init; }
 
     /// <summary>The packets of one stream: each one's time (seconds), size (bytes) and whether it is a keyframe.</summary>
     public static VideoPackets From(IEnumerable<(double Seconds, long Size, bool Key)> packets)
     {
         ArgumentNullException.ThrowIfNull(packets);
         var keyframes = new List<double>();
-        var times = new List<double>();
         var perSecond = new List<long>();
         long bytes = 0, count = 0;
         foreach (var (seconds, size, key) in packets)
@@ -285,13 +284,21 @@ public sealed record VideoPackets
             while (perSecond.Count <= second)
                 perSecond.Add(0);
             perSecond[second] += size;
-            times.Add(seconds);
             if (key)
                 keyframes.Add(seconds);
         }
 
         keyframes.Sort();
-        times.Sort();
-        return new VideoPackets { Keyframes = keyframes, Bytes = bytes, BytesPerSecond = perSecond, Count = count, Times = times };
+        return new VideoPackets { Keyframes = keyframes, Bytes = bytes, BytesPerSecond = perSecond, Count = count };
     }
 }
+
+/// <summary>
+/// The steps between a picture's frames in display order at its frame rate (FrameReader's FrameSteps,
+/// docs/decisions/2026-11-05-dropped-frames.md): how many, how many aren't one frame within half a frame, and the gaps
+/// among them, a step over 1.5 frames.
+/// </summary>
+public sealed record FrameStepCount(int Steps, int Irregular, IReadOnlyList<FrameGapSpan> Gaps);
+
+/// <summary>A gap between two frames (seconds): the frame before it, the one after it, and the frames missing (the step in frames, rounded, less one).</summary>
+public readonly record struct FrameGapSpan(double After, double Next, long Missing);

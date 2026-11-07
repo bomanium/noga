@@ -949,27 +949,17 @@ public sealed record Profile
         }
     }
 
-    // The steps between the picture's frames, in display order (docs/decisions/2026-11-05-dropped-frames.md): one frame,
-    // within half a frame, is regular; over 1.5 frames is a gap, its frames less one missing. Over 1% of the steps (and
-    // more than one) not regular is a variable frame rate, a warning, and its gaps aren't judged: a phone's or a screen
-    // recording's steps are irregular by design. Missing frames over MaxDroppedFrames fail, each gap a finding (the
-    // first MaxGaps; the rest in one); within it, they are reported. Gives the frames missing where judged, else 0.
+    // The steps between the picture's frames, in display order, as FrameReader's FrameSteps counts them
+    // (docs/decisions/2026-11-05-dropped-frames.md): one frame, within half a frame, is regular; over 1.5 frames is a
+    // gap, its frames less one missing. Over 1% of the steps (and more than one) not regular is a variable frame rate, a
+    // warning, and its gaps aren't judged: a phone's or a screen recording's steps are irregular by design. Missing
+    // frames over MaxDroppedFrames fail, each gap a finding (the first MaxGaps; the rest in one); within it, they are
+    // reported. Gives the frames missing where judged, else 0.
     long Dropped(List<Finding> into, Measurements measured, double frame, Func<double, Position> at)
     {
-        if (!measured.HasPicture || measured.Packets is not { Times.Count: > 1 } packets || !(frame > 0))
+        if (!measured.HasPicture || measured.Packets?.Steps is not { Steps: > 0 } counted || !(frame > 0))
             return 0;
-        var times = packets.Times;
-        int steps = times.Count - 1, irregular = 0;
-        var gaps = new List<(double After, double Next, long Missing)>();
-        for (int i = 1; i < times.Count; i++)
-        {
-            double step = (times[i] - times[i - 1]) / frame;
-            if (Math.Abs(step - 1) <= 0.5)
-                continue;
-            irregular++;
-            if (step > 1.5)
-                gaps.Add((times[i - 1], times[i], (long)Math.Round(step) - 1));
-        }
+        var (steps, irregular, gaps) = (counted.Steps, counted.Irregular, counted.Gaps);
 
         if (irregular > 1 && irregular > steps * 0.01)
         {
@@ -992,7 +982,7 @@ public sealed record Profile
             {
                 Check = "frames.dropped",
                 Severity = Severity.Pass,
-                Message = Invariant($"No frames missing: each of the {times.Count} frames one frame after the last"),
+                Message = Invariant($"No frames missing: each of the {steps + 1} frames one frame after the last"),
                 Value = 0,
                 Unit = "frames",
                 CheckedAgainst = DroppedFilter,

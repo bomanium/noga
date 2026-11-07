@@ -98,8 +98,9 @@ public sealed class DroppedFrameTests : IClassFixture<OddFiles>
     [Fact]
     public void ManyGapsAreSummed()
     {
-        var times = Enumerable.Range(0, 3000).Where(n => n < 100 || n % 100 != 0).Select(n => (n * 0.04, 10L, n == 0));
-        var measured = new Measurements { Duration = 120, RateNumerator = 25, RateDenominator = 1, Packets = VideoPackets.From(times) };
+        var frames = Enumerable.Range(0, 3000).Where(n => n < 100 || n % 100 != 0).ToList();
+        var packets = VideoPackets.From(frames.Select(n => (n * 0.04, 10L, n == 0))) with { Steps = Ffmpeg.Packets.Steps(frames.Select(n => (long?)n), new FrameReader.Rational(1, 25), new FrameReader.Rational(25, 1)) };
+        var measured = new Measurements { Duration = 120, RateNumerator = 25, RateDenominator = 1, Packets = packets };
 
         var gaps = Profile.EbuR128.Evaluate(measured).Findings.Where(f => f.Check == "frames.dropped").ToList();
 
