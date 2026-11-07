@@ -95,32 +95,32 @@ What is next, in order: docs/backlog.md.
   each is measured (`Measurements.OtherTracks`, `TrackMeasures`) and judged, its findings naming it (`Finding.Track`). `LineUp.End`: where the line-up tone ends; loudness is measured from there (`Measurements.LoudnessFrom`).
   `ChannelMeasures`: a track's channels one by one (`Measurements.Channels`, `TrackMeasures.Channels`), judged as
   `channel.*` (dead fails; silent, out of phase below `Profile.MinPhase`, clipping from `Profile.ClipRun` warn; dual
-  mono reported: decisions/2026-11-03-channel-faults.md), measured by Noga.Ffmpeg's `ChannelMeter` on both paths.
-  `Measurements.Freezes`: frozen pictures (Noga.Ffmpeg's `FreezeMeter`, freezedetect's arithmetic on both paths'
-  frames), judged as `freeze` like black, black, bars and constant colour left out (decisions/2026-11-03-freeze-frames.md). `Measurements.Repeats`: single repeated frames (Noga.Ffmpeg's `RepeatedFrames`, a second FreezeMeter at `Profile.RepeatNoise`, -80 dB, d 1.5 frames: its two-frame freezes), judged as `repeat`, information (`RepeatsWarn` a warning), over `Profile.RepeatCadence` of the moving frames one cadence line (decisions/2026-11-06-repeated-frames.md).
-  `Measurements.ConstantColour`: runs of one flat colour (Noga.Ffmpeg's `ColourMeter`: signalstats' Y, U and V LOW to
+  mono reported: decisions/2026-11-03-channel-faults.md), measured by Noga.Ffmpeg's `ChannelMeter` (FrameReader's) on both paths.
+  `Measurements.Freezes`: frozen pictures (Noga.Ffmpeg's `FreezeMeter`: FrameReader's FreezeDetector, freezedetect's arithmetic, on
+  both paths' frames), judged as `freeze` like black, black, bars and constant colour left out (decisions/2026-11-03-freeze-frames.md). `Measurements.Repeats`: single repeated frames (Noga.Ffmpeg's `RepeatedFrames`, a second FreezeMeter at `Profile.RepeatNoise`, -80 dB, d 1.5 frames: its two-frame freezes), judged as `repeat`, information (`RepeatsWarn` a warning), over `Profile.RepeatCadence` of the moving frames one cadence line (decisions/2026-11-06-repeated-frames.md).
+  `Measurements.ConstantColour`: runs of one flat colour (Noga.Ffmpeg's `ColourMeter`, FrameReader's ConstantColourDetector: signalstats' Y, U and V LOW to
   HIGH within `Profile.ColourSpread`, on both paths' frames; every fourth luma row first, which rules out moving
   pictures exactly), `ColourSpan` (its mean Y, Cb, Cr and #RRGGBB), judged as `colour` like black, black and bars left
   out, from `Profile.MinConstantColour` (decisions/2026-11-06-constant-colour.md). `Measurements.OutOfGamut`,
   `WorstOutOfGamut`: pixels whose R, G or B is outside `Profile.GamutLow` to `GamutHigh` (EBU R 103's -5% to 105%;
-  Noga.Ffmpeg's `GamutMeter`, the matrix tag's Kr and Kb, else BT.709, BT.601 under 720 lines; a table of each chroma
-  pair's run of Y codes in gamut), judged as `gamut` like range, over `Profile.MaxOutOfGamut` (1%) a warning, checked
+  Noga.Ffmpeg's `GamutMeter`, FrameReader's: the matrix tag's Kr and Kb, else BT.709, BT.601 under 720 lines; 8 to 12
+  bits), judged as `gamut` like range, over `Profile.MaxOutOfGamut` (1%) a warning, checked
   against geq's arithmetic (decisions/2026-11-06-rgb-gamut.md).
   `Profile.ToneLevel` (the tone's level judged: -18 ebu-r128, -20 atsc-a85) and `HeadBars`, `HeadTone`, `HeadBlack`,
   `TailBlack` (`head.*`, `tail.*`: what the head and tail must have, a failure when short;
   decisions/2026-11-03-line-up-and-head-tail.md). `Measurements.Interlace`: idet's totals (Noga.Ffmpeg's
-  `InterlaceMeter`, vf_idet.c ported, on both paths' frames), reported as `interlace` and judged against field_order
+  `InterlaceMeter`, FrameReader's InterlaceDetector: vf_idet.c, on both paths' frames), reported as `interlace` and judged against field_order
   as `interlace.flag` (a warning when they disagree: decisions/2026-11-03-interlacing.md). `Profile.Decode`: what was
   decoded against what the file lists, in MOV/MP4/MXF (`VideoFormat.ListedFrames`, `StreamDuration`,
   `VideoPackets.Count`, `PictureTypes`, each track's `ChannelMeasures.Duration`): `decode.frames` (cut short),
   `decode.errors` (frames that don't decode), `decode.sound`, each a failure (decisions/2026-11-04-odd-files.md); a sound-only WAV, RF64/BW64 or AIFF's header (`Measurements.SoundHeader`, Noga.Ffmpeg's `SoundHeaders.Read`) against the sound that decodes, which FFmpeg's WAV duration doesn't see, a header never finished a warning (decisions/2026-11-06-sound-headers.md).
   `av.length`, `av.start`: each track's decoded length and start (`StartTime`, ffprobe's start_time) against the
   picture's, within `Profile.SyncFrames` frames passing, over `Profile.SyncFailure` seconds failing, between warning
-  (decisions/2026-11-05-av-lengths.md). `frames.dropped`: gaps in the picture's timestamps (`VideoPackets.Times`,
-  each packet's pts sorted; a step over 1.5 frames), each a failure past `Profile.MaxDroppedFrames` (0), counted in
+  (decisions/2026-11-05-av-lengths.md). `frames.dropped`: gaps in the picture's timestamps (`VideoPackets.Steps`,
+  FrameReader's FrameSteps on each packet's pts, `Packets.Steps`; a step over 1.5 frames), each a failure past `Profile.MaxDroppedFrames` (0), counted in
   `av.length`'s picture; `frames.variable-rate`: over 1% of the steps not one frame warns, its gaps not judged
   (decisions/2026-11-05-dropped-frames.md). `LoudnessMeasure.MaxMomentary`, `MaxShortTerm` (and when): ebur128's highest M
-  and S from the line-up's end, Noga.Ffmpeg's `LoudnessBlocks` on both paths; `loudness.momentary`, `loudness.short-term`
+  and S from the line-up's end, Noga.Ffmpeg's `LoudnessBlocks` on both paths (not yet FrameReader's: its figures differ in the last digits, backlog Waiting); `loudness.momentary`, `loudness.short-term`
   and `loudness.range` judged by `Profile.MaxMomentary`, `MaxShortTerm`, `MinRange`, `MaxRange` (a failure past them;
   `Profiles.EbuR128S1`, ebu-r128-s1, sets -18 short-term: decisions/2026-11-05-short-term-loudness.md).
   `Measurements.HasPicture`: false for sound only (WAV, AIFF, an M4A whose cover art isn't a picture), measured on
@@ -130,7 +130,9 @@ What is next, in order: docs/backlog.md.
   through FrameReader (FFmpeg's libraries in-process, FrameReader.Native's): duration, frame rate, loudness (ebur128),
   silences (silencedetect), line-up tone, for every audio track (`AudioReaderOptions.Stream`). `Pictures`: the picture's measures from FrameReader's PictureMeter (black,
   bars, BRNG, cropdetect, picture types) for both paths, and FFmpeg's frames into it. `Packets.Read`: the video
-  packets (av_read_frame through FFmpeg.AutoGen: keyframes and bitrate, as ffprobe -show_packets). `Shots`: the
+  packets (FrameReader's MediaProbe: keyframes, bitrate and the steps between frames, as ffprobe -show_packets).
+  The meters are FrameReader's, Noga.Ffmpeg's classes giving them Noga's settings and figures in seconds
+  (decisions/2026-11-07-switching-to-framereaders-meters.md). `Shots`: the
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
   the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths; when there is none at a rate without drop-frame, `TimecodeTrack` reads a drop-frame flag FFmpeg drops (the tmcd track, MXF's timecode component), judged in Core as `timecode.drop-frame`, a warning; a profile's `FormatSpec.DropFrame` as `format.drop-frame`. `FrameMeters`: the picture's meters (PictureMeter on `FrameMeters.PictureLanes` threads, each frame's measures

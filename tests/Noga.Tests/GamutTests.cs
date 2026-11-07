@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using FrameReader;
 using Noga.Ffmpeg;
+using GamutMeter = Noga.Ffmpeg.GamutMeter;
 
 namespace Noga.Tests;
 
@@ -113,11 +114,12 @@ public sealed class GamutTests : IDisposable
         Assert.Throws<ArgumentException>(() => Profiles.Read("""{ "name": "x", "maxOutOfGamut": 2 }"""));
     }
 
-    // A 4x2 frame of one colour, 4:4:4 at 8 bits, limited range.
+    // A 4x2 frame of one colour, 4:4:4 at 8 bits, limited range, its pts in milliseconds.
     static void Add(GamutMeter meter, byte y, byte cb, byte cr, double seconds)
     {
         byte[] Plane(byte value) => [.. Enumerable.Repeat(value, 8)];
-        meter.Add(Plane(y), 4, Plane(cb), 4, Plane(cr), 4, 4, 2, ChromaSubsampling.Yuv444, 8, false, seconds);
+        var format = new PictureFormat(4, 2, false, new Rational(1, 1000), 0, 8, ChromaSubsampling.Yuv444);
+        meter.Add(format, Plane(y), 4, Plane(cb), 4, Plane(cr), 4, (long)Math.Round(seconds * 1000));
     }
 
     string Make(string pixelFormat)

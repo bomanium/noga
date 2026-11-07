@@ -4,14 +4,10 @@
        which FrameReader.Native ships as separate shared libraries with their licence beside them (docs/dependencies.md). -->
   <PropertyGroup>
     <RootNamespace>Noga.Ffmpeg</RootNamespace>
-    <!-- Packets: av_read_frame through FFmpeg.AutoGen's pointers. -->
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FrameReader" />
-    <!-- FrameReader's own bindings, for the packet scan (Packets). -->
-    <PackageReference Include="FFmpeg.AutoGen" />
     <!-- The shot list (Shots). -->
     <PackageReference Include="ShotDetector" />
     <!-- The release platforms (tools/publish.sh): CI's, the owner's, and Linux on ARM (decisions/2026-11-03-linux-arm64.md). -->

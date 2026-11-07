@@ -8,7 +8,7 @@ namespace Noga.Ffmpeg;
 /// rate, and from its audio the loudness (FFmpeg's own ebur128), the silences (FFmpeg's own silencedetect, with the
 /// profile's settings) and the line-up tone (FrameReader's ReferenceTone), the loudness from the end of the line-up
 /// (<see cref="LineUp"/>); from its picture black, bars, pixels outside broadcast range and the active picture
-/// and each frame's picture type (<see cref="Pictures"/>); the keyframes and bitrate from the video packets
+/// and each frame's picture type (<see cref="Pictures"/>); the keyframes, bitrate and steps between frames from the video packets
 /// (<see cref="Packets"/>); the shot list (<see cref="Shots"/>); the start timecode the tag ffprobe's JSON gives (<see cref="StartTimecode"/>).
 /// </summary>
 public static class FfmpegMeasurer
@@ -84,7 +84,7 @@ public static class FfmpegMeasurer
             token =>
             {
                 pictures = Pictures.Measure(path, token, freezes, interlace, seconds => parts[0].Report(duration > 0 ? seconds / duration : 0), colours, gamut, repeats);
-                packets = Packets.Read(path, token);
+                packets = Packets.Read(path, video.FrameRate, token);
             },
             token => shots = Shots.Detect(path, token, parts[1]),
             token =>

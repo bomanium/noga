@@ -322,3 +322,15 @@ Finished items from [backlog.md](backlog.md), oldest first.
     information (a profile's `repeatsWarn` makes them warnings), over 10% of the moving frames summed up as a cadence;
     a second FreezeMeter on both paths, checked against freezedetect with d a frame and a half;
     decisions/2026-11-06-repeated-frames.md)
+
+- Noga switched to FrameReader's meters (2.25.0): Noga.Ffmpeg's FreezeMeter, InterlaceMeter, ChannelMeter,
+  LoudnessBlocks, ColourMeter, GamutMeter, the timestamp gaps and Packets.Read (FFmpeg.AutoGen directly) replaced by
+  FreezeDetector, InterlaceDetector, ChannelMeter, LoudnessMeter's MaxMomentary(At)/MaxShortTerm(At),
+  ConstantColourDetector, GamutMeter, FrameSteps and MediaInfo's packet keyframes and sizes; every figure the same
+  against FFmpeg, FFmpeg.AutoGen dropped if nothing else uses it
+  - Why: 2026-10-31-where-the-measures-live.md puts the measures in the public packages; FrameReader 2.24.0 and
+    2.25.0 published Noga's (decisions/2026-11-05-meters-upstream.md, 2026-11-06-next-meters-upstream.md). Noga keeps
+    the verdicts, the profiles and the reports
+  - Status: Done (2026-11-07, FrameReader 2.25.0 and ShotDetector 3.30.0: all but LoudnessBlocks, whose figures differ
+    in the last digits and where the window never fills, Waiting in backlog.md;
+    decisions/2026-11-07-switching-to-framereaders-meters.md)

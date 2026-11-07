@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using FrameReader;
 using Noga.Ffmpeg;
+using ChannelMeter = Noga.Ffmpeg.ChannelMeter;
 
 namespace Noga.Tests;
 

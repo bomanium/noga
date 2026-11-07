@@ -80,6 +80,7 @@ public static class ManagedMeasurer
 
         var (packets, timestamps) = ReadPackets(path, cancellationToken);
         var (numerator, denominator) = Rate(FramesPerSecond(video, timestamps));
+        packets = packets with { Steps = Packets.Steps(timestamps.Select(t => (long?)t), new FrameReader.Rational(video.TimeBase.Numerator, video.TimeBase.Denominator), new FrameReader.Rational((int)numerator, (int)denominator)) };
         double videoDuration = video.FrameCount * (double)denominator / numerator;
         var measured = new Measurements
         {

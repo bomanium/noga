@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using FrameReader;
 using Noga.Ffmpeg;
+using GamutMeter = Noga.Ffmpeg.GamutMeter;
 
 namespace Noga.Tests;
 
@@ -64,17 +66,19 @@ internal static partial class FfmpegCli
         Assert.Equal(string.Concat(types.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(line => line[0])), measured.PictureTypes);
     }
 
-    /// <summary>The keyframes, the bytes in all and each second, and each packet's time are ffprobe -show_packets', exactly.</summary>
+    /// <summary>The keyframes, the bytes in all and each second, and the steps between the packets' pts are ffprobe -show_packets', exactly.</summary>
     public static void AssertPackets(string file, Measurements measured)
     {
         using var json = System.Text.Json.JsonDocument.Parse(Ffprobe(file, "-select_streams", "v:0", "-show_entries", "stream=time_base:packet=pts,dts,size,flags", "-of", "json"));
         string[] timeBase = json.RootElement.GetProperty("streams")[0].GetProperty("time_base").GetString()!.Split('/');
         double unit = Parse(timeBase[0]) / Parse(timeBase[1]);
-        var expected = VideoPackets.From(json.RootElement.GetProperty("packets").EnumerateArray().Select(p =>
+        var packets = json.RootElement.GetProperty("packets").EnumerateArray().Select(p =>
         {
             string pts = p.TryGetProperty("pts", out var value) ? value.ToString() : p.GetProperty("dts").ToString();
-            return (Parse(pts) * unit, long.Parse(p.GetProperty("size").GetString()!, CultureInfo.InvariantCulture), p.GetProperty("flags").GetString()!.Contains('K', StringComparison.Ordinal));
-        }));
+            return (Pts: long.Parse(pts, CultureInfo.InvariantCulture), Size: long.Parse(p.GetProperty("size").GetString()!, CultureInfo.InvariantCulture), Key: p.GetProperty("flags").GetString()!.Contains('K', StringComparison.Ordinal));
+        }).ToList();
+        var expected = VideoPackets.From(packets.Select(p => (p.Pts * unit, p.Size, p.Key)));
+        var steps = Packets.Steps(packets.Select(p => (long?)p.Pts), new Rational(int.Parse(timeBase[0], CultureInfo.InvariantCulture), int.Parse(timeBase[1], CultureInfo.InvariantCulture)), new Rational((int)measured.RateNumerator, (int)measured.RateDenominator));
         Assert.NotNull(measured.Packets);
         var got = measured.Packets;
 
@@ -82,7 +86,9 @@ internal static partial class FfmpegCli
         Assert.Equal(expected.BytesPerSecond, got.BytesPerSecond);
         Assert.Equal(expected.Keyframes, got.Keyframes);
         Assert.Equal(expected.Count, got.Count);
-        Assert.Equal(expected.Times, got.Times);
+        Assert.NotNull(got.Steps);
+        Assert.Equal((steps.Steps, steps.Irregular), (got.Steps.Steps, got.Steps.Irregular));
+        Assert.Equal(steps.Gaps, got.Steps.Gaps);
     }
 
     /// <summary>
@@ -378,17 +384,17 @@ internal static partial class FfmpegCli
     }
 
     /// <summary>Each frame's signalstats YLOW, YHIGH, YAVG, ULOW, UHIGH, UAVG, VLOW, VHIGH and VAVG, in order.</summary>
-    public static List<ColourStats> Signalstats(string file)
+    public static List<SignalStats> Signalstats(string file)
     {
         string log = Run(file, "-an -vf signalstats,metadata=print");
-        var frames = new List<ColourStats>();
+        var frames = new List<SignalStats>();
         var values = new Dictionary<string, double>();
         void Flush()
         {
             if (values.Count == 0)
                 return;
             ushort At(string key) => (ushort)values[key];
-            frames.Add(new ColourStats(At("YLOW"), At("YHIGH"), (float)values["YAVG"], At("ULOW"), At("UHIGH"), (float)values["UAVG"], At("VLOW"), At("VHIGH"), (float)values["VAVG"]));
+            frames.Add(new SignalStats(At("YLOW"), At("YHIGH"), (float)values["YAVG"], At("ULOW"), At("UHIGH"), (float)values["UAVG"], At("VLOW"), At("VHIGH"), (float)values["VAVG"]));
             values.Clear();
         }
 
@@ -408,7 +414,7 @@ internal static partial class FfmpegCli
     /// Each frame's figures are signalstats': LOW and HIGH exactly, AVG within its printing (3 decimals); a frame left
     /// out (null) is one whose YHIGH less YLOW is over the spread.
     /// </summary>
-    public static void AssertSignalstats(string file, IReadOnlyList<ColourStats?> measured, double spread)
+    public static void AssertSignalstats(string file, IReadOnlyList<SignalStats?> measured, double spread)
     {
         var frames = Signalstats(file);
         Assert.Equal(frames.Count, measured.Count);
