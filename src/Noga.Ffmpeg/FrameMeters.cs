@@ -23,7 +23,7 @@ public interface IMeteredFrame : IDisposable
 
 /// <summary>
 /// The picture's meters over every frame of a video, for both decoding paths: FrameReader's PictureMeter (black, bars,
-/// BRNG, crop, picture types), and the <see cref="FreezeMeter"/>, <see cref="InterlaceMeter"/>,
+/// BRNG, crop, picture types), and FrameReader's detectors through the <see cref="FreezeMeter"/>, <see cref="InterlaceMeter"/>,
 /// <see cref="ColourMeter"/>, <see cref="GamutMeter"/> and a second FreezeMeter for repeated frames when given. Each
 /// meter takes the frames on a thread of its own (<see cref="Lanes{T}"/>) while the next ones are decoded, PictureMeter,
 /// the slowest, on <see cref="PictureLanes"/> threads: each frame measured on its own, and the frames' measures joined,
@@ -80,7 +80,7 @@ public sealed class FrameMeters : IDisposable
                 var y = frame.Plane(0, out int yStride);
                 var u = frame.Plane(1, out int uStride);
                 var v = frame.Plane(2, out int vStride);
-                freezes.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, frame.Pts * unit);
+                freezes.Add(format, y, yStride, u, uStride, v, vStride, frame.Pts);
             });
         }
 
@@ -92,7 +92,7 @@ public sealed class FrameMeters : IDisposable
                 var y = frame.Plane(0, out int yStride);
                 var u = frame.Plane(1, out int uStride);
                 var v = frame.Plane(2, out int vStride);
-                repeats.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, frame.Pts * unit);
+                repeats.Add(format, y, yStride, u, uStride, v, vStride, frame.Pts);
             });
         }
 
@@ -104,7 +104,7 @@ public sealed class FrameMeters : IDisposable
                 var y = frame.Plane(0, out int yStride);
                 var u = frame.Plane(1, out int uStride);
                 var v = frame.Plane(2, out int vStride);
-                interlace.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth);
+                interlace.Add(format, y, yStride, u, uStride, v, vStride);
             });
         }
 
@@ -116,7 +116,7 @@ public sealed class FrameMeters : IDisposable
                 var y = frame.Plane(0, out int yStride);
                 var u = frame.Plane(1, out int uStride);
                 var v = frame.Plane(2, out int vStride);
-                colours.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, format.FullRange, frame.Pts * unit);
+                colours.Add(format, y, yStride, u, uStride, v, vStride, frame.Pts);
             });
         }
 
@@ -128,7 +128,7 @@ public sealed class FrameMeters : IDisposable
                 var y = frame.Plane(0, out int yStride);
                 var u = frame.Plane(1, out int uStride);
                 var v = frame.Plane(2, out int vStride);
-                gamut.Add(y, yStride, u, uStride, v, vStride, frame.Width, frame.Height, format.Chroma, format.BitDepth, format.FullRange, frame.Pts * unit);
+                gamut.Add(format, y, yStride, u, uStride, v, vStride, frame.Pts);
             });
         }
 
