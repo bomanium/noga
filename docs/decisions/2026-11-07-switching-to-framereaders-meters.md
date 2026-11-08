@@ -38,3 +38,6 @@ packets on the odd files too (edit lists, variable rate, dropped frames, cut and
   of the sums), and where the window never fills (sound under 400 ms or 3 s, or S from 2.5 s of a 5 s file) FrameReader
   gives -120.691 LUFS or -Infinity where Noga gives none. LoudnessBlocks stays in Noga.Ffmpeg until a FrameReader release
   gives its figures (backlog, Waiting).
+
+Since 2026-11-08 ([2026-11-08-loudest-blocks-upstream.md](2026-11-08-loudest-blocks-upstream.md)) FrameReader's
+loudest M and S digits are accepted, as they are FFmpeg's; only the unfilled windows are fixed upstream.
