@@ -13,7 +13,9 @@ public sealed record EbuQcItem(string Id, string Name, string Version)
     /// The catalogue item a check is, read from qc.ebu.io's API on 2026-11-01; null for checks it has none for: the
     /// bitrate measured from the packets (0158W reads the wrapper's), the shot list (0128B finds short shots, not
     /// shots), the format's summary, the container, the transfer, the matrix, the audio track count and the sound's
-    /// start against the picture's.
+    /// start against the picture's. Not mapped yet: the RMS level and the sample peak (level.rms, level.peak), the audio
+    /// bit rate and its mode (format.audio-bit-rate, format.bit-rate-mode), added on 2026-11-09 when the catalogue's API
+    /// couldn't be read (docs/decisions/2026-11-09-acx-profile.md).
     /// </summary>
     public static EbuQcItem? For(string check) => check switch
     {

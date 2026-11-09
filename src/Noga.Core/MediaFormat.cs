@@ -239,6 +239,9 @@ public sealed record AudioFormat(int Number, string Codec, int? SampleRate, int 
     /// <summary>When the stream starts (seconds; ffprobe's start_time); null when none.</summary>
     public double? StartTime { get; init; }
 
+    /// <summary>The stream's bit rate (bits per second; ffprobe's bit_rate: a VBR MP3's average); null when none.</summary>
+    public int? BitRate { get; init; }
+
     /// <summary>"pcm_s24le 48000 Hz 2 ch (stereo) 24-bit".</summary>
     public override string ToString()
     {
@@ -263,6 +266,7 @@ public sealed record AudioFormat(int Number, string Codec, int? SampleRate, int 
         {
             StreamDuration = MediaFormat.Number(stream, "duration"),
             StartTime = MediaFormat.Number(stream, "start_time"),
+            BitRate = MediaFormat.Integer(stream, "bit_rate"),
         };
     }
 }
