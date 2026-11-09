@@ -61,8 +61,44 @@ public static class Profiles
         ToneLevel = null,
     };
 
+    /// <summary>
+    /// ACX (Audible's Audiobook Creation Exchange), its audio submission requirements: each file -23 to -18 dB RMS,
+    /// sample peaks at most -3 dB, an MP3 at 192 kb/s or more, constant bit rate, 44.1 kHz, at most 120 minutes.
+    /// Integrated loudness and true peak are reported, not judged; no line-up tone. The noise floor (-60 dB RMS or
+    /// lower) waits on FrameReader's meter (docs/decisions/2026-11-09-acx-profile.md).
+    /// </summary>
+    public static Profile Acx { get; } = Profile.EbuR128 with
+    {
+        Name = "acx",
+        TargetLoudness = null,
+        MaxTruePeak = null,
+        ToneLevel = null,
+        MinRms = -23,
+        MaxRms = -18,
+        MaxSamplePeak = -3,
+        Format = new FormatSpec
+        {
+            Container = "mp3",
+            AudioCodec = "mp3",
+            SampleRate = 44100,
+            MinAudioBitRate = 192_000,
+            ConstantBitRate = true,
+            MaxDuration = 120 * 60,
+        },
+    };
+
+    /// <summary>
+    /// <see cref="Acx"/>'s levels on a master before it is encoded (a WAV, AIFF or FLAC): the RMS window, the sample
+    /// peak, 44.1 kHz and at most 120 minutes, without the MP3's container, codec and bit rate (docs/decisions/2026-11-09-acx-profile.md).
+    /// </summary>
+    public static Profile AcxMaster { get; } = Acx with
+    {
+        Name = "acx-master",
+        Format = new FormatSpec { SampleRate = 44100, MaxDuration = 120 * 60 },
+    };
+
     /// <summary>Every profile noga ships, the default first.</summary>
-    public static IReadOnlyList<Profile> All { get; } = [Profile.EbuR128, EbuR128S1, AtscA85, Op59, AribTrB32];
+    public static IReadOnlyList<Profile> All { get; } = [Profile.EbuR128, EbuR128S1, AtscA85, Op59, AribTrB32, Acx, AcxMaster];
 
     /// <summary>
     /// The folder of delivery templates shipped beside the program (profiles/: profile files with a format to copy and
@@ -102,7 +138,7 @@ public static class Profiles
         if (format.FrameRate is { } rate && VideoFormat.Rational(rate) is not > 0)
             throw new ArgumentException($"{source}: format.frameRate is a rate like 25, 25/1, 30000/1001 or 29.97.", nameof(source));
         if (format.Width is < 1 || format.Height is < 1 || format.BitDepth is < 1 || format.AudioTracks is < 0
-            || format.SampleRate is < 1 || format.AudioChannels is < 1 || format.AudioBitDepth is < 1)
+            || format.SampleRate is < 1 || format.AudioChannels is < 1 || format.AudioBitDepth is < 1 || format.MinAudioBitRate is < 1)
         {
             throw new ArgumentException($"{source}: format's sizes, depths, rates and channels are positive, audioTracks at least 0.", nameof(source));
         }
@@ -119,11 +155,12 @@ public static class Profiles
     /// <c>rangeMergeGap</c>, <c>minPhase</c>, <c>clipRun</c>, <c>freezeNoise</c>, <c>minFreeze</c>, <c>repeatNoise</c>, <c>repeatCadence</c>, <c>repeatsWarn</c>, <c>colourSpread</c>,
     /// <c>minConstantColour</c>, <c>maxOutOfGamut</c>, <c>gamutLow</c>, <c>gamutHigh</c>, <c>toneLevel</c>,
     /// <c>toneTolerance</c>, <c>headBars</c>, <c>headTone</c>, <c>headBlack</c>, <c>tailBlack</c>, <c>syncFrames</c>,
-    /// <c>syncFailure</c>, <c>maxMomentary</c>, <c>maxShortTerm</c>, <c>minRange</c>, <c>maxRange</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
+    /// <c>syncFailure</c>, <c>maxMomentary</c>, <c>maxShortTerm</c>, <c>minRange</c>, <c>maxRange</c>, <c>minRms</c>,
+    /// <c>maxRms</c>, <c>maxSamplePeak</c>), and <c>format</c>, the delivery's format (<see cref="FormatSpec"/>: <c>container</c>,
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
-    /// <c>audioBitDepth</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>, <c>dropFrame</c>).
+    /// <c>audioBitDepth</c>, <c>minAudioBitRate</c>, <c>constantBitRate</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>, <c>dropFrame</c>).
     /// </summary>
     /// <exception cref="ArgumentException">Not such JSON, or a value out of its range.</exception>
     public static Profile Read(string json, string source = "the profile")
@@ -184,6 +221,9 @@ public static class Profiles
             MaxShortTerm = file.MaxShortTerm ?? start.MaxShortTerm,
             MinRange = file.MinRange ?? start.MinRange,
             MaxRange = file.MaxRange ?? start.MaxRange,
+            MinRms = file.MinRms ?? start.MinRms,
+            MaxRms = file.MaxRms ?? start.MaxRms,
+            MaxSamplePeak = file.MaxSamplePeak ?? start.MaxSamplePeak,
             Format = file.Format ?? start.Format,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
@@ -206,6 +246,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: toneLevel is at most 0 dBFS; toneTolerance, headBars, headTone, headBlack and tailBlack at least 0.", nameof(json));
         if (profile.MaxMomentary is > 0 || profile.MaxShortTerm is > 0 || profile.MinRange is < 0 || profile.MaxRange is < 0 || profile.MinRange > profile.MaxRange)
             throw new ArgumentException($"{source}: maxMomentary and maxShortTerm are at most 0 LUFS; minRange and maxRange at least 0, the first no more than the second.", nameof(json));
+        if (profile.MinRms is > 0 || profile.MaxRms is > 0 || profile.MaxSamplePeak is > 0 || profile.MinRms > profile.MaxRms)
+            throw new ArgumentException($"{source}: minRms, maxRms and maxSamplePeak are at most 0 dBFS, minRms no more than maxRms.", nameof(json));
         if (profile.SyncFrames < 0 || profile.SyncFailure <= 0 || profile.MaxDroppedFrames < 0)
             throw new ArgumentException($"{source}: syncFrames and maxDroppedFrames are at least 0, syncFailure positive.", nameof(json));
         if (profile.Format is { } format)
@@ -254,6 +296,9 @@ internal sealed record ProfileFile(
     double? MaxShortTerm,
     double? MinRange,
     double? MaxRange,
+    double? MinRms,
+    double? MaxRms,
+    double? MaxSamplePeak,
     FormatSpec? Format);
 
 [JsonSourceGenerationOptions(

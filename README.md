@@ -30,11 +30,12 @@ Each figure is computed in-process and checked, in this repository's tests, agai
 | Line-up tone | 1 kHz tone, its level judged (-18 dBFS EBU, -20 dBFS ATSC) | `astats` and a 1 kHz bandpass |
 | Silence | spans of silence: a warning mid-programme | `silencedetect=n=-60dB:d=2`: each end within 10 ms |
 | Audio channels | dead (fails), silent, out of phase, clipping (warnings), dual mono, on every track | `astats`, `aphasemeter` |
+| Levels | a track's RMS level and sample peak, where a profile sets limits (`acx`) | `astats`' Overall RMS level within 0.05 dB, Peak level within 0.01 dB |
 | Broadcast range | pixels outside 16-235 (chroma 16-240), scaled to the bit depth | `signalstats` BRNG, exact |
 | RGB gamut | pixels whose R, G or B is outside -5% to 105% (EBU R 103), by the file's matrix: over 1% of the picture warns | `geq` per pixel and `signalstats`, exact |
 | Crop | letterbox and pillarbox | `cropdetect`, exact |
 | Interlacing | whether the picture looks interlaced, against the stream's field order | `idet`'s totals, exact |
-| Format | container, codec and profile, size, rate, scan, colour, bit depth, every audio track, duration; a profile can require each | `ffprobe`, exact |
+| Format | container, codec and profile, size, rate, scan, colour, bit depth, every audio track (its bit rate, and an MP3's constant or variable bit rate), duration; a profile can require each | `ffprobe`, exact; an MP3's frames against `ffprobe -show_packets`, exact |
 | Frames, keyframes, bitrate | picture types, keyframe positions, bytes a second | `ffprobe -show_frames`, `-show_packets`, exact |
 | Head and tail | a profile can require bars, tone and black at the head and black at the tail | as above |
 | Sound against picture | each track's length and start against the picture's: within a frame passes, over 1 s fails, between warns | `ffprobe -count_frames` and `start_time`, exact; the sound against `astats`' samples |
@@ -101,6 +102,10 @@ most of the cores busy. The web UI and the app run two checks at a time on 4 cor
 - `atsc-a85` (US): -24 LKFS within 2 LU, -2 dBTP
 - `op-59` (Australia): -24 LKFS within 1 LU, -2 dBTP
 - `arib-tr-b32` (Japan): -24 LKFS within 1 LU, -1 dBTP
+- `acx` (audiobooks for ACX, one file a chapter): -23 to -18 dB RMS, sample peaks at most -3 dB, an MP3 at 192 kb/s or
+  more, constant bit rate, 44.1 kHz, at most 120 minutes; loudness and true peak reported, not judged. ACX's noise
+  floor (-60 dB RMS) isn't checked yet
+- `acx-master`: `acx`'s levels, 44.1 kHz and length on a WAV, AIFF or FLAC master before it is encoded
 - delivery templates: `hd-1080i25-prores-hq`, `hd-1080p25-prores-hq`, `web-1080p-h264-aac`
 - your own `.json` file: a name, the profile it is `basedOn`, the thresholds it changes (`maxShortTerm`,
   `maxMomentary`, `minRange` and `maxRange` set loudness limits the named profiles leave open), and in `format` what

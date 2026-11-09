@@ -73,6 +73,15 @@ public sealed record FormatSpec
     /// <summary>Every audio track's bits per sample.</summary>
     public int? AudioBitDepth { get; init; }
 
+    /// <summary>The lowest bit rate every audio track may have (bits per second, ffprobe's bit_rate: 192000 for 192 kb/s).</summary>
+    public int? MinAudioBitRate { get; init; }
+
+    /// <summary>
+    /// Whether the audio must be at a constant bit rate (true) or not (false): an MP3's frames each at the same bit rate
+    /// (<see cref="Mp3Frames.Constant"/>); PCM is constant by nature; any other codec's isn't known, and fails.
+    /// </summary>
+    public bool? ConstantBitRate { get; init; }
+
     /// <summary>The shortest the file may be (seconds, format.duration).</summary>
     public double? MinDuration { get; init; }
 
@@ -96,11 +105,15 @@ public sealed record FormatSpec
     /// <summary>Whether no value is given (nothing to check).</summary>
     public bool IsEmpty => this == new FormatSpec();
 
+    /// <summary>What <see cref="ConstantBitRate"/> is checked against.</summary>
+    public const string BitRateModeFilter = "ffprobe -select_streams a:0 -show_packets -show_entries packet=size (one packet a frame, the Xing or Info frame left out: each frame's size its header's bit rate's, exact)";
+
     /// <summary>
-    /// Every value given, judged against <paramref name="format"/> and the start timecode read from the file
-    /// (<paramref name="startTimecode"/>, null when it has none): a pass or a failure each; the audio ones once per track.
+    /// Every value given, judged against <paramref name="format"/>, the start timecode read from the file
+    /// (<paramref name="startTimecode"/>, null when it has none) and an MP3's frames (<paramref name="mp3"/>, null when
+    /// it isn't one): a pass or a failure each; the audio ones once per track.
     /// </summary>
-    public IReadOnlyList<Finding> Judge(MediaFormat format, string? startTimecode)
+    public IReadOnlyList<Finding> Judge(MediaFormat format, string? startTimecode, Mp3Frames? mp3 = null)
     {
         ArgumentNullException.ThrowIfNull(format);
         var into = new List<Finding>();
@@ -170,6 +183,14 @@ public sealed record FormatSpec
             Integer("format.sample-rate", "Sample rate", audio.SampleRate, SampleRate, "Hz", "sample_rate", audio.Number);
             Integer("format.audio-channels", "Channels", audio.Channels, AudioChannels, "", "channels", audio.Number);
             Integer("format.audio-bit-depth", "Audio bit depth", audio.BitDepth, AudioBitDepth, "bits", "bits_per_raw_sample, else bits_per_sample", audio.Number);
+            if (MinAudioBitRate is { } least)
+            {
+                string said = audio.BitRate is { } rate ? Invariant($"{rate / 1000.0:0.###} kb/s") : "not stated";
+                Add("format.audio-bit-rate", audio.BitRate >= least, $"Audio bit rate {said}", Invariant($"at least {least / 1000.0:0.###} kb/s"), "bit_rate", audio.Number);
+            }
+
+            if (ConstantBitRate is { } constant)
+                BitRateMode(audio, constant);
         }
 
         if (MinDuration is not null || MaxDuration is not null)
@@ -207,6 +228,42 @@ public sealed record FormatSpec
         }
 
         return into;
+
+        // An MP3's frames say whether its bit rate is constant; PCM's is by nature; any other codec's isn't known here.
+        void BitRateMode(AudioFormat audio, bool constant)
+        {
+            string expected = constant ? "constant" : "variable";
+            bool? measured;
+            string message;
+            if (audio.Number == 1 && mp3 is { Count: > 0 } frames)
+            {
+                measured = frames.Constant;
+                message = frames.Constant
+                    ? Invariant($"Constant bit rate: {frames.Count} frames at {frames.Lowest / 1000.0:0.###} kb/s")
+                    : frames.BitRates.ContainsKey(0)
+                        ? Invariant($"Free-format bit rate in {frames.BitRates[0]} of {frames.Count} frames")
+                        : Invariant($"Variable bit rate: {frames.Count} frames from {frames.Lowest / 1000.0:0.###} to {frames.Highest / 1000.0:0.###} kb/s");
+            }
+            else if (audio.Codec.StartsWith("pcm_", StringComparison.Ordinal))
+            {
+                measured = true;
+                message = $"Constant bit rate: {audio.Codec} (PCM)";
+            }
+            else
+            {
+                measured = null;
+                message = $"Bit rate mode not known: {audio.Codec} (only an MP3's frames are read)";
+            }
+
+            into.Add(new Finding
+            {
+                Check = "format.bit-rate-mode",
+                Severity = measured == constant ? Severity.Pass : Severity.Failure,
+                Message = Invariant($"Track {audio.Number}: {message} (expected {expected})"),
+                Track = audio.Number,
+                CheckedAgainst = BitRateModeFilter,
+            });
+        }
 
         void Text(string check, string what, string? measured, string? expected, string field, int? track = null)
         {

@@ -62,6 +62,8 @@ public static class FfmpegMeasurer
             measured = StartTimecode.Add(measured with { RateNumerator = SoundOnlyRate, RateDenominator = 1, NotMeasured = [], HasPicture = false }, path, cancellationToken);
             if (measured.Format?.Container is "wav" or "aiff")
                 measured = measured with { SoundHeader = SoundHeaders.Read(path) };
+            else if (measured.Format?.Container == "mp3")
+                measured = measured with { Mp3 = Mp3Headers.Read(path) };
             return MeasureSound(path, profile, measured, cancellationToken, stages.Together(1)[0]);
         }
 
@@ -216,7 +218,7 @@ public static class FfmpegMeasurer
             audio.Seek(TimeSpan.FromSeconds(from));
         var loudness = Loudness.Measure(audio, cancellationToken);
         double? integrated = loudness.Integrated <= Ungated ? null : loudness.Integrated;
-        return new LoudnessMeasure(integrated, loudness.Range, loudness.TruePeak);
+        return new LoudnessMeasure(integrated, loudness.Range, loudness.TruePeak) { SamplePeak = loudness.SamplePeak };
     }
 
     // silencedetect attaches lavfi.silence_start and lavfi.silence_end to the frames where a silence starts (once it

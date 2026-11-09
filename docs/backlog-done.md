@@ -334,3 +334,10 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Status: Done (2026-11-07, FrameReader 2.25.0 and ShotDetector 3.30.0: all but LoudnessBlocks, whose figures differ
     in the last digits and where the window never fills, Waiting in backlog.md;
     decisions/2026-11-07-switching-to-framereaders-meters.md)
+
+- The acx profile for one file (issue #78): `acx` and `acx-master`, an RMS window (-23 to -18 dB RMS), a sample-peak
+  ceiling (-3 dBFS), an MP3 at 192 kb/s or more, constant bit rate, 44.1 kHz, at most 120 minutes; loudness and true
+  peak reported, not judged
+  - Why: spoken-word deliveries are judged by other figures than broadcast loudness; the owner picked it from a
+    research session's list and chose ACX first (decisions/2026-11-09-acx-profile.md)
+  - Status: Done (2026-11-09; the noise floor waits on FrameReader: backlog, Waiting)

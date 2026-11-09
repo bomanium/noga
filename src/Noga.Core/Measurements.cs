@@ -66,6 +66,12 @@ public sealed record Measurements
     /// <summary>Whether the picture looks interlaced, idet's totals (docs/decisions/2026-11-03-interlacing.md); null when not measured.</summary>
     public InterlaceMeasures? Interlace { get; init; }
 
+    /// <summary>
+    /// An MP3's frames as their headers give them (bit rate each, the Xing or Info frame left out), read by Noga.Ffmpeg's
+    /// Mp3Headers for a file whose container is mp3 (docs/decisions/2026-11-09-acx-profile.md); null for any other.
+    /// </summary>
+    public Mp3Frames? Mp3 { get; init; }
+
     /// <summary>The first audio track's channels one by one; null when not measured.</summary>
     public ChannelMeasures? Channels { get; init; }
 
@@ -159,7 +165,14 @@ public sealed record InterlaceMeasures(long SingleTff, long SingleBff, long Sing
     public bool TopFieldFirst => MultiTff >= MultiBff;
 }
 
-public sealed record ChannelMeasures(int Channels, double Duration, IReadOnlyList<IReadOnlyList<TimeRange>> Silences, IReadOnlyList<double> RmsLevels, IReadOnlyList<int> ClippedRuns, IReadOnlyList<long> FullScaleSamples, double? Phase);
+public sealed record ChannelMeasures(int Channels, double Duration, IReadOnlyList<IReadOnlyList<TimeRange>> Silences, IReadOnlyList<double> RmsLevels, IReadOnlyList<int> ClippedRuns, IReadOnlyList<long> FullScaleSamples, double? Phase)
+{
+    /// <summary>
+    /// The RMS level of every channel's samples together (dBFS; -∞ for digital silence): astats' Overall RMS level,
+    /// the mean of each channel's mean square, as each channel has as many samples.
+    /// </summary>
+    public double OverallRms => RmsLevels.Count == 0 ? double.NegativeInfinity : 10 * Math.Log10(RmsLevels.Average(l => Math.Pow(10, l / 10)));
+}
 
 /// <summary>
 /// A run of frames of one flat colour (docs/decisions/2026-11-06-constant-colour.md): its span and its mean Y, Cb and
@@ -195,6 +208,12 @@ public readonly record struct ToneSpan(double Start, double End, double Frequenc
 /// <summary>EBU R128 / ITU-R BS.1770 loudness: integrated (LUFS; null below the absolute gate), range (LU) and true peak (dBTP).</summary>
 public readonly record struct LoudnessMeasure(double? Integrated, double Range, double TruePeak)
 {
+    /// <summary>
+    /// The highest sample's magnitude over every channel (dBFS; -∞ for digital silence), as ebur128's sample peak and
+    /// astats' Peak level give it; null when not measured.
+    /// </summary>
+    public double? SamplePeak { get; init; }
+
     /// <summary>The loudest momentary loudness (LUFS, ebur128's M: 400 ms); null when not measured or shorter than that.</summary>
     public double? MaxMomentary { get; init; }
 
@@ -302,3 +321,20 @@ public sealed record FrameStepCount(int Steps, int Irregular, IReadOnlyList<Fram
 
 /// <summary>A gap between two frames (seconds): the frame before it, the one after it, and the frames missing (the step in frames, rounded, less one).</summary>
 public readonly record struct FrameGapSpan(double After, double Next, long Missing);
+
+/// <summary>
+/// An MP3's frames as their headers give them (docs/decisions/2026-11-09-acx-profile.md): how many, their bytes, how
+/// many at each bit rate (bits per second; 0 for free format), and the Xing, Info or VBRI frame before them (an encoder's
+/// tag, not sound: left out of the counts, as FFmpeg's mp3 demuxer leaves it out of its packets), null when none.
+/// </summary>
+public sealed record Mp3Frames(long Count, long Bytes, IReadOnlyDictionary<int, long> BitRates, string? Tag)
+{
+    /// <summary>Whether every frame has the same bit rate (constant bit rate), free format aside.</summary>
+    public bool Constant => Count > 0 && BitRates.Count == 1 && !BitRates.ContainsKey(0);
+
+    /// <summary>The lowest frame's bit rate (bits per second); null without frames.</summary>
+    public int? Lowest => BitRates.Count == 0 ? null : BitRates.Keys.Min();
+
+    /// <summary>The highest frame's bit rate (bits per second); null without frames.</summary>
+    public int? Highest => BitRates.Count == 0 ? null : BitRates.Keys.Max();
+}

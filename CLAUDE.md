@@ -83,11 +83,15 @@ What is next, in order: docs/backlog.md.
 - `src/Noga.Core`: the checks. `Measurements` (what was measured, from either decoder: loudness, black, silences,
   bars, tone, pixels outside broadcast range (spans under `Profile.RangeMergeGap` apart joined: `RangeSpan.Merge`), the active picture, picture types, keyframes and bytes a second
   (`VideoPackets`); seconds from the first frame), `Profile` (thresholds and measurement settings; `Profile.EbuR128` is
-  v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (ebu-r128-s1, atsc-a85, op-59, arib-tr-b32, and profile files:
+  v1's and the default, `Evaluate` gives a `QcReport`), `Profiles` (ebu-r128-s1, atsc-a85, op-59, arib-tr-b32, acx and acx-master, and profile files:
   `Profiles.Get(nameOrFile)`, decisions/2026-11-01-profiles.md; templates by name: `Profiles.Templates`, the release's `profiles/`
-  from `packaging/profiles/`), `MediaFormat` (the file's format, ffprobe's values: container, video, every audio
+  from `packaging/profiles/`; acx: audiobooks, `Profile.MinRms`, `MaxRms` (`level.rms`: every channel together,
+  `ChannelMeasures.OverallRms`, astats' Overall RMS level) and `MaxSamplePeak` (`level.peak`: `LoudnessMeasure.SamplePeak`, both paths), no loudness
+  target nor true-peak limit (`TargetLoudness`, `MaxTruePeak` null: reported only); its noise floor waits on FrameReader:
+  decisions/2026-11-09-acx-profile.md, 2026-11-09-noise-floor.md), `MediaFormat` (the file's format, ffprobe's values: container, video, every audio
   track, duration; reported always; `VideoFormat.Colour` says the colour tags in words, untagged ones as such: decisions/2026-11-04-raw-values.md; `FormatWords`: the HTML report's header rows, Video, Audio, Container and Duration in words a client reads, from `QcReport.Format`: decisions/2026-11-04-format-words.md) and `FormatSpec` (a profile's `Format`: what the delivery asks for, each value a
-  pass or a failure; decisions/2026-11-03-delivery-format.md), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
+  pass or a failure; decisions/2026-11-03-delivery-format.md; `MinAudioBitRate` against ffprobe's bit_rate, `ConstantBitRate` against an MP3's frames,
+  `Measurements.Mp3`), `QcReport`/`Finding` (severity, message, value, positions, what it is checked
   against, its EBU QC item: `EbuQcItem.For`, decisions/2026-11-01-ebu-qc-items.md; `ExitCode`; `Reason`, the first failure or warning for a job's row: decisions/2026-11-04-job-rows.md; `Source`, a `CheckedFile`: the full path, size, modified time and when checked, set by `Checker.Run`, in both reports: decisions/2026-11-04-checked-file.md), `Timecode` (SMPTE from the file's start timecode; at 29.97/59.94 drop-frame or non-drop as its ";" or ":" says, drop-frame without one: decisions/2026-11-06-drop-frame.md), `ReportJson`
   (the JSON report, source-generated), `ReportHtml` (the HTML report, one self-contained page: the verdict with counts, the failures and warnings first, the format in the header, the shots folded; phone, dark and print: decisions/2026-11-04-report-layout.md), `StatusStyle` (a file's `Status` and each severity: one label and one tinted colour, light and dark, for the report, `noga serve`'s page, the app and the command line; each at least WCAG AA: decisions/2026-11-04-status-style.md), `Product` (name and
   version). `Measurements.NotMeasured` lists the checks a decoder path doesn't measure yet, which the report says.
@@ -134,7 +138,7 @@ What is next, in order: docs/backlog.md.
   The meters are FrameReader's, Noga.Ffmpeg's classes giving them Noga's settings and figures in seconds
   (decisions/2026-11-07-switching-to-framereaders-meters.md). `Shots`: the
   shot list, ShotDetector's (PySceneDetect detect-adaptive; trusted, not checked here). `Tags.Read`: ffprobe's tags
-  the managed path needs (range, rotation, what ShotDetector's file path would read). `StartTimecode.Add`: the timecode tag through FrameReader's
+  the managed path needs (range, rotation, what ShotDetector's file path would read). `Mp3Headers.Read`: an MP3's frame headers (each frame's bit rate, the Xing/Info frame left out), whether its bit rate is constant, checked against ffprobe -show_packets. `StartTimecode.Add`: the timecode tag through FrameReader's
   `MediaProbe.ProbeJson` (ffprobe's JSON in-process), for both paths; when there is none at a rate without drop-frame, `TimecodeTrack` reads a drop-frame flag FFmpeg drops (the tmcd track, MXF's timecode component), judged in Core as `timecode.drop-frame`, a warning; a profile's `FormatSpec.DropFrame` as `format.drop-frame`. `FrameMeters`: the picture's meters (PictureMeter on `FrameMeters.PictureLanes` threads, each frame's measures
   joined; `FreezeMeter`; `InterlaceMeter`; `ColourMeter`; `GamutMeter`; the repeats' FreezeMeter) each on a thread of its own while the next frames decode, for both paths'
   frames (`IMeteredFrame`), through `Lanes` (each item to every consumer, disposed once all are done);

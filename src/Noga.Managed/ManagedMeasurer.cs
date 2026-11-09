@@ -161,6 +161,7 @@ public static class ManagedMeasurer
                 MaxMomentaryAt = start + momentaryAt,
                 MaxShortTerm = shortTerm,
                 MaxShortTermAt = start + shortTermAt,
+                SamplePeak = loudness.SamplePeak,
             },
         };
     }

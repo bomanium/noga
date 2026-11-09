@@ -40,8 +40,8 @@ public sealed record Profile
     /// <summary>The profile's name in reports and on the command line.</summary>
     public required string Name { get; init; }
 
-    /// <summary>The integrated loudness aimed at (LUFS).</summary>
-    public required double TargetLoudness { get; init; }
+    /// <summary>The integrated loudness aimed at (LUFS); null: reported, not judged (acx: docs/decisions/2026-11-09-acx-profile.md).</summary>
+    public required double? TargetLoudness { get; init; }
 
     /// <summary>How far from the target still passes (LU).</summary>
     public required double LoudnessPass { get; init; }
@@ -49,8 +49,8 @@ public sealed record Profile
     /// <summary>How far from the target is a warning rather than a failure (LU).</summary>
     public required double LoudnessWarning { get; init; }
 
-    /// <summary>The highest true peak that passes (dBTP).</summary>
-    public required double MaxTruePeak { get; init; }
+    /// <summary>The highest true peak that passes (dBTP); null: reported, not judged.</summary>
+    public required double? MaxTruePeak { get; init; }
 
     /// <summary>The shortest black span reported (seconds; blackdetect's d).</summary>
     public required double MinBlack { get; init; }
@@ -178,6 +178,27 @@ public sealed record Profile
 
     /// <summary>The loudness range's most (LU); null: no most.</summary>
     public double? MaxRange { get; init; }
+
+    /// <summary>
+    /// The lowest RMS level that passes (dBFS: every channel's samples together, astats' Overall RMS level, over the
+    /// whole track); null: not judged (docs/decisions/2026-11-09-acx-profile.md).
+    /// </summary>
+    public double? MinRms { get; init; }
+
+    /// <summary>The highest RMS level that passes (dBFS, as <see cref="MinRms"/>); null: not judged.</summary>
+    public double? MaxRms { get; init; }
+
+    /// <summary>
+    /// The highest sample peak that passes (dBFS: the largest sample's magnitude over every channel, astats' Overall
+    /// Peak level), from the end of the line-up as loudness is; null: not judged (docs/decisions/2026-11-09-acx-profile.md).
+    /// </summary>
+    public double? MaxSamplePeak { get; init; }
+
+    /// <summary>What <see cref="MinRms"/> and <see cref="MaxRms"/> are checked against.</summary>
+    public static string RmsFilter => "-map 0:a:N -af astats=measure_perchannel=none:measure_overall=RMS_level (Overall RMS level, within 0.05 dB)";
+
+    /// <summary>What <see cref="MaxSamplePeak"/> is checked against.</summary>
+    public static string SamplePeakFilter => "-map 0:a:N -af astats=measure_perchannel=none:measure_overall=Peak_level (Overall Peak level, within 0.01 dB)";
 
     /// <summary>What the sound's length is checked against, as the picture's.</summary>
     public static string AvLengthFilter => "ffprobe -select_streams v:0 -count_frames (nb_read_frames, and the frames missing in its gaps, times the frame's duration) against -map 0:a:N -af astats's Number of samples (within one AAC frame, 1024 samples)";
@@ -422,6 +443,7 @@ public sealed record Profile
         }
 
         Loudness(findings, measured.Loudness, At);
+        Levels(findings, measured.Channels, measured.Loudness);
 
         // Every track's findings say which track (docs/decisions/2026-11-01-every-audio-track.md): the first's above,
         // then each other's in turn, each compared with its own -map 0:a:N.
@@ -441,6 +463,7 @@ public sealed record Profile
                 Channels(own, other.Channels, other.Silences, At);
                 From(own, other.LoudnessFrom, other.Loudness);
                 Loudness(own, other.Loudness, At);
+                Levels(own, other.Channels, other.Loudness);
                 findings.AddRange(own.Select(f => OnTrack(f, other.Number)));
             }
         }
@@ -525,7 +548,7 @@ public sealed record Profile
         {
             into.Add(new Finding { Check = "format", Severity = Severity.Info, Message = $"Format: {format}", CheckedAgainst = $"{MediaFormat.CheckedAgainst} (exact)" });
             if (Format is { IsEmpty: false } spec)
-                into.AddRange(spec.Judge(format, measured.StartTimecode));
+                into.AddRange(spec.Judge(format, measured.StartTimecode, measured.Mp3));
         }
         else if (Format is { IsEmpty: false })
         {
@@ -559,14 +582,17 @@ public sealed record Profile
         }
         else
         {
-            // Judged at the report's precision (0.1 LU), so a figure the report shows as passing passes.
-            double off = Math.Round(integrated - TargetLoudness, 1);
-            var severity = Math.Abs(off) <= LoudnessPass ? Severity.Pass : Math.Abs(off) <= LoudnessWarning ? Severity.Warning : Severity.Failure;
+            // Judged at the report's precision (0.1 LU), so a figure the report shows as passing passes; reported only
+            // when the profile has no target.
+            double? off = TargetLoudness is { } target ? Math.Round(integrated - target, 1) : null;
+            var severity = off is not { } o ? Severity.Info : Math.Abs(o) <= LoudnessPass ? Severity.Pass : Math.Abs(o) <= LoudnessWarning ? Severity.Warning : Severity.Failure;
             into.Add(new Finding
             {
                 Check = "loudness.integrated",
                 Severity = severity,
-                Message = Invariant($"Integrated loudness {integrated:0.0} LUFS ({off:+0.0;-0.0;0.0} LU from {TargetLoudness:0} LUFS)"),
+                Message = off is { } from
+                    ? Invariant($"Integrated loudness {integrated:0.0} LUFS ({from:+0.0;-0.0;0.0} LU from {TargetLoudness:0} LUFS)")
+                    : Invariant($"Integrated loudness {integrated:0.0} LUFS"),
                 Value = integrated,
                 Unit = "LUFS",
                 CheckedAgainst = LoudnessFilter,
@@ -598,14 +624,15 @@ public sealed record Profile
         Loudest(into, "loudness.short-term", "short-term", l.MaxShortTerm, l.MaxShortTermAt, 3, MaxShortTerm, at);
 
         double peak = Math.Round(l.TruePeak, 1);
+        string most = MaxTruePeak is { } max ? Invariant($" (at most {max:0.0} dBTP)") : "";
         into.Add(new Finding
         {
             Check = "loudness.true-peak",
-            Severity = peak > MaxTruePeak ? Severity.Failure : Severity.Pass,
+            Severity = MaxTruePeak is null ? Severity.Info : peak > MaxTruePeak ? Severity.Failure : Severity.Pass,
             // Silence has no peak: ebur128 gives -inf, which the report says in words rather than as "-Infinity".
             Message = double.IsNegativeInfinity(l.TruePeak)
-                ? Invariant($"True peak: none, the sound is silent (at most {MaxTruePeak:0.0} dBTP)")
-                : Invariant($"True peak {l.TruePeak:0.0} dBTP (at most {MaxTruePeak:0.0} dBTP)"),
+                ? Invariant($"True peak: none, the sound is silent{most}")
+                : Invariant($"True peak {l.TruePeak:0.0} dBTP{most}"),
             Value = l.TruePeak,
             Unit = "dBTP",
             CheckedAgainst = LoudnessFilter,
@@ -1221,7 +1248,51 @@ public sealed record Profile
     }
 
     // The checks each audio track has.
-    static bool IsTrackCheck(string check) => check is "tone" or "silence" || check.StartsWith("loudness.", StringComparison.Ordinal) || check.StartsWith("channel.", StringComparison.Ordinal);
+    static bool IsTrackCheck(string check) => check is "tone" or "silence" || check.StartsWith("loudness.", StringComparison.Ordinal) || check.StartsWith("channel.", StringComparison.Ordinal) || check.StartsWith("level.", StringComparison.Ordinal);
+
+    // A track's RMS level and sample peak (docs/decisions/2026-11-09-acx-profile.md), each judged at the report's
+    // precision (0.1 dB) when the profile sets a limit, and not reported otherwise.
+    void Levels(List<Finding> into, ChannelMeasures? channels, LoudnessMeasure? loudness)
+    {
+        if ((MinRms is not null || MaxRms is not null) && channels is { Channels: > 0 } c)
+        {
+            double rms = c.OverallRms;
+            double shown = Math.Round(rms, 1);
+            bool outside = double.IsNegativeInfinity(rms) || shown < MinRms || shown > MaxRms;
+            string window = (MinRms, MaxRms) switch
+            {
+                ({ } low, { } high) => Invariant($"{low:0.#} to {high:0.#} dBFS"),
+                ({ } low, null) => Invariant($"at least {low:0.#} dBFS"),
+                _ => Invariant($"at most {MaxRms:0.#} dBFS"),
+            };
+            into.Add(new Finding
+            {
+                Check = "level.rms",
+                Severity = outside ? Severity.Failure : Severity.Pass,
+                Message = double.IsNegativeInfinity(rms)
+                    ? $"RMS level: none, the sound is silent ({window})"
+                    : Invariant($"RMS level {rms:0.0} dBFS ({window})"),
+                Value = double.IsNegativeInfinity(rms) ? null : rms,
+                Unit = "dBFS",
+                CheckedAgainst = RmsFilter,
+            });
+        }
+
+        if (MaxSamplePeak is { } max && loudness?.SamplePeak is { } peak)
+        {
+            into.Add(new Finding
+            {
+                Check = "level.peak",
+                Severity = Math.Round(peak, 1) > max ? Severity.Failure : Severity.Pass,
+                Message = double.IsNegativeInfinity(peak)
+                    ? Invariant($"Sample peak: none, the sound is silent (at most {max:0.0} dBFS)")
+                    : Invariant($"Sample peak {peak:0.0} dBFS (at most {max:0.0} dBFS)"),
+                Value = double.IsNegativeInfinity(peak) ? null : peak,
+                Unit = "dBFS",
+                CheckedAgainst = SamplePeakFilter,
+            });
+        }
+    }
 
     // A track's channels one by one (docs/decisions/2026-11-03-channel-faults.md): a channel silent throughout while
     // another has sound fails; one silent for MinSilence or more while another has sound, a pair out of phase, and
