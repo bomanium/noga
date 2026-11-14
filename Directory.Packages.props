@@ -16,9 +16,9 @@
     <PackageVersion Include="ShotDetector" Version="3.30.0" />
     <PackageVersion Include="ShotDetector.FastYuv" Version="3.30.0" />
     <!-- The desktop app (Noga.App): Avalonia (MIT), its Skia and HarfBuzz renderers (MIT) come with it. They move together. -->
-    <PackageVersion Include="Avalonia" Version="12.1.5" />
+    <PackageVersion Include="Avalonia" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.5" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.5" />
     <!-- Pure managed H.264/AAC decoding and MP4 demuxing (MIT). -->
     <PackageVersion Include="ManagedCodecs" Version="0.4.0" />
