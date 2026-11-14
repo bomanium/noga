@@ -7,7 +7,7 @@
     <!-- Moves with the format tool in .config/dotnet-tools.json, in one PR. -->
     <PackageVersion Include="StyleBro.Analyzers" Version="0.8.0-alpha.1" />
     <!-- FFmpeg through FrameReader (MIT) and FFmpeg's shared libraries (LGPL, separate and replaceable). They move together. -->
-    <PackageVersion Include="FrameReader" Version="2.25.0" />
+    <PackageVersion Include="FrameReader" Version="2.26.0" />
     <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.25.0" />
     <PackageVersion Include="FrameReader.Native.linux-arm64" Version="2.25.0" />
     <PackageVersion Include="FrameReader.Native.win-x64" Version="2.25.0" />
