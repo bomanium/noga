@@ -9,7 +9,7 @@
     <!-- FFmpeg through FrameReader (MIT) and FFmpeg's shared libraries (LGPL, separate and replaceable). They move together. -->
     <PackageVersion Include="FrameReader" Version="2.25.0" />
     <PackageVersion Include="FrameReader.Native.linux-x64" Version="2.25.0" />
-    <PackageVersion Include="FrameReader.Native.linux-arm64" Version="2.25.0" />
+    <PackageVersion Include="FrameReader.Native.linux-arm64" Version="2.26.0" />
     <PackageVersion Include="FrameReader.Native.win-x64" Version="2.25.0" />
     <!-- The shot list: PySceneDetect's detectors (MIT), at FrameReader's version; FastYuv (LGPL-2.1-or-later) converts
          the managed path's frames, a separate, replaceable assembly with its licence beside it. They move together. -->
