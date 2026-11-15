@@ -115,7 +115,8 @@ public sealed class AppTests : IDisposable
         window.Dropped(data);
         Settle(model, window);
 
-        Assert.Equal(["good.mov", "bad.mov", "ep01.mxf"], _checked.Select(c => c.File));
+        // Two run at a time on four cores or more, so which starts first isn't given.
+        Assert.Equal(["bad.mov", "ep01.mxf", "good.mov"], _checked.Select(c => c.File).Order(StringComparer.Ordinal));
         var rows = window.Rows.Select(Text).ToList();
         Assert.Equal(3, rows.Count);
         Assert.StartsWith("Failed | Report | JSON | ep01.mxf | took ", rows[0], StringComparison.Ordinal);
