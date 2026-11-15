@@ -13,7 +13,7 @@ namespace Noga;
 /// </summary>
 public static class ReportHtml
 {
-    const string Style = """
+    internal const string Style = """
         :root { color-scheme: light dark;
           --fg: #1b1b1b; --muted: #5a5a5a; --line: #ddd; --bg: #fff; --head: #f6f6f4; --link: #1f5d99; }
         @media screen and (prefers-color-scheme: dark) { :root {
@@ -231,7 +231,7 @@ public static class ReportHtml
         return string.Join(" · ", parts);
     }
 
-    static string Encode(string text) => WebUtility.HtmlEncode(text);
+    internal static string Encode(string text) => WebUtility.HtmlEncode(text);
 
     // The EBU QC item as a link to its page in the catalogue; nothing when the check has none.
     static string Ebu(EbuQcItem? item) =>

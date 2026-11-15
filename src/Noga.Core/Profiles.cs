@@ -64,7 +64,8 @@ public static class Profiles
     /// <summary>
     /// ACX (Audible's Audiobook Creation Exchange), its audio submission requirements: each file -23 to -18 dB RMS,
     /// sample peaks at most -3 dB, an MP3 at 192 kb/s or more, constant bit rate, 44.1 kHz, at most 120 minutes.
-    /// Integrated loudness and true peak are reported, not judged; no line-up tone. The noise floor (-60 dB RMS or
+    /// Integrated loudness and true peak are reported, not judged; no line-up tone. A folder's files are one book: one
+    /// format, RMS levels within 2 dB of their median (docs/decisions/2026-11-15-set-check.md). The noise floor (-60 dB RMS or
     /// lower) waits on FrameReader's meter (docs/decisions/2026-11-09-acx-profile.md).
     /// </summary>
     public static Profile Acx { get; } = Profile.EbuR128 with
@@ -85,6 +86,7 @@ public static class Profiles
             ConstantBitRate = true,
             MaxDuration = 120 * 60,
         },
+        Set = new SetSpec(),
     };
 
     /// <summary>
@@ -160,7 +162,8 @@ public static class Profiles
     /// <c>videoCodec</c>, <c>videoProfile</c>, <c>width</c>, <c>height</c>, <c>frameRate</c>, <c>scan</c>, <c>fieldOrder</c>,
     /// <c>pixelFormat</c>, <c>bitDepth</c>, <c>colourPrimaries</c>, <c>transfer</c>, <c>matrix</c>, <c>colourRange</c>,
     /// <c>displayAspect</c>, <c>audioTracks</c>, <c>audioCodec</c>, <c>sampleRate</c>, <c>audioChannels</c>,
-    /// <c>audioBitDepth</c>, <c>minAudioBitRate</c>, <c>constantBitRate</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>, <c>dropFrame</c>).
+    /// <c>audioBitDepth</c>, <c>minAudioBitRate</c>, <c>constantBitRate</c>, <c>minDuration</c>, <c>maxDuration</c>, <c>startTimecode</c>, <c>dropFrame</c>),
+    /// and <c>set</c>, what a folder's files must have in common (<see cref="SetSpec"/>: <c>sameFormat</c>, <c>levelTolerance</c>).
     /// </summary>
     /// <exception cref="ArgumentException">Not such JSON, or a value out of its range.</exception>
     public static Profile Read(string json, string source = "the profile")
@@ -225,6 +228,7 @@ public static class Profiles
             MaxRms = file.MaxRms ?? start.MaxRms,
             MaxSamplePeak = file.MaxSamplePeak ?? start.MaxSamplePeak,
             Format = file.Format ?? start.Format,
+            Set = file.Set ?? start.Set,
         };
         if (profile.LoudnessPass < 0 || profile.LoudnessWarning < profile.LoudnessPass)
             throw new ArgumentException($"{source}: loudnessPass is at least 0 and loudnessWarning at least loudnessPass.", nameof(json));
@@ -252,6 +256,8 @@ public static class Profiles
             throw new ArgumentException($"{source}: syncFrames and maxDroppedFrames are at least 0, syncFailure positive.", nameof(json));
         if (profile.Format is { } format)
             Check(format, source);
+        if (profile.Set?.LevelTolerance is < 0)
+            throw new ArgumentException($"{source}: set.levelTolerance is at least 0 dB.", nameof(json));
         return profile;
     }
 }
@@ -299,7 +305,8 @@ internal sealed record ProfileFile(
     double? MinRms,
     double? MaxRms,
     double? MaxSamplePeak,
-    FormatSpec? Format);
+    FormatSpec? Format,
+    SetSpec? Set);
 
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
@@ -308,4 +315,5 @@ internal sealed record ProfileFile(
     AllowTrailingCommas = true)]
 [JsonSerializable(typeof(ProfileFile))]
 [JsonSerializable(typeof(FormatSpec))]
+[JsonSerializable(typeof(SetSpec))]
 internal partial class ProfileFileContext : JsonSerializerContext;

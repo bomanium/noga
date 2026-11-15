@@ -16,6 +16,17 @@ public static class MediaFiles
     public static bool IsReport(string name) =>
         name.EndsWith(".qc.html", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".qc.json", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>The media files in <paramref name="folder"/> itself (not its subfolders), hidden ones and reports left out, by name.</summary>
+    public static IEnumerable<string> Directly(string folder)
+    {
+        ArgumentNullException.ThrowIfNull(folder);
+        var options = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.Hidden | FileAttributes.System };
+        return new DirectoryInfo(folder).EnumerateFiles("*", options)
+            .Where(f => !f.Name.StartsWith('.') && !IsReport(f.Name) && IsMedia(f.Name))
+            .Select(f => f.FullName)
+            .Order(StringComparer.OrdinalIgnoreCase);
+    }
+
     /// <summary>
     /// The media files <paramref name="paths"/> name: each file itself (whatever its extension: it was asked for), and
     /// the media files in each folder and its subfolders, hidden ones and reports left out, in order.
