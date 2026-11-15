@@ -10,12 +10,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
 
 ## Next
 
-- A book as one check: `noga check FOLDER` checks a folder's files as one set, each file's report plus one summary
-  (every file the same format, mono or stereo throughout, levels within a tolerance of each other) and one exit code
-  - Why: ACX judges an audiobook as a set of files as well as one by one; the owner chose a folder given to `noga
-    check` over a new command (decisions/2026-11-09-set-check.md)
-  - Status: Open
-
 - Room tone at the head and tail of a spoken-word file: quiet, but not digital silence, for 1 to 5 s (ACX's figures;
   its blog says 0.5 to 1 s at the head), judged under acx
   - Why: ACX asks for it in each file (decisions/2026-11-09-acx-profile.md); silences and each channel's RMS are

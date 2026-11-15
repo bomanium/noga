@@ -1,6 +1,6 @@
 noga: file-based quality control of video deliveries (Noga: Swedish for careful, thorough)
 
-  noga check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]
+  noga check FILE|FOLDER [--out FOLDER] [--warnings-fail] [--profile PROFILE]
   noga serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER] [--token TOKEN]
                 [--cert FILE [--key FILE] | --http] [--profile PROFILE] [--no-open]
 
@@ -14,6 +14,9 @@ only by who opens the link it prints (it carries a random token). Shared, it is 
 a self-signed one it makes once and keeps in your profile. Browsers warn about a self-signed certificate once: accept
 it when the fingerprint they show is the one noga printed. --http shares it as plain HTTP instead, for a network you
 trust.
+Given a folder, check checks its media files (not its subfolders') and adds the set's report, FOLDERNAME.set.qc.html
+and .json: every file's verdict and one exit code; under acx and acx-master (or a profile file's "set") the files
+must also have one format, and RMS levels within 2 dB of their median (a warning).
 noga --help says the same.
 
 Profiles: ebu-r128 (the default), ebu-r128-s1 (ads and promos), atsc-a85, op-59, arib-tr-b32, or your own in a .json file (a "name", "basedOn" one

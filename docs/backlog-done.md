@@ -350,3 +350,11 @@ Finished items from [backlog.md](backlog.md), oldest first.
     FrameReader's digits turned out to be FFmpeg's (decisions/2026-11-08-loudest-blocks-upstream.md)
   - Status: Done (2026-11-15, FrameReader 2.26.0: both paths read LoudnessMeter's loudest blocks, `FfmpegMeasurer.Blocks`,
     and LoudnessBlocks is gone)
+
+- A book as one check: `noga check FOLDER` checks a folder's files as one set, each file's report plus one summary
+  (every file the same format, mono or stereo throughout, levels within a tolerance of each other) and one exit code
+  - Why: ACX judges an audiobook as a set of files as well as one by one; the owner chose a folder given to `noga
+    check` over a new command (decisions/2026-11-09-set-check.md)
+  - Status: Done (2026-11-15: `noga check FOLDER`, each file's reports and FOLDERNAME.set.qc.html/.json; under a profile
+    with a `set` (acx, acx-master) one format fails and RMS levels over 2 dB from the median warn;
+    decisions/2026-11-15-set-check.md. The web UI and the app don't group a folder yet)
