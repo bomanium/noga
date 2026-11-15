@@ -124,7 +124,7 @@ What is next, in order: docs/backlog.md.
   FrameReader's FrameSteps on each packet's pts, `Packets.Steps`; a step over 1.5 frames), each a failure past `Profile.MaxDroppedFrames` (0), counted in
   `av.length`'s picture; `frames.variable-rate`: over 1% of the steps not one frame warns, its gaps not judged
   (decisions/2026-11-05-dropped-frames.md). `LoudnessMeasure.MaxMomentary`, `MaxShortTerm` (and when): ebur128's highest M
-  and S from the line-up's end, Noga.Ffmpeg's `LoudnessBlocks` on both paths (not yet FrameReader's, until a release counts only full windows: backlog Waiting, decisions/2026-11-08-loudest-blocks-upstream.md); `loudness.momentary`, `loudness.short-term`
+  and S from the line-up's end, FrameReader's LoudnessMeter on both paths (`FfmpegMeasurer.Blocks`: no full block, no level; decisions/2026-11-08-loudest-blocks-upstream.md); `loudness.momentary`, `loudness.short-term`
   and `loudness.range` judged by `Profile.MaxMomentary`, `MaxShortTerm`, `MinRange`, `MaxRange` (a failure past them;
   `Profiles.EbuR128S1`, ebu-r128-s1, sets -18 short-term: decisions/2026-11-05-short-term-loudness.md).
   `Measurements.HasPicture`: false for sound only (WAV, AIFF, an M4A whose cover art isn't a picture), measured on
@@ -152,7 +152,7 @@ What is next, in order: docs/backlog.md.
   `Tags.AudioCodecs`, since a QuickTime PCM track's sample table is huge: docs/notes/performance.md), the packets from its demuxer, and the shots from
   ShotDetector on the same decoded frames (ShotDetector.FastYuv converts them; LGPL, its own DLL): the same figures as the FFmpeg path, which a
   test checks on make-samples.sh's MP4.
-- `src/Noga.Cli`: the `noga` command (`CommandLine.Run`): `noga check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]`
+- `src/Noga.Cli`: the `noga` command (`CommandLine.Run`): `noga check FILE|FOLDER [--out FOLDER] [--warnings-fail] [--profile PROFILE]`
   measures FILE (the managed path for H.264/AAC MP4, the FFmpeg path for the rest), judges it by the profile (ebu-r128 unless --profile names another or a file), writes FILE.qc.html and
   FILE.qc.json, prints the findings and exits 0 passed, 1 failed, 2 usage or read error, 3 warnings. `Checker.Run`:
   one file's check (`src/Noga.Checking`), for both commands. `noga serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]...
@@ -164,7 +164,11 @@ What is next, in order: docs/backlog.md.
   streams them (server-sent events), `Watcher` scans a watched folder every 2 s and queues its media files without a
   report once they have settled for 5 s (copied); `Server`'s guard refuses other Hosts (localhost) or requests without the token (shared), and changes without the
   X-Noga header or from another Origin.
-- `src/Noga.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `Jobs`
+- `src/Noga.Checking`: `Checker.Run` (one file's check: measured on its path, judged, both reports written), `SetChecker.Run`
+  (`noga check FOLDER`: the folder's own media files, `MediaFiles.Directly`, each checked, then the set's report, FOLDERNAME.set.qc.html
+  and .json; Core's `SetReport`, `SetHtml`, `SetJson`: every file's verdict, and under a profile with a `Set`, `SetSpec`, acx's and
+  acx-master's, `set.format`, a failure for a file whose format differs, and `set.level`, a warning for an RMS level over
+  `LevelTolerance`, 2 dB, from the set's median; exit 2 when a file couldn't be read: decisions/2026-11-15-set-check.md), `Jobs`
   (checks run two at a time, else one) and `MediaFiles` (what counts as media), shared by the CLI, its web UI and the app.
 - `src/Noga.App`: `noga-app`, the desktop app (decisions/2026-11-01-desktop-app.md): Avalonia 12, built in code
   (no XAML); `MainWindow` (profile, drop zone and file picker, the checks with their verdicts and reports; drops anywhere in the window, the zone lit while dragging and one line once there are checks, rows stacked below 600 px: decisions/2026-11-04-app-drop-zone.md; rows kept and rebuilt only when their check changes, in the web UI too: decisions/2026-11-04-rows-in-place.md; the empty window all drop zone, Add folder…, a row's folder by its end, `Job.ShortFolder`: decisions/2026-11-04-layout-fixes.md), `AppModel`

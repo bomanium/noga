@@ -16,25 +16,34 @@ public sealed class Samples
     /// <summary>The programme's files, by decoder path: ProRes/MOV, DNxHR/MXF, H.264/MP4.</summary>
     public static readonly string[] Programmes = ["programme_prores.mov", "programme_dnxhr.mxf", "programme_h264.mp4"];
 
+    // Two test classes share the folder, each with a fixture of its own: one makes the files, the other waits.
+    static readonly Lock Making = new();
+
     public Samples()
     {
         string root = Root();
         Folder = Path.Combine(root, "samples");
+        lock (Making)
+            Make(root, Folder);
+    }
+
+    static void Make(string root, string folder)
+    {
         string script = Path.Combine(root, "tools", "make-samples.sh");
-        string stamp = Path.Combine(Folder, ".make-samples.sha256");
+        string stamp = Path.Combine(folder, ".make-samples.sha256");
         string version = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(script)));
-        if (Programmes.All(p => File.Exists(Path.Combine(Folder, p))) && File.Exists(stamp) && File.ReadAllText(stamp).Trim() == version)
+        if (Programmes.All(p => File.Exists(Path.Combine(folder, p))) && File.Exists(stamp) && File.ReadAllText(stamp).Trim() == version)
             return;
 
         var start = new ProcessStartInfo("bash") { WorkingDirectory = root, RedirectStandardError = true, UseShellExecute = false };
         start.ArgumentList.Add(Path.Combine("tools", "make-samples.sh"));
-        start.ArgumentList.Add(Folder);
+        start.ArgumentList.Add(folder);
         using var process = Process.Start(start)!;
         string log = process.StandardError.ReadToEnd();
         process.WaitForExit();
         Assert.True(process.ExitCode == 0, $"tools/make-samples.sh failed:\n{log}");
         foreach (string programme in Programmes)
-            Assert.True(File.Exists(Path.Combine(Folder, programme)), $"make-samples.sh made no {programme} (the H.264 file needs an ffmpeg with libx264).");
+            Assert.True(File.Exists(Path.Combine(folder, programme)), $"make-samples.sh made no {programme} (the H.264 file needs an ffmpeg with libx264).");
     }
 
     readonly ConcurrentDictionary<(string, bool), Measurements> _measured = new();

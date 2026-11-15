@@ -3,7 +3,7 @@ using Noga.Checking;
 namespace Noga.Cli;
 
 /// <summary>
-/// The `noga` command: <c>noga check FILE</c> measures a file, judges it by the profile, writes an HTML and a
+/// The `noga` command: <c>noga check FILE</c> (or a folder, its files as one set: <see cref="SetChecker"/>) measures a file, judges it by the profile, writes an HTML and a
 /// JSON report and exits with the report's code (docs/decisions/2026-10-31-exit-codes-head-tail-timecode.md).
 /// </summary>
 static class CommandLine
@@ -15,12 +15,16 @@ static class CommandLine
     public const int Usage = QcReport.Error;
 
     const string Help = """
-        Usage: noga check FILE [--out FOLDER] [--warnings-fail] [--profile PROFILE]
+        Usage: noga check FILE|FOLDER [--out FOLDER] [--warnings-fail] [--profile PROFILE]
                noga serve [--port PORT | --listen ADDRESS:PORT] [--root FOLDER]... [--watch FOLDER]
                              [--token TOKEN] [--cert FILE [--key FILE] | --http] [--profile PROFILE] [--no-open]
                noga --help | --version
 
         check writes FILE.qc.html and FILE.qc.json (next to FILE, or in FOLDER) and prints the findings.
+        Given a folder, it checks the folder's media files (not its subfolders') as one set, a book's chapters: each
+        file's reports, and the set's (FOLDERNAME.set.qc.html and .json) with every file's verdict and one exit code.
+        Where the profile has a "set" (acx and acx-master; a profile file's "set": sameFormat, levelTolerance), the
+        files must also have one format (a failure) and RMS levels within 2 dB of their median (a warning).
         Profiles (--profile; ebu-r128 unless given): ebu-r128 (EBU R128: -23 LUFS within 0.5 LU, true peak -1 dBTP),
         ebu-r128-s1 (ads and promos: as ebu-r128, short-term loudness at most -18 LUFS), atsc-a85 (US: -24 LKFS
         within 2 LU, -2 dBTP), op-59 (Australia: -24 LKFS within 1 LU, -2 dBTP), arib-tr-b32 (Japan: -24 LKFS within
@@ -90,6 +94,9 @@ static class CommandLine
         if (check.ProfileName is not null && !TryProfile(check.ProfileName, error, out _))
             return Usage;
 
+        if (Directory.Exists(check.File))
+            return CheckSet(check, output, error);
+
         CheckResult result;
         try
         {
@@ -119,6 +126,34 @@ static class CommandLine
         }
 
         output.WriteLine($"Reports: {html}, {json}");
+        return code;
+    }
+
+    // A folder's files as one set: a line a file as it is done, what was found across them, and one exit code.
+    static int CheckSet(CheckArguments check, TextWriter output, TextWriter error)
+    {
+        SetResult result;
+        try
+        {
+            result = SetChecker.Run(check.File, check.Out, check.Profile, checkedFile: file =>
+            {
+                string? why = file.Report is { } own ? own.Reason : file.Error;
+                output.WriteLine($"{file.Name}: {StatusStyle.Label(file.Status)}{(why is null ? "" : $": {why}")}");
+            });
+        }
+        catch (CheckException e)
+        {
+            error.WriteLine($"noga: {e.Message}");
+            return Usage;
+        }
+
+        var (report, html, json) = result;
+        foreach (var finding in report.Findings)
+            output.WriteLine($"  {finding.Severity,-8} {finding.Check}: {finding.Message}");
+        int code = report.ExitCode(check.WarningsFail);
+        string label = report.Unreadable > 0 ? $"Couldn't read {report.Unreadable} of {report.Files.Count} files" : StatusStyle.Label(report.Status);
+        output.WriteLine($"{Path.GetFileName(Path.TrimEndingDirectorySeparator(report.Folder))}: {label} ({report.Counts}; profile {report.Profile}, exit code {code})");
+        output.WriteLine($"Reports: each file's FILE.qc.html and FILE.qc.json in {Path.GetDirectoryName(html)}; the set's: {html}, {json}");
         return code;
     }
 

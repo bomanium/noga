@@ -20,6 +20,25 @@ public sealed class LoudnessLimitTests : IClassFixture<OddFiles>
         Assert.True(loudness.MaxMomentary >= loudness.MaxShortTerm);
     }
 
+    // Sound that never fills a block has no level there (ebur128 prints its starting -120.7 LUFS): 1 s fills the
+    // 400 ms block and not the 3 s one, 0.2 s neither (docs/decisions/2026-11-08-loudest-blocks-upstream.md).
+    [Theory]
+    [InlineData(1.0, true)]
+    [InlineData(0.2, false)]
+    public void ABlockNeverFilledHasNoLevel(double seconds, bool momentary)
+    {
+        const int Rate = 48000;
+        var meter = new FrameReader.LoudnessMeter(Rate, 1, null);
+        meter.Add([.. Enumerable.Range(0, (int)(seconds * Rate)).Select(n => (float)(0.1 * Math.Sin(2 * Math.PI * 1000 * n / Rate)))]);
+
+        var blocks = Ffmpeg.FfmpegMeasurer.Blocks(meter.Finish().Loudness);
+
+        Assert.Equal(momentary, blocks.Momentary is not null);
+        if (momentary)
+            Assert.InRange(blocks.Momentary!.Value, -30, -15);
+        Assert.Null(blocks.ShortTerm);
+    }
+
     // ebu-r128 reports them; ebu-r128-s1 fails a short-term above -18 LUFS, its timecodes the 3 s window's.
     [Fact]
     public void S1FailsShortTermAboveMinus18()

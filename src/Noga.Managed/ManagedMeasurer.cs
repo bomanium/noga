@@ -137,15 +137,13 @@ public static class ManagedMeasurer
         // As ffmpeg -ss FROM: the first sample at or after it.
         long first = (long)Math.Ceiling(from * audio.SampleRate);
         var meter = new LoudnessMeter(audio.SampleRate, audio.Channels, null);
-        var blocks = new LoudnessBlocks(audio.SampleRate, audio.Channels);
         Decode(path, cancellationToken, (chunk, position) =>
         {
             long skip = Math.Clamp(first - position, 0, chunk.Length / audio.Channels);
             meter.Add(chunk[(int)(skip * audio.Channels)..]);
-            blocks.Add(chunk[(int)(skip * audio.Channels)..]);
         });
         var loudness = meter.Finish().Loudness;
-        var (momentary, momentaryAt, shortTerm, shortTermAt) = blocks.Finish();
+        var (momentary, momentaryAt, shortTerm, shortTermAt) = FfmpegMeasurer.Blocks(loudness);
         double start = (double)first / audio.SampleRate;
 
         return measured with

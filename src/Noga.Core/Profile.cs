@@ -245,6 +245,12 @@ public sealed record Profile
     /// </summary>
     public FormatSpec? Format { get; init; }
 
+    /// <summary>
+    /// What a folder's files must have in common when checked as one set (a profile file's "set":
+    /// docs/decisions/2026-11-15-set-check.md); null: each file on its own.
+    /// </summary>
+    public SetSpec? Set { get; init; }
+
     /// <summary>What pixels outside broadcast range are checked against.</summary>
     public string RangeFilter => Invariant($"signalstats BRNG on each frame (luma 16-235, chroma 16-240, scaled to the depth; exact), colour bars left out, spans under {RangeMergeGap:0.#} s apart joined");
 
@@ -1251,27 +1257,30 @@ public sealed record Profile
     static bool IsTrackCheck(string check) => check is "tone" or "silence" || check.StartsWith("loudness.", StringComparison.Ordinal) || check.StartsWith("channel.", StringComparison.Ordinal) || check.StartsWith("level.", StringComparison.Ordinal);
 
     // A track's RMS level and sample peak (docs/decisions/2026-11-09-acx-profile.md), each judged at the report's
-    // precision (0.1 dB) when the profile sets a limit, and not reported otherwise.
+    // precision (0.1 dB) when the profile sets a limit, and not reported otherwise (the RMS level also for a set).
     void Levels(List<Finding> into, ChannelMeasures? channels, LoudnessMeasure? loudness)
     {
-        if ((MinRms is not null || MaxRms is not null) && channels is { Channels: > 0 } c)
+        // Reported without a limit too where the profile compares a set's files by it (Set).
+        bool judged = MinRms is not null || MaxRms is not null;
+        if ((judged || Set is not null) && channels is { Channels: > 0 } c)
         {
             double rms = c.OverallRms;
             double shown = Math.Round(rms, 1);
             bool outside = double.IsNegativeInfinity(rms) || shown < MinRms || shown > MaxRms;
             string window = (MinRms, MaxRms) switch
             {
-                ({ } low, { } high) => Invariant($"{low:0.#} to {high:0.#} dBFS"),
-                ({ } low, null) => Invariant($"at least {low:0.#} dBFS"),
-                _ => Invariant($"at most {MaxRms:0.#} dBFS"),
+                ({ } low, { } high) => Invariant($" ({low:0.#} to {high:0.#} dBFS)"),
+                ({ } low, null) => Invariant($" (at least {low:0.#} dBFS)"),
+                (null, { } high) => Invariant($" (at most {high:0.#} dBFS)"),
+                _ => "",
             };
             into.Add(new Finding
             {
                 Check = "level.rms",
-                Severity = outside ? Severity.Failure : Severity.Pass,
+                Severity = !judged ? Severity.Info : outside ? Severity.Failure : Severity.Pass,
                 Message = double.IsNegativeInfinity(rms)
-                    ? $"RMS level: none, the sound is silent ({window})"
-                    : Invariant($"RMS level {rms:0.0} dBFS ({window})"),
+                    ? $"RMS level: none, the sound is silent{window}"
+                    : Invariant($"RMS level {rms:0.0} dBFS{window}"),
                 Value = double.IsNegativeInfinity(rms) ? null : rms,
                 Unit = "dBFS",
                 CheckedAgainst = RmsFilter,

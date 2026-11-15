@@ -104,7 +104,7 @@ most of the cores busy. The web UI and the app run two checks at a time on 4 cor
 - `arib-tr-b32` (Japan): -24 LKFS within 1 LU, -1 dBTP
 - `acx` (audiobooks for ACX, one file a chapter): -23 to -18 dB RMS, sample peaks at most -3 dB, an MP3 at 192 kb/s or
   more, constant bit rate, 44.1 kHz, at most 120 minutes; loudness and true peak reported, not judged. ACX's noise
-  floor (-60 dB RMS) isn't checked yet
+  floor (-60 dB RMS) isn't checked yet. Given the book's folder, the chapters are also checked as one set (below)
 - `acx-master`: `acx`'s levels, 44.1 kHz and length on a WAV, AIFF or FLAC master before it is encoded
 - delivery templates: `hd-1080i25-prores-hq`, `hd-1080p25-prores-hq`, `web-1080p-h264-aac`
 - your own `.json` file: a name, the profile it is `basedOn`, the thresholds it changes (`maxShortTerm`,
@@ -121,6 +121,21 @@ most of the cores busy. The web UI and the app run two checks at a time on 4 cor
               "scan": "interlaced", "audioTracks": 1, "audioChannels": 2, "startTimecode": "10:00:00:00" }
 }
 ```
+
+### A folder as one set
+
+```
+noga check book/ --profile acx
+```
+
+Given a folder, `check` checks its media files (not its subfolders') one by one, writes each file's reports as usual,
+and adds the set's: `book.set.qc.html` and `book.set.qc.json`, with every file's verdict, RMS level and sample peak,
+and one exit code (2 when a file couldn't be read, else the worst of the files and the set). Under a profile with a
+`set` (`acx`, `acx-master`, or a profile file's `"set": { "sameFormat": true, "levelTolerance": 2 }`) the files are
+also judged together: a file whose format differs from the others' (container, codec, sample rate, mono or stereo,
+bit depth, an MP3's or PCM's bit rate; ffprobe's values) fails the set, and one whose RMS level is more than 2 dB from
+the median of the set's is a warning. ACX asks for one format throughout and levels that match; the 2 dB is Noga's,
+ACX gives no figure.
 
 The release's `profiles/` folder has the templates to copy from. `noga --help` lists every profile with its figures.
 
