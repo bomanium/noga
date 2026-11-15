@@ -31,14 +31,6 @@ Status: **Open**, **In progress**, **Waiting**, **Maybe**; finished (in backlog-
     any digital silence; the owner chose a new meter, which belongs in FrameReader (decisions/2026-11-09-noise-floor.md)
   - Status: Waiting (on the meter in FrameReader, bisforboman/FrameReader, and its release)
 
-- LoudnessBlocks switched to FrameReader's LoudnessMeter (MaxMomentary(At), MaxShortTerm(At)), once a FrameReader
-  release counts only the blocks whose 400 ms or 3 s window is full (none filled: no time, Noga's null, where 2.25.0
-  gives -120.691 LUFS); its last digits accepted, as they are FFmpeg's f_ebur128.c arithmetic and Noga's aren't
-  - Why: the last of Noga's meters after the switch to FrameReader's; the owner chose to fix a meter that differs
-    upstream and wait (decisions/2026-11-07-switching-to-framereaders-meters.md), and only the unfilled windows when
-    FrameReader's digits turned out to be FFmpeg's (decisions/2026-11-08-loudest-blocks-upstream.md)
-  - Status: Waiting (on the fix in FrameReader, now its own repository, bisforboman/FrameReader, and its release)
-
 ## Maybe
 
 - The shots from the picture pass's frames on the FFmpeg path, for the formats ShotDetector's frame source takes

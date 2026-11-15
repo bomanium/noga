@@ -341,3 +341,12 @@ Finished items from [backlog.md](backlog.md), oldest first.
   - Why: spoken-word deliveries are judged by other figures than broadcast loudness; the owner picked it from a
     research session's list and chose ACX first (decisions/2026-11-09-acx-profile.md)
   - Status: Done (2026-11-09; the noise floor waits on FrameReader: backlog, Waiting)
+
+- LoudnessBlocks switched to FrameReader's LoudnessMeter (MaxMomentary(At), MaxShortTerm(At)), once a FrameReader
+  release counts only the blocks whose 400 ms or 3 s window is full (none filled: no time, Noga's null, where 2.25.0
+  gives -120.691 LUFS); its last digits accepted, as they are FFmpeg's f_ebur128.c arithmetic and Noga's aren't
+  - Why: the last of Noga's meters after the switch to FrameReader's; the owner chose to fix a meter that differs
+    upstream and wait (decisions/2026-11-07-switching-to-framereaders-meters.md), and only the unfilled windows when
+    FrameReader's digits turned out to be FFmpeg's (decisions/2026-11-08-loudest-blocks-upstream.md)
+  - Status: Done (2026-11-15, FrameReader 2.26.0: both paths read LoudnessMeter's loudest blocks, `FfmpegMeasurer.Blocks`,
+    and LoudnessBlocks is gone)

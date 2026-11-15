@@ -171,7 +171,8 @@ public static class FfmpegMeasurer
         }
     }
 
-    // The loudest momentary and short-term loudness from the end of the line-up, as ffmpeg -ss FROM's ebur128 M and S.
+    // The loudest momentary and short-term loudness from the end of the line-up, as ffmpeg -ss FROM's ebur128 M and S:
+    // FrameReader's LoudnessMeter, which keeps them (the ebur128 filter doesn't). No time: no block filled, no level.
     static (double? Momentary, double MomentaryAt, double? ShortTerm, double ShortTermAt) MeasureBlocks(string path, double from, ChannelWeights? weights, AudioReaderOptions options, CancellationToken cancellationToken)
     {
         using var audio = new AudioReader(path, options);
@@ -179,15 +180,25 @@ public static class FfmpegMeasurer
             audio.Seek(TimeSpan.FromSeconds(from));
         if (weights is not null && weights.Weights.Count != audio.Channels)
             weights = null;
-        var meter = new LoudnessBlocks(audio.SampleRate, audio.Channels, weights);
+        var meter = new LoudnessMeter(audio.SampleRate, audio.Channels, weights);
         while (audio.TryRead(out var chunk))
         {
             cancellationToken.ThrowIfCancellationRequested();
             meter.Add(chunk.Samples);
         }
 
-        return meter.Finish();
+        return Blocks(meter.Finish().Loudness);
     }
+
+    /// <summary>
+    /// The loudest momentary and short-term loudness of a LoudnessMeter's result (LUFS), each with when its block ends
+    /// (seconds from the first sample); null where the samples never filled the block, which FrameReader gives no time.
+    /// </summary>
+    public static (double? Momentary, double MomentaryAt, double? ShortTerm, double ShortTermAt) Blocks(LoudnessResult loudness) => (
+        loudness.MaxMomentaryAt is null ? null : loudness.MaxMomentary,
+        loudness.MaxMomentaryAt?.TotalSeconds ?? 0,
+        loudness.MaxShortTermAt is null ? null : loudness.MaxShortTerm,
+        loudness.MaxShortTermAt?.TotalSeconds ?? 0);
 
     // Each channel on its own (ChannelMeter), from the decoded samples.
     static ChannelMeasures MeasureChannels(string path, Profile profile, AudioReaderOptions options, CancellationToken cancellationToken)
