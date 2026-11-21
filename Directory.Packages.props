@@ -26,7 +26,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <!-- The desktop app's tests: Avalonia.Headless.XUnit needs xunit v3, at the version it builds on. -->
-    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <!-- Each failed test as a check-run annotation in CI. -->
     <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.5" />
