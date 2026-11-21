@@ -21,7 +21,7 @@
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.6" />
     <!-- Pure managed H.264/AAC decoding and MP4 demuxing (MIT). -->
-    <PackageVersion Include="ManagedCodecs" Version="0.4.0" />
+    <PackageVersion Include="ManagedCodecs" Version="0.19.0" />
     <!-- Tests only. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
